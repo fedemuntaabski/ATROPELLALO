@@ -7,5 +7,7 @@ public enum LootType {
     /** Combustible - restaura la barra de fuel */
     FUEL,
     /** Chatarra - restaura la salud del jugador */
-    SCRAP
+    SCRAP,
+    /** Orbe de experiencia - otorga XP al jugador */
+    XP_ORB
 }

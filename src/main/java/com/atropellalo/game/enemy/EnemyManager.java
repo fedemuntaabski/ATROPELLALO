@@ -2,6 +2,7 @@ package com.atropellalo.game.enemy;
 
 import com.atropellalo.game.config.GameConfig;
 import com.atropellalo.game.entity.Player;
+import com.atropellalo.game.loot.LootManager;
 
 import java.awt.Color;
 import java.awt.Font;
@@ -33,6 +34,9 @@ public class EnemyManager implements ExplosiveZombie.ExplosionCallback {
     // Referencia al jugador para daño por explosión
     private Player player;
     
+    // Referencia al LootManager para generar XP orbs
+    private LootManager lootManager;
+    
     // Estadísticas
     private int totalKills;
     
@@ -59,6 +63,14 @@ public class EnemyManager implements ExplosiveZombie.ExplosionCallback {
     }
     
     /**
+     * Establece la referencia al LootManager para generar XP orbs.
+     * @param lootManager Gestor de loot
+     */
+    public void setLootManager(LootManager lootManager) {
+        this.lootManager = lootManager;
+    }
+    
+    /**
      * Actualiza todos los enemigos y el sistema de oleadas.
      * @param deltaTime Tiempo desde el último frame
      * @param playerX Posición X del jugador
@@ -81,7 +93,7 @@ public class EnemyManager implements ExplosiveZombie.ExplosionCallback {
         // Verificar colisiones con jugador
         checkPlayerCollisions(playerX, playerY);
         
-        // Limpiar enemigos muertos
+        // Limpiar enemigos muertos y generar XP
         cleanupDeadEnemies();
     }
     
@@ -169,21 +181,32 @@ public class EnemyManager implements ExplosiveZombie.ExplosionCallback {
     }
     
     /**
-     * Crea un enemigo del tipo especificado.
+     * Crea un enemigo del tipo especificado con escalado por oleada.
      */
     private Enemy createEnemy(EnemyType type, float x, float y) {
+        // Calcular factores de escalado según la oleada actual
+        float healthScale = (float) Math.pow(GameConfig.WAVE_HEALTH_SCALING, currentWave - 1);
+        float speedScale = (float) Math.pow(GameConfig.WAVE_SPEED_SCALING, currentWave - 1);
+        float damageScale = (float) Math.pow(GameConfig.WAVE_DAMAGE_SCALING, currentWave - 1);
+        
+        Enemy enemy;
         switch (type) {
             case FAST:
-                return new FastZombie(x, y);
+                enemy = new FastZombie(x, y, healthScale, speedScale, damageScale);
+                break;
             case SLOW:
-                return new SlowZombie(x, y);
+                enemy = new SlowZombie(x, y, healthScale, speedScale, damageScale);
+                break;
             case EXPLOSIVE:
-                ExplosiveZombie explosive = new ExplosiveZombie(x, y);
+                ExplosiveZombie explosive = new ExplosiveZombie(x, y, healthScale, speedScale, damageScale);
                 explosive.setExplosionContext(enemies, this);
-                return explosive;
+                enemy = explosive;
+                break;
             default:
-                return new FastZombie(x, y);
+                enemy = new FastZombie(x, y, healthScale, speedScale, damageScale);
         }
+        
+        return enemy;
     }
     
     /**
@@ -224,7 +247,7 @@ public class EnemyManager implements ExplosiveZombie.ExplosionCallback {
     }
     
     /**
-     * Elimina enemigos muertos de la lista.
+     * Elimina enemigos muertos de la lista y genera XP orbs.
      */
     private void cleanupDeadEnemies() {
         Iterator<Enemy> iterator = enemies.iterator();
@@ -238,9 +261,48 @@ public class EnemyManager implements ExplosiveZombie.ExplosionCallback {
                         continue; // Esperar a que explote
                     }
                 }
+                
+                // Generar XP orb en la posición del enemigo
+                spawnXPForEnemy(enemy);
+                
+                // Incrementar contador de kills
+                totalKills++;
+                
                 iterator.remove();
             }
         }
+    }
+    
+    /**
+     * Genera un orbe de XP basado en el tipo de enemigo.
+     * El XP escala con el multiplicador del enemigo (basado en oleada).
+     * @param enemy Enemigo que murió
+     */
+    private void spawnXPForEnemy(Enemy enemy) {
+        if (lootManager == null) {
+            return;
+        }
+        
+        int baseXP;
+        switch (enemy.getType()) {
+            case FAST:
+                baseXP = GameConfig.XP_FAST_ZOMBIE;
+                break;
+            case SLOW:
+                baseXP = GameConfig.XP_SLOW_ZOMBIE;
+                break;
+            case EXPLOSIVE:
+                baseXP = GameConfig.XP_EXPLOSIVE_ZOMBIE;
+                break;
+            default:
+                baseXP = GameConfig.XP_FAST_ZOMBIE;
+        }
+        
+        // Aplicar escalado de XP por oleada
+        float xpScale = (float) Math.pow(GameConfig.WAVE_XP_SCALING, currentWave - 1);
+        int scaledXP = Math.round(baseXP * xpScale * enemy.getXPMultiplier());
+        
+        lootManager.spawnXPOrb(enemy.getCenterX(), enemy.getCenterY(), scaledXP);
     }
     
     /**

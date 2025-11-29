@@ -180,7 +180,7 @@ public final class GameConfig {
     public static float WAVE_INTERVAL = 5.0f;
     
     /** Número base de enemigos por oleada */
-    public static int WAVE_BASE_ENEMIES = 5;
+    public static int WAVE_BASE_ENEMIES = 10;
     
     /** Incremento de enemigos por oleada */
     public static int WAVE_ENEMY_INCREMENT = 5;
@@ -211,9 +211,185 @@ public final class GameConfig {
     /** Delay entre disparos (segundos) */
     public static float PISTOL_FIRE_DELAY = 0.5f;
     
+    /** Disparos simultáneos de la pistola */
+    public static int PISTOL_PROJECTILE_COUNT = 1;
+    
+    /** Área de impacto de la pistola */
+    public static float PISTOL_IMPACT_AREA = 0.0f;
+    
     /** Velocidad del proyectil (píxeles/segundo) */
     public static float PROJECTILE_SPEED = 400.0f;
     
     /** Tamaño del proyectil (píxeles) */
     public static int PROJECTILE_SIZE = 8;
+    
+    // ==================== ARMAS - AMETRALLADORA LIGERA ====================
+    
+    /** Daño de la ametralladora por disparo (bajo) */
+    public static float LMG_DAMAGE = 5.0f;
+    
+    /** Rango de la ametralladora (medio) */
+    public static float LMG_RANGE = 200.0f;
+    
+    /** Delay entre disparos (muy bajo - alta cadencia) */
+    public static float LMG_FIRE_DELAY = 0.1f;
+    
+    /** Disparos simultáneos de la ametralladora */
+    public static int LMG_PROJECTILE_COUNT = 1;
+    
+    /** Área de impacto de la ametralladora */
+    public static float LMG_IMPACT_AREA = 0.0f;
+    
+    // ==================== ARMAS - LANZAGRANADAS ====================
+    
+    /** Daño del lanzagranadas (muy alto) */
+    public static float GRENADE_DAMAGE = 50.0f;
+    
+    /** Rango del lanzagranadas (medio) */
+    public static float GRENADE_RANGE = 200.0f;
+    
+    /** Delay entre disparos (alto - baja cadencia) */
+    public static float GRENADE_FIRE_DELAY = 2.0f;
+    
+    /** Disparos simultáneos del lanzagranadas */
+    public static int GRENADE_PROJECTILE_COUNT = 1;
+    
+    /** Radio de explosión de la granada */
+    public static float GRENADE_EXPLOSION_RADIUS = 60.0f;
+    
+    /** Velocidad del proyectil de granada */
+    public static float GRENADE_PROJECTILE_SPEED = 250.0f;
+    
+    // ==================== ARMAS - PÚAS/SPIKES ====================
+    
+    /** Daño de las púas por contacto (bajo) */
+    public static float SPIKES_DAMAGE = 8.0f;
+    
+    /** Radio de daño de las púas (muy corto) */
+    public static float SPIKES_RANGE = 50.0f;
+    
+    /** Cooldown de daño de las púas */
+    public static float SPIKES_DAMAGE_COOLDOWN = 0.3f;
+    
+    // ==================== ARMAS - SIERRAS CIRCULARES ====================
+    
+    /** Daño de las sierras por contacto */
+    public static float SAW_DAMAGE = 12.0f;
+    
+    /** Radio de cada sierra */
+    public static float SAW_RADIUS = 25.0f;
+    
+    /** Distancia de las sierras desde el centro del jugador */
+    public static float SAW_DISTANCE = 45.0f;
+    
+    /** Cooldown de daño de las sierras */
+    public static float SAW_DAMAGE_COOLDOWN = 0.25f;
+    
+    /** Velocidad de rotación de las sierras (rad/s) */
+    public static float SAW_ROTATION_SPEED = 10.0f;
+    
+    // ==================== ARMAS - ESCOPETA ====================
+    
+    /** Daño de la escopeta por proyectil (alto) */
+    public static float SHOTGUN_DAMAGE = 25.0f;
+    
+    /** Rango de la escopeta (corto) */
+    public static float SHOTGUN_RANGE = 150.0f;
+    
+    /** Delay entre disparos (medio) */
+    public static float SHOTGUN_FIRE_DELAY = 1.0f;
+    
+    /** Proyectiles por disparo */
+    public static int SHOTGUN_PROJECTILE_COUNT = 5;
+    
+    /** Ángulo de dispersión total (15% de 360 = ~54 grados) */
+    public static float SHOTGUN_SPREAD_ANGLE = 54.0f;
+    
+    /** Velocidad de los proyectiles */
+    public static float SHOTGUN_PROJECTILE_SPEED = 350.0f;
+    
+    // ==================== ARMAS - LANZALLAMAS ====================
+    
+    /** Daño del lanzallamas por segundo (medio) */
+    public static float FLAMETHROWER_DAMAGE = 15.0f;
+    
+    /** Rango del lanzallamas (corto) */
+    public static float FLAMETHROWER_RANGE = 100.0f;
+    
+    /** Ángulo del cono del lanzallamas (grados) */
+    public static float FLAMETHROWER_CONE_ANGLE = 45.0f;
+    
+    /** Tick rate del daño del lanzallamas (segundos) */
+    public static float FLAMETHROWER_TICK_RATE = 0.1f;
+    
+    // ==================== SISTEMA DE XP Y NIVELES ====================
+    
+    /** Tamaño del orbe de XP */
+    public static int XP_ORB_SIZE = 12;
+    
+    /** Distancia de atracción magnética del orbe */
+    public static float XP_ORB_MAGNET_DISTANCE = 100.0f;
+    
+    /** Velocidad de atracción del orbe */
+    public static float XP_ORB_MAGNET_SPEED = 200.0f;
+    
+    /** Distancia de recolección del orbe */
+    public static float XP_ORB_PICKUP_DISTANCE = 25.0f;
+    
+    /** XP base otorgado por zombie rápido */
+    public static int XP_FAST_ZOMBIE = 10;
+    
+    /** XP base otorgado por zombie lento */
+    public static int XP_SLOW_ZOMBIE = 25;
+    
+    /** XP base otorgado por zombie explosivo */
+    public static int XP_EXPLOSIVE_ZOMBIE = 20;
+    
+    /** XP requerido para nivel 1 -> 2 */
+    public static int XP_BASE_TO_LEVEL_UP = 100;
+    
+    /** Factor de incremento de XP por nivel */
+    public static float XP_LEVEL_SCALING = 1.2f;
+    
+    // ==================== MEJORAS/UPGRADES ====================
+    
+    /** Cantidad de mejora de salud máxima */
+    public static float UPGRADE_HEALTH_AMOUNT = 20.0f;
+    
+    /** Cantidad de mejora de velocidad */
+    public static float UPGRADE_SPEED_AMOUNT = 20.0f;
+    
+    /** Factor de mejora de daño de arma */
+    public static float UPGRADE_WEAPON_DAMAGE_FACTOR = 1.2f;
+    
+    /** Factor de mejora de cadencia de arma */
+    public static float UPGRADE_WEAPON_FIRE_RATE_FACTOR = 0.85f;
+    
+    /** Factor de mejora de área de impacto */
+    public static float UPGRADE_WEAPON_AREA_FACTOR = 1.3f;
+    
+    /** Incremento de disparos simultáneos */
+    public static int UPGRADE_WEAPON_PROJECTILE_COUNT = 1;
+    
+    /** Máximo de armas que puede tener el jugador */
+    public static int MAX_WEAPONS = 3;
+    
+    // ==================== ESCALADO DE OLEADAS ====================
+    
+    /** Factor de escalado de vida de enemigos por oleada */
+    public static float WAVE_HEALTH_SCALING = 1.05f;
+    
+    /** Factor de escalado de velocidad de enemigos por oleada */
+    public static float WAVE_SPEED_SCALING = 1.02f;
+    
+    /** Factor de escalado de daño de enemigos por oleada */
+    public static float WAVE_DAMAGE_SCALING = 1.03f;
+    
+    /** Factor de escalado de XP de enemigos por oleada */
+    public static float WAVE_XP_SCALING = 1.05f;
+    
+    // ==================== BONIFICACIONES DE NIVEL ====================
+    
+    /** Combustible otorgado al subir de nivel */
+    public static float LEVEL_UP_FUEL_BONUS = 10.0f;
 }

@@ -7,7 +7,7 @@ import java.awt.Graphics2D;
 
 /**
  * Representa al jugador en el juego.
- * Gestiona posición, movimiento, salud y combustible.
+ * Gestiona posición, movimiento, salud, combustible y experiencia.
  */
 public class Player {
     
@@ -21,10 +21,26 @@ public class Player {
     private float maxHealth;
     private float fuel;
     private float maxFuel;
+    private float speed;
+    
+    // Sistema de experiencia y niveles
+    private int currentXP;
+    private int level;
+    private int xpToNextLevel;
     
     // Estado del jugador
     private boolean isMoving;
     private boolean isAlive;
+    
+    // Callback para notificar subida de nivel
+    private LevelUpCallback levelUpCallback;
+    
+    /**
+     * Interface para notificar cuando el jugador sube de nivel.
+     */
+    public interface LevelUpCallback {
+        void onLevelUp(int newLevel);
+    }
     
     public Player(float startX, float startY) {
         this.x = startX;
@@ -37,9 +53,23 @@ public class Player {
         this.health = GameConfig.PLAYER_INITIAL_HEALTH;
         this.maxFuel = GameConfig.PLAYER_MAX_FUEL;
         this.fuel = GameConfig.PLAYER_INITIAL_FUEL;
+        this.speed = GameConfig.PLAYER_SPEED;
+        
+        // Inicializar sistema de niveles
+        this.currentXP = 0;
+        this.level = 1;
+        this.xpToNextLevel = GameConfig.XP_BASE_TO_LEVEL_UP;
         
         this.isMoving = false;
         this.isAlive = true;
+    }
+    
+    /**
+     * Establece el callback para notificaciones de subida de nivel.
+     * @param callback Callback a invocar
+     */
+    public void setLevelUpCallback(LevelUpCallback callback) {
+        this.levelUpCallback = callback;
     }
     
     /**
@@ -117,8 +147,8 @@ public class Player {
             return;
         }
         
-        velocityX = moveX * GameConfig.PLAYER_SPEED;
-        velocityY = moveY * GameConfig.PLAYER_SPEED;
+        velocityX = moveX * speed;
+        velocityY = moveY * speed;
         
         // Normalizar velocidad diagonal
         if (moveX != 0 && moveY != 0) {
@@ -156,6 +186,62 @@ public class Player {
             health = 0;
             isAlive = false;
         }
+    }
+    
+    /**
+     * Añade experiencia al jugador.
+     * @param amount Cantidad de XP a añadir
+     * @return true si el jugador subió de nivel
+     */
+    public boolean addXP(int amount) {
+        currentXP += amount;
+        
+        if (currentXP >= xpToNextLevel) {
+            levelUp();
+            return true;
+        }
+        
+        return false;
+    }
+    
+    /**
+     * Procesa la subida de nivel.
+     * Otorga combustible bonus y calcula XP para el siguiente nivel.
+     */
+    private void levelUp() {
+        currentXP -= xpToNextLevel;
+        level++;
+        
+        // Calcular XP requerido para el siguiente nivel (escalado exponencial)
+        xpToNextLevel = (int) (GameConfig.XP_BASE_TO_LEVEL_UP * 
+                               Math.pow(GameConfig.XP_LEVEL_SCALING, level - 1));
+        
+        // Bonificación de combustible al subir de nivel
+        addFuel(GameConfig.LEVEL_UP_FUEL_BONUS);
+        
+        // Notificar callback
+        if (levelUpCallback != null) {
+            levelUpCallback.onLevelUp(level);
+        }
+    }
+    
+    // ==================== MÉTODOS DE MEJORA ====================
+    
+    /**
+     * Aumenta la salud máxima del jugador.
+     * @param amount Cantidad a aumentar
+     */
+    public void upgradeMaxHealth(float amount) {
+        maxHealth += amount;
+        health = Math.min(health + amount, maxHealth); // También restaura algo de vida
+    }
+    
+    /**
+     * Aumenta la velocidad del jugador.
+     * @param amount Cantidad a aumentar
+     */
+    public void upgradeSpeed(float amount) {
+        speed += amount;
     }
     
     public float getX() {
@@ -200,6 +286,30 @@ public class Player {
     
     public float getMaxFuel() {
         return maxFuel;
+    }
+    
+    public float getSpeed() {
+        return speed;
+    }
+    
+    public int getCurrentXP() {
+        return currentXP;
+    }
+    
+    public int getLevel() {
+        return level;
+    }
+    
+    public int getXpToNextLevel() {
+        return xpToNextLevel;
+    }
+    
+    /**
+     * Obtiene el porcentaje de progreso hacia el siguiente nivel.
+     * @return Valor entre 0.0 y 1.0
+     */
+    public float getXPProgress() {
+        return (float) currentXP / xpToNextLevel;
     }
     
     public boolean isAlive() {

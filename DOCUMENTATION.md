@@ -6,7 +6,7 @@
 - **Lenguaje**: Java 11
 - **Framework UI**: Swing
 - **Build Tool**: Maven
-- **Estado**: Fase 5 Completada - Sistema de Armas con Disparo Automático
+- **Estado**: Fase 7 Completada - Escopeta, Sierras, Escalado de Enemigos
 
 ## Pautas de Desarrollo Aplicadas
 
@@ -905,9 +905,586 @@ PROJECTILE_SIZE = 8;            // Tamaño del proyectil (px)
 
 **Nota**: Las configuraciones de enemigos usan `static` (no `static final`) para permitir modificación en tiempo real durante pruebas.
 
+## Fase 6: Sistema de XP, Niveles y Mejoras (NUEVO)
+
+### Resumen
+Implementación completa del sistema estilo Vampire Survivors con orbes de XP, subida de nivel con menú de mejoras y nuevas armas.
+
+### Sistema de XP y Niveles
+
+#### XPOrb (NUEVO)
+**Ubicación**: `com.atropellalo.game.loot.XPOrb`
+
+**Responsabilidad**: Orbes de experiencia que caen de enemigos.
+
+**Características**:
+- Hereda de `Loot`
+- Atracción magnética hacia el jugador
+- Distancia de atracción: 100 px
+- Velocidad de atracción: 300 px/s
+- Renderizado con gradiente radial (verde/amarillo)
+- Cada tipo de enemigo da diferente XP
+
+#### Sistema de Niveles (Player)
+**Nuevos campos en Player**:
+- `currentXP`: Experiencia actual
+- `level`: Nivel del jugador (comienza en 1)
+- `xpToNextLevel`: XP necesario para subir (100 base, +50 por nivel)
+- `speed`: Velocidad del jugador (mejora con upgrades)
+
+**Callback de nivel**:
+```java
+public interface LevelUpCallback {
+    void onLevelUp(int newLevel);
+}
+```
+
+**Fórmula de XP**:
+- Nivel 1 → 2: 100 XP
+- Nivel 2 → 3: 150 XP
+- Nivel 3 → 4: 200 XP
+- Fórmula: `100 + (level - 1) * 50`
+
+#### XP por Enemigo (GameConfig)
+```java
+XP_FAST_ZOMBIE = 10;      // Zombie rápido
+XP_SLOW_ZOMBIE = 25;      // Zombie lento
+XP_EXPLOSIVE_ZOMBIE = 15; // Zombie explosivo
+```
+
+### Sistema de Mejoras (Upgrades)
+
+#### UpgradeType (NUEVO)
+**Ubicación**: `com.atropellalo.game.upgrade.UpgradeType`
+
+**Valores**:
+- `VEHICLE_HEALTH`: Mejora salud máxima (+20 HP)
+- `VEHICLE_SPEED`: Mejora velocidad (+15%)
+- `NEW_WEAPON`: Añade nueva arma (máx 3)
+- `WEAPON_DAMAGE`: Mejora daño del arma (+20%)
+- `WEAPON_FIRE_RATE`: Mejora cadencia (+15%)
+- `WEAPON_IMPACT_AREA`: Mejora área de impacto (+25%)
+- `WEAPON_PROJECTILE_COUNT`: Añade proyectil (+1)
+
+#### UpgradeOption (NUEVO)
+**Ubicación**: `com.atropellalo.game.upgrade.UpgradeOption`
+
+**Responsabilidad**: Representa una opción de mejora.
+
+**Campos**:
+- `type`: Tipo de mejora
+- `title`: Título para mostrar
+- `description`: Descripción detallada
+- `weaponType`: Tipo de arma (opcional, para NEW_WEAPON o upgrades de arma)
+
+#### UpgradeManager (NUEVO)
+**Ubicación**: `com.atropellalo.game.upgrade.UpgradeManager`
+
+**Responsabilidad**: Genera y aplica mejoras.
+
+**Métodos Principales**:
+- `generateOptions(Player, WeaponManager)`: Genera 3 opciones aleatorias
+- `applyUpgrade(UpgradeOption, Player, WeaponManager)`: Aplica mejora seleccionada
+
+**Lógica de Generación**:
+1. Siempre incluye mejoras de vehículo (salud, velocidad)
+2. Si hay espacio para armas (< 3), incluye nuevas armas
+3. Incluye mejoras para armas equipadas
+4. Selecciona 3 aleatorias sin repetir
+
+#### UpgradeMenu (NUEVO)
+**Ubicación**: `com.atropellalo.game.ui.UpgradeMenu`
+
+**Responsabilidad**: Menú visual de selección de mejoras.
+
+**Características**:
+- Overlay semi-transparente
+- 3 tarjetas de opción
+- Navegación con teclado (A/D o ←/→)
+- Selección con Enter, Espacio o 1/2/3
+- Tarjeta seleccionada resaltada en verde
+- Pausa el juego mientras está visible
+
+**Callback**:
+```java
+public interface UpgradeSelectedCallback {
+    void onUpgradeSelected(UpgradeOption option);
+}
+```
+
+### Nuevas Armas
+
+#### WeaponType (NUEVO)
+**Ubicación**: `com.atropellalo.game.weapon.WeaponType`
+
+**Valores**:
+- `PISTOL`: Pistola base
+- `LIGHT_MACHINE_GUN`: Ametralladora ligera
+- `GRENADE_LAUNCHER`: Lanzagranadas
+- `SPIKES`: Púas alrededor del vehículo
+- `FLAMETHROWER`: Lanzallamas
+
+#### LightMachineGun (NUEVO)
+**Ubicación**: `com.atropellalo.game.weapon.LightMachineGun`
+
+**Características**:
+- Alta cadencia de fuego (5 disparos/s)
+- Daño bajo por proyectil (8 HP)
+- 2 proyectiles por disparo
+- Proyectiles naranjas/rojos
+- Rango: 300 px
+
+**Configuración** (GameConfig):
+```java
+LMG_DAMAGE = 8.0f;
+LMG_RANGE = 300.0f;
+LMG_FIRE_DELAY = 0.2f;
+LMG_PROJECTILE_COUNT = 2;
+LMG_PROJECTILE_SPEED = 500.0f;
+```
+
+#### GrenadeLauncher (NUEVO)
+**Ubicación**: `com.atropellalo.game.weapon.GrenadeLauncher`
+
+**Características**:
+- Bajo ratio de fuego (0.5 disparos/s)
+- Alto daño (30 HP directo)
+- Daño en área (50 px de radio)
+- Proyectiles grandes y lentos
+- Color gris/verde oscuro
+
+**Configuración** (GameConfig):
+```java
+GRENADE_DAMAGE = 30.0f;
+GRENADE_RANGE = 350.0f;
+GRENADE_FIRE_DELAY = 2.0f;
+GRENADE_IMPACT_AREA = 50.0f;
+GRENADE_PROJECTILE_SPEED = 250.0f;
+```
+
+#### Spikes (NUEVO)
+**Ubicación**: `com.atropellalo.game.weapon.Spikes`
+
+**Características**:
+- Arma pasiva (no dispara proyectiles)
+- Daño continuo a enemigos cercanos
+- 8 púas alrededor del jugador
+- Radio de daño: 60 px
+- Daño por segundo: 20 HP
+
+**Configuración** (GameConfig):
+```java
+SPIKES_DAMAGE = 20.0f;
+SPIKES_RANGE = 60.0f;
+SPIKES_DAMAGE_INTERVAL = 0.5f;
+```
+
+**Métodos Especiales**:
+- `processContinuousDamage(List<Enemy>, float, float)`: Daña enemigos en rango
+- `render(Graphics2D, float, float)`: Dibuja púas alrededor del jugador
+
+#### Flamethrower (NUEVO)
+**Ubicación**: `com.atropellalo.game.weapon.Flamethrower`
+
+**Características**:
+- Arma de daño continuo en cono
+- No dispara proyectiles tradicionales
+- Daño en área cónica frente al jugador
+- Partículas de fuego animadas
+- Ángulo de cono: 45°
+- Rango: 120 px
+
+**Configuración** (GameConfig):
+```java
+FLAMETHROWER_DAMAGE = 25.0f;
+FLAMETHROWER_RANGE = 120.0f;
+FLAMETHROWER_DAMAGE_INTERVAL = 0.1f;
+FLAMETHROWER_CONE_ANGLE = 45.0f;
+```
+
+**Métodos Especiales**:
+- `processContinuousDamage(List<Enemy>, float, float)`: Daña enemigos en cono
+- `render(Graphics2D, float, float)`: Dibuja llamas con partículas
+
+### Actualizaciones a Clases Existentes
+
+#### Weapon (Actualizado)
+**Nuevos campos**:
+- `weaponType`: Tipo de arma
+- `projectileCount`: Proyectiles por disparo
+- `impactArea`: Radio de daño en área
+
+**Nuevos métodos**:
+- `upgradeDamage()`: Mejora daño 20%
+- `upgradeFireRate()`: Mejora cadencia 15%
+- `upgradeImpactArea()`: Mejora área 25%
+- `upgradeProjectileCount()`: Añade 1 proyectil
+
+**Cambio en tryFire()**:
+- Ahora retorna `List<Projectile>` en lugar de un solo proyectil
+
+#### Projectile (Actualizado)
+**Nuevos campos**:
+- `impactArea`: Radio de explosión
+- `speed`: Velocidad personalizable
+- `color`: Color del proyectil
+- `size`: Tamaño del proyectil
+
+**Nuevo método**:
+- `applyAreaDamage(List<Enemy>)`: Aplica daño en área al impactar
+
+**Nuevos constructores**:
+- Constructor completo con todos los parámetros
+- Constructor simplificado compatible con versión anterior
+
+#### WeaponManager (Actualizado)
+**Cambios**:
+- De `Weapon weapon` a `List<Weapon> weapons`
+- Máximo 3 armas simultáneas
+
+**Nuevos métodos**:
+- `addWeapon(Weapon)`: Añade arma si hay espacio
+- `hasWeapon(WeaponType)`: Verifica si tiene un tipo de arma
+- `getWeapon(WeaponType)`: Obtiene arma por tipo
+- `canAddWeapon()`: Verifica si puede añadir más armas
+- `getAvailableWeaponTypes()`: Lista armas no equipadas
+
+**Actualización de render()**:
+- Nueva firma: `render(Graphics2D, float, float)` para armas que dibujan en posición del jugador
+
+#### Player (Actualizado)
+**Nuevos campos**:
+- `currentXP`: Experiencia actual
+- `level`: Nivel (comienza en 1)
+- `xpToNextLevel`: XP para siguiente nivel
+- `speed`: Velocidad (mejora con upgrades)
+- `levelUpCallback`: Callback al subir de nivel
+
+**Nuevos métodos**:
+- `addXP(int)`: Añade XP, retorna true si sube de nivel
+- `setLevelUpCallback(LevelUpCallback)`: Configura callback
+- `upgradeMaxHealth()`: Mejora salud máxima
+- `upgradeSpeed()`: Mejora velocidad
+- Getters para XP, nivel, etc.
+
+#### GameHUD (Actualizado)
+**Nuevo elemento**:
+- Barra de XP encima de las barras existentes
+- Muestra nivel actual
+- Barra de progreso hacia siguiente nivel
+- Color púrpura/magenta
+
+#### LootManager (Actualizado)
+**Nuevos campos**:
+- `List<XPOrb> xpOrbs`: Lista separada de orbes de XP
+
+**Nuevos métodos**:
+- `spawnXPOrb(float, float, int)`: Crea orbe de XP en posición
+
+**Actualización de update()**:
+- Nueva firma: `update(float, float, float)` para atracción magnética
+- Actualiza orbes de XP con posición del jugador
+
+#### EnemyManager (Actualizado)
+**Nuevos campos**:
+- `LootManager lootManager`: Referencia para spawn de XP
+
+**Nuevos métodos**:
+- `setLootManager(LootManager)`: Configura el loot manager
+- `spawnXPForEnemy(Enemy)`: Genera XP según tipo de enemigo
+
+**Actualización de cleanupDeadEnemies()**:
+- Llama a `spawnXPForEnemy()` antes de eliminar enemigo muerto
+
+#### LootType (Actualizado)
+**Nuevo valor**:
+- `XP_ORB`: Orbe de experiencia
+
+#### GamePanel (Actualizado)
+**Nuevos campos**:
+- `UpgradeManager upgradeManager`
+- `UpgradeMenu upgradeMenu`
+- `boolean paused`
+
+**Nuevas integraciones**:
+- Conecta `enemyManager.setLootManager(lootManager)`
+- Configura `player.setLevelUpCallback()`
+- Configura `upgradeMenu.setCallback()`
+- Implementa `KeyListener` para menú de mejoras
+
+**Nuevos métodos**:
+- `onPlayerLevelUp(int)`: Pausa juego, muestra menú
+- `onUpgradeSelected(UpgradeOption)`: Aplica mejora, reanuda juego
+
+**Actualización de update()**:
+- No actualiza si `paused` es true
+- Pasa posición del jugador a `lootManager.update()`
+
+**Actualización de paintComponent()**:
+- Renderiza `upgradeMenu` si está visible
+- Pasa posición del jugador a `weaponManager.render()`
+
+**Manejo de XP en applyLootEffect()**:
+- Detecta `LootType.XP_ORB`
+- Extrae valor de XP del orbe
+- Llama a `player.addXP()`
+
+### Flujo del Sistema
+
+```
+Enemigo muere
+    ↓
+EnemyManager.cleanupDeadEnemies()
+    ↓
+spawnXPForEnemy() → LootManager.spawnXPOrb()
+    ↓
+XPOrb aparece en el mapa
+    ↓
+LootManager.update() → XPOrb atracción magnética
+    ↓
+LootManager.checkCollisions() → Jugador recoge orbe
+    ↓
+GamePanel.applyLootEffect() → player.addXP()
+    ↓
+[Si alcanza XP necesario]
+    ↓
+Player.addXP() retorna true + callback
+    ↓
+GamePanel.onPlayerLevelUp()
+    ↓
+paused = true
+    ↓
+UpgradeManager.generateOptions()
+    ↓
+UpgradeMenu.show()
+    ↓
+[Jugador selecciona opción]
+    ↓
+UpgradeMenu callback → GamePanel.onUpgradeSelected()
+    ↓
+UpgradeManager.applyUpgrade()
+    ↓
+paused = false
+    ↓
+Juego continúa
+```
+
+### Configuración de Mejoras (GameConfig)
+```java
+// Mejoras de vehículo
+UPGRADE_HEALTH_AMOUNT = 20.0f;      // +20 HP máximo
+UPGRADE_SPEED_AMOUNT = 0.15f;       // +15% velocidad
+
+// Mejoras de armas (multiplicadores)
+UPGRADE_WEAPON_DAMAGE_FACTOR = 0.2f;         // +20% daño
+UPGRADE_WEAPON_FIRE_RATE_FACTOR = 0.15f;     // +15% cadencia
+UPGRADE_WEAPON_IMPACT_AREA_FACTOR = 0.25f;   // +25% área
+UPGRADE_WEAPON_PROJECTILE_COUNT = 1;         // +1 proyectil
+
+// Límites
+MAX_WEAPONS = 3;                    // Máximo de armas
+```
+
+### Controles del Menú de Mejoras
+- **A / ←**: Mover selección a la izquierda
+- **D / →**: Mover selección a la derecha
+- **Enter / Espacio**: Confirmar selección
+- **1 / 2 / 3**: Selección directa de opción
+
+---
+
+## Fase 7: Mejoras de Armas y Escalado de Enemigos (NUEVO)
+
+### Resumen
+Implementación de nueva arma escopeta, cambio de púas por sierras circulares, lanzagranadas aleatorio con efectos de explosión, escalado de enemigos por oleada, y bonificación de combustible al subir de nivel.
+
+### Nueva Arma: Escopeta (Shotgun)
+
+**Ubicación**: `com.atropellalo.game.weapon.Shotgun`
+
+**Características**:
+- Alto daño por proyectil (25 HP)
+- Rango corto (150 px)
+- 5 proyectiles por disparo
+- Dispersión en área del 15% (~54°)
+- Cadencia media (1 disparo/segundo)
+
+**Configuración** (GameConfig):
+```java
+SHOTGUN_DAMAGE = 25.0f;           // Daño alto
+SHOTGUN_RANGE = 150.0f;           // Rango corto
+SHOTGUN_FIRE_DELAY = 1.0f;        // Cadencia media
+SHOTGUN_PROJECTILE_COUNT = 5;     // 5 perdigones
+SHOTGUN_SPREAD_ANGLE = 54.0f;     // 15% de 360°
+SHOTGUN_PROJECTILE_SPEED = 350.0f;
+```
+
+### Sierras Circulares (Reemplazo de Púas)
+
+**Ubicación**: `com.atropellalo.game.weapon.CircularSaw`
+
+**Cambio**: Las púas (Spikes) fueron reemplazadas por sierras circulares.
+
+**Características**:
+- Dos sierras, una a cada lado del jugador
+- Rotación constante visual
+- Daño por contacto continuo
+- Dientes triangulares animados
+
+**Configuración** (GameConfig):
+```java
+SAW_DAMAGE = 12.0f;              // Daño por contacto
+SAW_RADIUS = 25.0f;              // Radio de cada sierra
+SAW_DISTANCE = 45.0f;            // Distancia desde el jugador
+SAW_DAMAGE_COOLDOWN = 0.25f;     // Cooldown de daño
+SAW_ROTATION_SPEED = 10.0f;      // Velocidad de rotación (rad/s)
+```
+
+**Renderizado**:
+- Disco base metálico
+- 12 dientes triangulares
+- Centro oscuro con agujero
+- Rotación continua animada
+
+### Lanzagranadas Aleatorio
+
+**Cambios en GrenadeLauncher**:
+- Ya NO apunta automáticamente a enemigos
+- Dispara en direcciones ALEATORIAS
+- Solo dispara si hay enemigos en el mapa
+
+**Nueva clase GrenadeProjectile**:
+**Ubicación**: `com.atropellalo.game.weapon.GrenadeProjectile`
+
+**Efecto de explosión visual**:
+- Fase de expansión (0-50% duración)
+  - Círculos concéntricos de colores
+  - Amarillo → Naranja → Rojo → Humo
+  - Destello blanco central
+- Fase de disipación (50-100% duración)
+  - Humo que se expande
+  - Fuego residual que se desvanece
+- Duración total: 0.5 segundos
+
+### Escalado de Enemigos por Oleada
+
+**Sistema de escalado progresivo**:
+Los enemigos se vuelven más fuertes con cada oleada. Los 4 atributos escalan simultáneamente:
+
+```java
+WAVE_HEALTH_SCALING = 1.05f;   // +5% vida por oleada
+WAVE_SPEED_SCALING = 1.02f;    // +2% velocidad por oleada
+WAVE_DAMAGE_SCALING = 1.03f;   // +3% daño por oleada
+WAVE_XP_SCALING = 1.05f;       // +5% XP por oleada
+```
+
+**Fórmula de escalado**:
+```
+statFinal = statBase × (factorEscalado ^ (oleada - 1))
+```
+
+**Ejemplo oleada 5**:
+- Vida: base × 1.05^4 = base × 1.216 (+21.6%)
+- Velocidad: base × 1.02^4 = base × 1.082 (+8.2%)
+- Daño: base × 1.03^4 = base × 1.126 (+12.6%)
+- XP: base × 1.05^4 = base × 1.216 (+21.6%)
+
+**Implementación**:
+- `Enemy` tiene nuevo campo `xpMultiplier`
+- Constructor con factores de escalado
+- `EnemyManager.createEnemy()` calcula escalado
+- `spawnXPForEnemy()` aplica escalado de XP
+
+### Proyectiles Múltiples Sin Dispersión
+
+**Cambio importante**: El multi-disparo ya NO dispersa proyectiles.
+
+Armas afectadas:
+- **Pistola**: Todos los proyectiles van al mismo objetivo
+- **Ametralladora Ligera**: Todos en la misma dirección
+- **Escopeta**: Mantiene su dispersión intencional (es su característica)
+
+**Motivo**: Aumentar la cantidad de proyectiles debe aumentar el DPS, no dispersar el daño.
+
+### Bonificación de Combustible al Subir de Nivel
+
+**Configuración**:
+```java
+LEVEL_UP_FUEL_BONUS = 10.0f;   // +10 combustible
+```
+
+**Implementación en Player.levelUp()**:
+```java
+// Bonificación de combustible al subir de nivel
+addFuel(GameConfig.LEVEL_UP_FUEL_BONUS);
+```
+
+### Actualizaciones de Archivos
+
+#### Nuevos Archivos
+- `Shotgun.java` - Nueva arma escopeta
+- `CircularSaw.java` - Reemplazo de Spikes
+- `GrenadeProjectile.java` - Proyectil con explosión visual
+
+#### Archivos Eliminados
+- `Spikes.java` - Reemplazado por CircularSaw
+
+#### Archivos Modificados
+
+**GameConfig.java**:
+- Añadidas configs de escopeta (SHOTGUN_*)
+- Añadidas configs de sierras (SAW_*)
+- Añadidos factores de escalado (WAVE_*_SCALING)
+- Añadido LEVEL_UP_FUEL_BONUS
+
+**WeaponType.java**:
+- Eliminado: `SPIKES`
+- Añadido: `CIRCULAR_SAW`, `SHOTGUN`
+
+**Enemy.java**:
+- Nuevo campo: `xpMultiplier`
+- Nuevo constructor con factores de escalado
+- Nuevo getter: `getXPMultiplier()`
+
+**FastZombie.java, SlowZombie.java, ExplosiveZombie.java**:
+- Nuevo constructor con factores de escalado
+
+**EnemyManager.java**:
+- `createEnemy()` aplica factores de escalado
+- `spawnXPForEnemy()` escala XP por oleada
+
+**Pistol.java, LightMachineGun.java**:
+- Proyectiles múltiples van en la misma dirección
+
+**GrenadeLauncher.java**:
+- Disparo aleatorio (no apunta)
+- Usa GrenadeProjectile
+
+**Player.java**:
+- `levelUp()` otorga combustible bonus
+
+**WeaponManager.java**:
+- Crea CircularSaw y Shotgun
+
+**UpgradeManager.java**:
+- Referencias actualizadas de SPIKES a CIRCULAR_SAW
+
+### Configuración Completa de Escalado
+
+```java
+// ==================== ESCALADO DE OLEADAS ====================
+WAVE_HEALTH_SCALING = 1.05f;    // Factor de escalado de vida
+WAVE_SPEED_SCALING = 1.02f;     // Factor de escalado de velocidad
+WAVE_DAMAGE_SCALING = 1.03f;    // Factor de escalado de daño
+WAVE_XP_SCALING = 1.05f;        // Factor de escalado de XP
+
+// ==================== BONIFICACIONES DE NIVEL ====================
+LEVEL_UP_FUEL_BONUS = 10.0f;    // Combustible al subir de nivel
+```
+
 ---
 
 **Fecha de Creación**: 29/11/2025  
 **Última Actualización**: 29/11/2025  
 **Versión**: 1.0-SNAPSHOT  
-**Estado**: Fase 5 Completada - Sistema de Armas con Disparo Automático
+**Estado**: Fase 7 Completada - Escopeta, Sierras, Escalado de Enemigos

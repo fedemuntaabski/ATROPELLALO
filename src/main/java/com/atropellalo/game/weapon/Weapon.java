@@ -2,6 +2,7 @@ package com.atropellalo.game.weapon;
 
 import com.atropellalo.game.enemy.Enemy;
 
+import java.awt.Graphics2D;
 import java.util.List;
 
 /**
@@ -14,18 +15,39 @@ public abstract class Weapon {
     protected float range;
     protected float fireDelay;
     protected float currentCooldown;
+    protected int projectileCount;
+    protected float impactArea;
+    protected WeaponType weaponType;
     
     /**
      * Constructor base para armas.
      * @param damage Daño del arma
      * @param range Rango de alcance
      * @param fireDelay Delay entre disparos (segundos)
+     * @param weaponType Tipo de arma
      */
-    protected Weapon(float damage, float range, float fireDelay) {
+    protected Weapon(float damage, float range, float fireDelay, WeaponType weaponType) {
         this.damage = damage;
         this.range = range;
         this.fireDelay = fireDelay;
         this.currentCooldown = 0;
+        this.projectileCount = 1;
+        this.impactArea = 0;
+        this.weaponType = weaponType;
+    }
+    
+    /**
+     * Constructor extendido para armas con más parámetros.
+     */
+    protected Weapon(float damage, float range, float fireDelay, 
+                    int projectileCount, float impactArea, WeaponType weaponType) {
+        this.damage = damage;
+        this.range = range;
+        this.fireDelay = fireDelay;
+        this.currentCooldown = 0;
+        this.projectileCount = projectileCount;
+        this.impactArea = impactArea;
+        this.weaponType = weaponType;
     }
     
     /**
@@ -51,9 +73,30 @@ public abstract class Weapon {
      * @param playerX Posición X del jugador
      * @param playerY Posición Y del jugador
      * @param enemies Lista de enemigos
-     * @return Proyectil creado o null si no puede disparar
+     * @return Lista de proyectiles creados o lista vacía si no puede disparar
      */
-    public abstract Projectile tryFire(float playerX, float playerY, List<Enemy> enemies);
+    public abstract List<Projectile> tryFire(float playerX, float playerY, List<Enemy> enemies);
+    
+    /**
+     * Renderiza efectos visuales del arma (si los tiene).
+     * @param g2d Contexto gráfico
+     * @param playerX Centro X del jugador
+     * @param playerY Centro Y del jugador
+     */
+    public void render(Graphics2D g2d, float playerX, float playerY) {
+        // Implementación por defecto vacía - las armas con efectos visuales la sobrescriben
+    }
+    
+    /**
+     * Procesa el daño continuo del arma (para armas como púas o lanzallamas).
+     * @param deltaTime Tiempo desde el último frame
+     * @param playerX Centro X del jugador
+     * @param playerY Centro Y del jugador
+     * @param enemies Lista de enemigos
+     */
+    public void processContinuousDamage(float deltaTime, float playerX, float playerY, List<Enemy> enemies) {
+        // Implementación por defecto vacía - solo armas de daño continuo la sobrescriben
+    }
     
     /**
      * Encuentra el enemigo más cercano dentro del rango.
@@ -91,6 +134,43 @@ public abstract class Weapon {
         currentCooldown = fireDelay;
     }
     
+    // ==================== MÉTODOS DE MEJORA ====================
+    
+    /**
+     * Mejora el daño del arma.
+     * @param factor Factor multiplicador
+     */
+    public void upgradeDamage(float factor) {
+        this.damage *= factor;
+    }
+    
+    /**
+     * Mejora la cadencia del arma (reduce el delay).
+     * @param factor Factor multiplicador (< 1 para mejorar)
+     */
+    public void upgradeFireRate(float factor) {
+        this.fireDelay *= factor;
+        if (this.fireDelay < 0.05f) {
+            this.fireDelay = 0.05f; // Mínimo delay
+        }
+    }
+    
+    /**
+     * Mejora el área de impacto.
+     * @param factor Factor multiplicador
+     */
+    public void upgradeImpactArea(float factor) {
+        this.impactArea *= factor;
+    }
+    
+    /**
+     * Incrementa la cantidad de disparos simultáneos.
+     * @param amount Cantidad a incrementar
+     */
+    public void upgradeProjectileCount(int amount) {
+        this.projectileCount += amount;
+    }
+    
     // Getters
     
     public float getDamage() {
@@ -107,5 +187,17 @@ public abstract class Weapon {
     
     public float getCurrentCooldown() {
         return currentCooldown;
+    }
+    
+    public int getProjectileCount() {
+        return projectileCount;
+    }
+    
+    public float getImpactArea() {
+        return impactArea;
+    }
+    
+    public WeaponType getWeaponType() {
+        return weaponType;
     }
 }

@@ -8,6 +8,9 @@ import com.atropellalo.game.input.InputHandler;
 import com.atropellalo.game.loot.Loot;
 import com.atropellalo.game.loot.LootManager;
 import com.atropellalo.game.loot.LootType;
+import com.atropellalo.game.loot.XPOrb;
+import com.atropellalo.game.upgrade.UpgradeManager;
+import com.atropellalo.game.upgrade.UpgradeOption;
 import com.atropellalo.game.weapon.WeaponManager;
 
 import javax.swing.JPanel;
@@ -15,6 +18,8 @@ import javax.imageio.ImageIO;
 import java.awt.Graphics;
 import java.awt.Graphics2D;
 import java.awt.RenderingHints;
+import java.awt.event.KeyEvent;
+import java.awt.event.KeyListener;
 import java.awt.image.BufferedImage;
 import java.io.IOException;
 import java.util.List;
@@ -26,7 +31,7 @@ import java.util.logging.Logger;
  * Responsable de dibujar el mapa de fondo y todos los elementos del juego.
  * Contiene el game loop principal.
  */
-public class GamePanel extends JPanel implements Runnable {
+public class GamePanel extends JPanel implements Runnable, KeyListener {
     
     private static final Logger LOGGER = Logger.getLogger(GamePanel.class.getName());
     private static final String MAP_IMAGE_PATH = "/images/map.jpg";
@@ -36,6 +41,7 @@ public class GamePanel extends JPanel implements Runnable {
     private BufferedImage mapImage;
     private Thread gameThread;
     private boolean running;
+    private boolean paused;
     
     private Player player;
     private Camera camera;
@@ -44,6 +50,10 @@ public class GamePanel extends JPanel implements Runnable {
     private EnemyManager enemyManager;
     private WeaponManager weaponManager;
     private GameHUD gameHUD;
+    
+    // Sistema de mejoras
+    private UpgradeManager upgradeManager;
+    private UpgradeMenu upgradeMenu;
     
     public GamePanel() {
         loadMapImage();
@@ -58,12 +68,16 @@ public class GamePanel extends JPanel implements Runnable {
         // Crear jugador en el centro del mundo
         player = new Player(GameConfig.WORLD_WIDTH / 2f, GameConfig.WORLD_HEIGHT / 2f);
         
+        // Configurar callback de subida de nivel
+        player.setLevelUpCallback(this::onPlayerLevelUp);
+        
         // Crear cámara
         camera = new Camera(1280, 720, GameConfig.WORLD_WIDTH, GameConfig.WORLD_HEIGHT);
         
         // Crear y configurar input handler
         inputHandler = new InputHandler();
         addKeyListener(inputHandler);
+        addKeyListener(this); // Para el menú de mejoras
         
         // Crear sistema de loot
         lootManager = new LootManager();
@@ -71,6 +85,7 @@ public class GamePanel extends JPanel implements Runnable {
         // Crear sistema de enemigos
         enemyManager = new EnemyManager();
         enemyManager.setPlayer(player);
+        enemyManager.setLootManager(lootManager);
         
         // Crear sistema de armas
         weaponManager = new WeaponManager();
@@ -78,7 +93,49 @@ public class GamePanel extends JPanel implements Runnable {
         // Crear HUD
         gameHUD = new GameHUD(1280, 720);
         
+        // Crear sistema de mejoras
+        upgradeManager = new UpgradeManager();
+        upgradeMenu = new UpgradeMenu(1280, 720);
+        upgradeMenu.setCallback(this::onUpgradeSelected);
+        
+        paused = false;
+        
         LOGGER.info("Juego inicializado - Mundo: " + GameConfig.WORLD_WIDTH + "x" + GameConfig.WORLD_HEIGHT);
+    }
+    
+    /**
+     * Callback cuando el jugador sube de nivel.
+     */
+    private void onPlayerLevelUp(int newLevel) {
+        LOGGER.info("¡Jugador subió al nivel " + newLevel + "!");
+        
+        // Pausar el juego
+        paused = true;
+        
+        // Generar opciones de mejora
+        List<UpgradeOption> options = upgradeManager.generateOptions(player, weaponManager);
+        
+        // Mostrar menú de mejoras
+        upgradeMenu.show(options, newLevel);
+    }
+    
+    /**
+     * Callback cuando se selecciona una mejora.
+     */
+    private void onUpgradeSelected(UpgradeOption option) {
+        LOGGER.info("Mejora seleccionada: " + option.getTitle());
+        
+        // Aplicar la mejora
+        boolean success = upgradeManager.applyUpgrade(option, player, weaponManager);
+        
+        if (success) {
+            LOGGER.info("Mejora aplicada exitosamente");
+        } else {
+            LOGGER.warning("Error al aplicar mejora");
+        }
+        
+        // Reanudar el juego
+        paused = false;
     }
     
     /**
@@ -129,8 +186,8 @@ public class GamePanel extends JPanel implements Runnable {
      * Actualiza la lógica del juego.
      */
     private void update(float deltaTime) {
-        // No actualizar si el juego terminó
-        if (!player.isAlive()) {
+        // No actualizar si el juego terminó o está pausado
+        if (!player.isAlive() || paused) {
             return;
         }
         
@@ -140,8 +197,8 @@ public class GamePanel extends JPanel implements Runnable {
         player.setMovement(moveX, moveY);
         player.update(deltaTime);
         
-        // Actualizar sistema de loot
-        lootManager.update(deltaTime);
+        // Actualizar sistema de loot (con posición del jugador para atracción de orbes)
+        lootManager.update(deltaTime, player.getCenterX(), player.getCenterY());
         
         // Verificar colisiones con loot
         List<Loot> collected = lootManager.checkCollisions(player.getCenterX(), player.getCenterY());
@@ -169,6 +226,10 @@ public class GamePanel extends JPanel implements Runnable {
         } else if (loot.getType() == LootType.SCRAP) {
             player.heal(loot.getValue());
             LOGGER.fine("Chatarra recolectada: +" + loot.getValue() + " HP");
+        } else if (loot.getType() == LootType.XP_ORB) {
+            XPOrb orb = (XPOrb) loot;
+            player.addXP(orb.getXPValue());
+            LOGGER.fine("XP recolectado: +" + orb.getXPValue());
         }
     }
     
@@ -209,6 +270,11 @@ public class GamePanel extends JPanel implements Runnable {
         
         // Dibujar información de oleadas
         enemyManager.renderWaveInfo(g2d, 1280);
+        
+        // Dibujar menú de mejoras si está visible
+        if (upgradeMenu.isVisible()) {
+            upgradeMenu.render(g2d);
+        }
     }
     
     /**
@@ -235,10 +301,10 @@ public class GamePanel extends JPanel implements Runnable {
     }
     
     /**
-     * Dibuja todos los proyectiles.
+     * Dibuja todos los proyectiles y efectos de armas.
      */
     private void drawProjectiles(Graphics2D g2d) {
-        weaponManager.render(g2d);
+        weaponManager.render(g2d, player.getCenterX(), player.getCenterY());
     }
     
     /**
@@ -246,5 +312,24 @@ public class GamePanel extends JPanel implements Runnable {
      */
     private void drawPlayer(Graphics2D g2d) {
         player.render(g2d);
+    }
+    
+    // KeyListener para el menú de mejoras
+    
+    @Override
+    public void keyPressed(KeyEvent e) {
+        if (upgradeMenu.isVisible()) {
+            upgradeMenu.handleKeyPress(e.getKeyCode());
+        }
+    }
+    
+    @Override
+    public void keyReleased(KeyEvent e) {
+        // No necesario
+    }
+    
+    @Override
+    public void keyTyped(KeyEvent e) {
+        // No necesario
     }
 }
