@@ -2,6 +2,7 @@ package com.atropellalo.game.enemy;
 
 import com.atropellalo.game.config.GameConfig;
 import com.atropellalo.game.entity.Player;
+import com.atropellalo.game.loot.LootManager;
 
 import java.awt.Color;
 import java.awt.Font;
@@ -14,9 +15,11 @@ import java.util.logging.Logger;
 
 /**
  * Gestiona el spawn, actualización y colisiones de enemigos.
- * Implementa sistema de oleadas progresivas.
+ * Implementa sistema de oleadas progresivas con jefes en oleadas especiales.
  */
-public class EnemyManager implements ExplosiveZombie.ExplosionCallback {
+public class EnemyManager implements ExplosiveZombie.ExplosionCallback, 
+                                     BruiserBoss.BossDamageCallback, 
+                                     InfectorBoss.BossDamageCallback {
     
     private static final Logger LOGGER = Logger.getLogger(EnemyManager.class.getName());
     
@@ -30,8 +33,15 @@ public class EnemyManager implements ExplosiveZombie.ExplosionCallback {
     private float spawnTimer;
     private boolean waveInProgress;
     
+    // Control de jefes
+    private boolean bossSpawnedThisWave;
+    private Enemy currentBoss;
+    
     // Referencia al jugador para daño por explosión
     private Player player;
+    
+    // Referencia al LootManager para generar XP orbs
+    private LootManager lootManager;
     
     // Estadísticas
     private int totalKills;
@@ -48,6 +58,8 @@ public class EnemyManager implements ExplosiveZombie.ExplosionCallback {
         this.spawnTimer = 0;
         this.waveInProgress = false;
         this.totalKills = 0;
+        this.bossSpawnedThisWave = false;
+        this.currentBoss = null;
     }
     
     /**
@@ -56,6 +68,14 @@ public class EnemyManager implements ExplosiveZombie.ExplosionCallback {
      */
     public void setPlayer(Player player) {
         this.player = player;
+    }
+    
+    /**
+     * Establece la referencia al LootManager para generar XP orbs.
+     * @param lootManager Gestor de loot
+     */
+    public void setLootManager(LootManager lootManager) {
+        this.lootManager = lootManager;
     }
     
     /**
@@ -81,7 +101,7 @@ public class EnemyManager implements ExplosiveZombie.ExplosionCallback {
         // Verificar colisiones con jugador
         checkPlayerCollisions(playerX, playerY);
         
-        // Limpiar enemigos muertos
+        // Limpiar enemigos muertos y generar XP
         cleanupDeadEnemies();
     }
     
@@ -117,23 +137,47 @@ public class EnemyManager implements ExplosiveZombie.ExplosionCallback {
     
     /**
      * Inicia la siguiente oleada.
+     * En oleadas especiales (10, 20) genera jefes.
      */
     private void startNextWave() {
         currentWave++;
         waveInProgress = true;
+        bossSpawnedThisWave = false;
+        currentBoss = null;
         
         // Calcular enemigos para esta oleada
         enemiesRemainingInWave = GameConfig.WAVE_BASE_ENEMIES + 
                                  (currentWave - 1) * GameConfig.WAVE_ENEMY_INCREMENT;
         
         LOGGER.info("Iniciando oleada " + currentWave + " con " + enemiesRemainingInWave + " enemigos");
+        
+        // Verificar si es oleada de jefe
+        if (currentWave == GameConfig.BRUISER_BOSS_WAVE) {
+            LOGGER.info("¡OLEADA DE JEFE! El Aplastador aparecerá...");
+        } else if (currentWave == GameConfig.INFECTOR_BOSS_WAVE) {
+            LOGGER.info("¡OLEADA DE JEFE! El Infectador aparecerá...");
+        }
     }
     
     /**
      * Genera un enemigo aleatorio en una posición válida.
+     * En oleadas de jefe, genera el jefe primero.
      */
     private void spawnRandomEnemy(float playerX, float playerY) {
-        // Determinar tipo de enemigo
+        // Verificar si debe spawnearse un jefe en esta oleada
+        if (!bossSpawnedThisWave) {
+            if (currentWave == GameConfig.BRUISER_BOSS_WAVE) {
+                spawnBoss(EnemyType.BOSS_BRUISER, playerX, playerY);
+                bossSpawnedThisWave = true;
+                return;
+            } else if (currentWave == GameConfig.INFECTOR_BOSS_WAVE) {
+                spawnBoss(EnemyType.BOSS_INFECTOR, playerX, playerY);
+                bossSpawnedThisWave = true;
+                return;
+            }
+        }
+        
+        // Determinar tipo de enemigo normal
         EnemyType type = getRandomEnemyType();
         
         // Encontrar posición válida (lejos del jugador)
@@ -154,6 +198,39 @@ public class EnemyManager implements ExplosiveZombie.ExplosionCallback {
     }
     
     /**
+     * Genera un jefe en una posición válida.
+     */
+    private void spawnBoss(EnemyType bossType, float playerX, float playerY) {
+        // Encontrar posición válida para el jefe (lejos del jugador)
+        float x, y;
+        int attempts = 0;
+        do {
+            x = GameConfig.ENEMY_SPAWN_MARGIN + 
+                random.nextFloat() * (GameConfig.WORLD_WIDTH - 2 * GameConfig.ENEMY_SPAWN_MARGIN);
+            y = GameConfig.ENEMY_SPAWN_MARGIN + 
+                random.nextFloat() * (GameConfig.WORLD_HEIGHT - 2 * GameConfig.ENEMY_SPAWN_MARGIN);
+            attempts++;
+        } while (distanceToPoint(x, y, playerX, playerY) < GameConfig.ENEMY_MIN_SPAWN_DISTANCE * 1.5f 
+                 && attempts < 50);
+        
+        Enemy boss;
+        if (bossType == EnemyType.BOSS_BRUISER) {
+            BruiserBoss bruiser = new BruiserBoss(x, y);
+            bruiser.setDamageCallback(this);
+            boss = bruiser;
+            LOGGER.info("¡El Aplastador ha aparecido en (" + (int)x + ", " + (int)y + ")!");
+        } else {
+            InfectorBoss infector = new InfectorBoss(x, y);
+            infector.setDamageCallback(this);
+            boss = infector;
+            LOGGER.info("¡El Infectador ha aparecido en (" + (int)x + ", " + (int)y + ")!");
+        }
+        
+        currentBoss = boss;
+        enemies.add(boss);
+    }
+    
+    /**
      * Obtiene un tipo de enemigo aleatorio según las probabilidades configuradas.
      */
     private EnemyType getRandomEnemyType() {
@@ -169,21 +246,32 @@ public class EnemyManager implements ExplosiveZombie.ExplosionCallback {
     }
     
     /**
-     * Crea un enemigo del tipo especificado.
+     * Crea un enemigo del tipo especificado con escalado por oleada.
      */
     private Enemy createEnemy(EnemyType type, float x, float y) {
+        // Calcular factores de escalado según la oleada actual
+        float healthScale = (float) Math.pow(GameConfig.WAVE_HEALTH_SCALING, currentWave - 1);
+        float speedScale = (float) Math.pow(GameConfig.WAVE_SPEED_SCALING, currentWave - 1);
+        float damageScale = (float) Math.pow(GameConfig.WAVE_DAMAGE_SCALING, currentWave - 1);
+        
+        Enemy enemy;
         switch (type) {
             case FAST:
-                return new FastZombie(x, y);
+                enemy = new FastZombie(x, y, healthScale, speedScale, damageScale);
+                break;
             case SLOW:
-                return new SlowZombie(x, y);
+                enemy = new SlowZombie(x, y, healthScale, speedScale, damageScale);
+                break;
             case EXPLOSIVE:
-                ExplosiveZombie explosive = new ExplosiveZombie(x, y);
+                ExplosiveZombie explosive = new ExplosiveZombie(x, y, healthScale, speedScale, damageScale);
                 explosive.setExplosionContext(enemies, this);
-                return explosive;
+                enemy = explosive;
+                break;
             default:
-                return new FastZombie(x, y);
+                enemy = new FastZombie(x, y, healthScale, speedScale, damageScale);
         }
+        
+        return enemy;
     }
     
     /**
@@ -224,7 +312,19 @@ public class EnemyManager implements ExplosiveZombie.ExplosionCallback {
     }
     
     /**
-     * Elimina enemigos muertos de la lista.
+     * Callback cuando un jefe daña al jugador con habilidad especial.
+     */
+    @Override
+    public void onBossDamage(float damage) {
+        if (player != null && player.isAlive()) {
+            player.damage(damage);
+            LOGGER.info("Jugador dañado por habilidad de jefe: " + damage);
+        }
+    }
+    
+    /**
+     * Elimina enemigos muertos de la lista y genera XP orbs.
+     * Maneja la secuencia de muerte especial de los jefes.
      */
     private void cleanupDeadEnemies() {
         Iterator<Enemy> iterator = enemies.iterator();
@@ -238,9 +338,77 @@ public class EnemyManager implements ExplosiveZombie.ExplosionCallback {
                         continue; // Esperar a que explote
                     }
                 }
+                
+                // Manejar muerte especial del Infectador
+                if (enemy instanceof InfectorBoss) {
+                    InfectorBoss infector = (InfectorBoss) enemy;
+                    if (!infector.isDying()) {
+                        infector.startDeathSequence();
+                        continue; // Esperar a que complete la explosión de muerte
+                    }
+                    if (!infector.isDeathComplete()) {
+                        continue; // Aún no termina la animación
+                    }
+                }
+                
+                // Limpiar referencia al jefe si es necesario
+                if (enemy == currentBoss) {
+                    LOGGER.info("¡JEFE DERROTADO! " + enemy.getType());
+                    currentBoss = null;
+                }
+                
+                // Generar XP orb en la posición del enemigo
+                spawnXPForEnemy(enemy);
+                
+                // Incrementar contador de kills
+                totalKills++;
+                
                 iterator.remove();
             }
         }
+    }
+    
+    /**
+     * Genera un orbe de XP basado en el tipo de enemigo.
+     * El XP escala con el multiplicador del enemigo (basado en oleada).
+     * Los jefes dan XP fijo alto.
+     * @param enemy Enemigo que murió
+     */
+    private void spawnXPForEnemy(Enemy enemy) {
+        if (lootManager == null) {
+            return;
+        }
+        
+        int baseXP;
+        switch (enemy.getType()) {
+            case FAST:
+                baseXP = GameConfig.XP_FAST_ZOMBIE;
+                break;
+            case SLOW:
+                baseXP = GameConfig.XP_SLOW_ZOMBIE;
+                break;
+            case EXPLOSIVE:
+                baseXP = GameConfig.XP_EXPLOSIVE_ZOMBIE;
+                break;
+            case BOSS_BRUISER:
+                baseXP = GameConfig.XP_BRUISER_BOSS;
+                // Los jefes no escalan XP - ya dan mucho
+                lootManager.spawnXPOrb(enemy.getCenterX(), enemy.getCenterY(), baseXP);
+                return;
+            case BOSS_INFECTOR:
+                baseXP = GameConfig.XP_INFECTOR_BOSS;
+                // Los jefes no escalan XP - ya dan mucho
+                lootManager.spawnXPOrb(enemy.getCenterX(), enemy.getCenterY(), baseXP);
+                return;
+            default:
+                baseXP = GameConfig.XP_FAST_ZOMBIE;
+        }
+        
+        // Aplicar escalado de XP por oleada
+        float xpScale = (float) Math.pow(GameConfig.WAVE_XP_SCALING, currentWave - 1);
+        int scaledXP = Math.round(baseXP * xpScale * enemy.getXPMultiplier());
+        
+        lootManager.spawnXPOrb(enemy.getCenterX(), enemy.getCenterY(), scaledXP);
     }
     
     /**
@@ -255,6 +423,7 @@ public class EnemyManager implements ExplosiveZombie.ExplosionCallback {
     
     /**
      * Renderiza información de oleada en el HUD.
+     * Muestra alerta especial cuando hay un jefe activo.
      */
     public void renderWaveInfo(Graphics2D g2d, int screenWidth) {
         g2d.setFont(new Font("Arial", Font.BOLD, 16));
@@ -282,11 +451,26 @@ public class EnemyManager implements ExplosiveZombie.ExplosionCallback {
             g2d.drawString(nextWave, x - 30, y + 40);
         }
         
-        // Mostrar enemigos restantes
+        // Mostrar enemigos restantes o alerta de jefe
         if (waveInProgress) {
-            g2d.setColor(Color.ORANGE);
-            String remaining = "Enemigos: " + enemies.size();
-            g2d.drawString(remaining, x, y + 40);
+            if (currentBoss != null && currentBoss.isAlive()) {
+                // Alerta de jefe activo
+                g2d.setColor(new Color(218, 165, 32)); // Dorado
+                g2d.setFont(new Font("Arial", Font.BOLD, 18));
+                String bossAlert = "★ ¡JEFE ACTIVO! ★";
+                g2d.drawString(bossAlert, x - 40, y + 40);
+                
+                // Mostrar salud del jefe
+                g2d.setColor(Color.RED);
+                g2d.setFont(new Font("Arial", Font.BOLD, 14));
+                int bossHealthPercent = (int) ((currentBoss.getHealth() / currentBoss.getMaxHealth()) * 100);
+                String bossHealth = "Salud: " + bossHealthPercent + "%";
+                g2d.drawString(bossHealth, x - 10, y + 58);
+            } else {
+                g2d.setColor(Color.ORANGE);
+                String remaining = "Enemigos: " + enemies.size();
+                g2d.drawString(remaining, x, y + 40);
+            }
         }
     }
     

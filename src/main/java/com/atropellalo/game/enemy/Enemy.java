@@ -19,6 +19,7 @@ public abstract class Enemy {
     protected float damage;
     protected boolean alive;
     protected float damageCooldown;
+    protected float xpMultiplier;
     
     /**
      * Constructor base para enemigos.
@@ -30,15 +31,33 @@ public abstract class Enemy {
      * @param damage Daño al jugador por contacto
      */
     protected Enemy(float x, float y, float health, float speed, int size, float damage) {
+        this(x, y, health, speed, size, damage, 1.0f, 1.0f, 1.0f);
+    }
+    
+    /**
+     * Constructor con factores de escalado.
+     * @param x Posición X inicial
+     * @param y Posición Y inicial
+     * @param health Salud base del enemigo
+     * @param speed Velocidad base de movimiento
+     * @param size Tamaño del enemigo
+     * @param damage Daño base al jugador por contacto
+     * @param healthScale Factor de escalado de salud
+     * @param speedScale Factor de escalado de velocidad
+     * @param damageScale Factor de escalado de daño
+     */
+    protected Enemy(float x, float y, float health, float speed, int size, float damage,
+                   float healthScale, float speedScale, float damageScale) {
         this.x = x;
         this.y = y;
-        this.health = health;
-        this.maxHealth = health;
-        this.speed = speed;
+        this.health = health * healthScale;
+        this.maxHealth = health * healthScale;
+        this.speed = speed * speedScale;
         this.size = size;
-        this.damage = damage;
+        this.damage = damage * damageScale;
         this.alive = true;
         this.damageCooldown = 0;
+        this.xpMultiplier = (healthScale + speedScale + damageScale) / 3.0f;
     }
     
     /**
@@ -193,5 +212,13 @@ public abstract class Enemy {
     
     public float getSpeed() {
         return speed;
+    }
+    
+    /**
+     * Obtiene el multiplicador de XP basado en el escalado del enemigo.
+     * @return Multiplicador de XP
+     */
+    public float getXPMultiplier() {
+        return xpMultiplier;
     }
 }

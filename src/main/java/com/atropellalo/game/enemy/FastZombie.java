@@ -16,16 +16,29 @@ public class FastZombie extends Enemy {
     private static final Color EYE_COLOR = Color.RED;
     
     /**
-     * Crea un nuevo zombie rápido.
+     * Crea un nuevo zombie rápido sin escalado.
      * @param x Posición X inicial
      * @param y Posición Y inicial
      */
     public FastZombie(float x, float y) {
+        this(x, y, 1.0f, 1.0f, 1.0f);
+    }
+    
+    /**
+     * Crea un nuevo zombie rápido con escalado por oleada.
+     * @param x Posición X inicial
+     * @param y Posición Y inicial
+     * @param healthScale Factor de escalado de salud
+     * @param speedScale Factor de escalado de velocidad
+     * @param damageScale Factor de escalado de daño
+     */
+    public FastZombie(float x, float y, float healthScale, float speedScale, float damageScale) {
         super(x, y, 
               GameConfig.FAST_ZOMBIE_HEALTH, 
               GameConfig.FAST_ZOMBIE_SPEED, 
               GameConfig.FAST_ZOMBIE_SIZE, 
-              GameConfig.FAST_ZOMBIE_DAMAGE);
+              GameConfig.FAST_ZOMBIE_DAMAGE,
+              healthScale, speedScale, damageScale);
     }
     
     @Override

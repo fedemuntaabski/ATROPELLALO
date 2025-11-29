@@ -16,16 +16,29 @@ public class SlowZombie extends Enemy {
     private static final Color EYE_COLOR = new Color(255, 255, 0); // Amarillo
     
     /**
-     * Crea un nuevo zombie lento.
+     * Crea un nuevo zombie lento sin escalado.
      * @param x Posición X inicial
      * @param y Posición Y inicial
      */
     public SlowZombie(float x, float y) {
+        this(x, y, 1.0f, 1.0f, 1.0f);
+    }
+    
+    /**
+     * Crea un nuevo zombie lento con escalado por oleada.
+     * @param x Posición X inicial
+     * @param y Posición Y inicial
+     * @param healthScale Factor de escalado de salud
+     * @param speedScale Factor de escalado de velocidad
+     * @param damageScale Factor de escalado de daño
+     */
+    public SlowZombie(float x, float y, float healthScale, float speedScale, float damageScale) {
         super(x, y, 
               GameConfig.SLOW_ZOMBIE_HEALTH, 
               GameConfig.SLOW_ZOMBIE_SPEED, 
               GameConfig.SLOW_ZOMBIE_SIZE, 
-              GameConfig.SLOW_ZOMBIE_DAMAGE);
+              GameConfig.SLOW_ZOMBIE_DAMAGE,
+              healthScale, speedScale, damageScale);
     }
     
     @Override

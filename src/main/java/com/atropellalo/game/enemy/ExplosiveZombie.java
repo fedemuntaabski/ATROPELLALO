@@ -35,16 +35,29 @@ public class ExplosiveZombie extends Enemy {
     }
     
     /**
-     * Crea un nuevo zombie explosivo.
+     * Crea un nuevo zombie explosivo sin escalado.
      * @param x Posición X inicial
      * @param y Posición Y inicial
      */
     public ExplosiveZombie(float x, float y) {
+        this(x, y, 1.0f, 1.0f, 1.0f);
+    }
+    
+    /**
+     * Crea un nuevo zombie explosivo con escalado por oleada.
+     * @param x Posición X inicial
+     * @param y Posición Y inicial
+     * @param healthScale Factor de escalado de salud
+     * @param speedScale Factor de escalado de velocidad
+     * @param damageScale Factor de escalado de daño
+     */
+    public ExplosiveZombie(float x, float y, float healthScale, float speedScale, float damageScale) {
         super(x, y, 
               GameConfig.EXPLOSIVE_ZOMBIE_HEALTH, 
               GameConfig.EXPLOSIVE_ZOMBIE_SPEED, 
               GameConfig.EXPLOSIVE_ZOMBIE_SIZE, 
-              GameConfig.EXPLOSIVE_ZOMBIE_DAMAGE);
+              GameConfig.EXPLOSIVE_ZOMBIE_DAMAGE,
+              healthScale, speedScale, damageScale);
         this.exploded = false;
         this.explosionTimer = 0;
     }

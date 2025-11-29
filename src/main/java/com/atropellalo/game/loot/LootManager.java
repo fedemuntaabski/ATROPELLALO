@@ -18,6 +18,7 @@ public class LootManager {
     private static final Logger LOGGER = Logger.getLogger(LootManager.class.getName());
     
     private final List<Loot> lootItems;
+    private final List<XPOrb> xpOrbs;
     private final Random random;
     
     private float fuelSpawnTimer;
@@ -33,6 +34,7 @@ public class LootManager {
      */
     public LootManager() {
         this.lootItems = new ArrayList<>();
+        this.xpOrbs = new ArrayList<>();
         this.random = new Random();
         this.fuelSpawnTimer = 0;
         this.scrapSpawnTimer = 0;
@@ -74,8 +76,10 @@ public class LootManager {
     /**
      * Actualiza el sistema de loot.
      * @param deltaTime Tiempo transcurrido desde el último update
+     * @param playerX Centro X del jugador (para atracción de orbes)
+     * @param playerY Centro Y del jugador (para atracción de orbes)
      */
-    public void update(float deltaTime) {
+    public void update(float deltaTime, float playerX, float playerY) {
         // Actualizar timers de spawn
         fuelSpawnTimer += deltaTime;
         scrapSpawnTimer += deltaTime;
@@ -96,8 +100,35 @@ public class LootManager {
                 random.nextFloat() * (GameConfig.SCRAP_SPAWN_INTERVAL_MAX - GameConfig.SCRAP_SPAWN_INTERVAL_MIN);
         }
         
+        // Actualizar orbes de XP (atracción magnética)
+        for (XPOrb orb : xpOrbs) {
+            orb.update(deltaTime, playerX, playerY);
+        }
+        
         // Limpiar loot recolectado
         removeCollectedLoot();
+    }
+    
+    /**
+     * Actualiza el sistema de loot (sin posición del jugador - compatibilidad).
+     * @param deltaTime Tiempo transcurrido desde el último update
+     */
+    public void update(float deltaTime) {
+        update(deltaTime, 0, 0);
+    }
+    
+    /**
+     * Genera un orbe de XP en una posición específica.
+     * @param x Posición X
+     * @param y Posición Y
+     * @param xpValue Cantidad de XP
+     */
+    public void spawnXPOrb(float x, float y, int xpValue) {
+        // Pequeña variación aleatoria en la posición
+        float offsetX = (random.nextFloat() - 0.5f) * 20;
+        float offsetY = (random.nextFloat() - 0.5f) * 20;
+        
+        xpOrbs.add(new XPOrb(x + offsetX, y + offsetY, xpValue));
     }
     
     /**
@@ -142,6 +173,9 @@ public class LootManager {
                 iterator.remove();
             }
         }
+        
+        // Limpiar orbes de XP recolectados
+        xpOrbs.removeIf(XPOrb::isCollected);
     }
     
     /**
@@ -153,12 +187,24 @@ public class LootManager {
     public List<Loot> checkCollisions(float playerCenterX, float playerCenterY) {
         List<Loot> collected = new ArrayList<>();
         
+        // Verificar loot normal
         for (Loot loot : lootItems) {
             if (!loot.isCollected()) {
                 float distance = loot.distanceTo(playerCenterX, playerCenterY);
                 if (distance <= GameConfig.LOOT_PICKUP_DISTANCE) {
                     loot.collect();
                     collected.add(loot);
+                }
+            }
+        }
+        
+        // Verificar orbes de XP
+        for (XPOrb orb : xpOrbs) {
+            if (!orb.isCollected()) {
+                float distance = orb.distanceTo(playerCenterX, playerCenterY);
+                if (distance <= GameConfig.XP_ORB_PICKUP_DISTANCE) {
+                    orb.collect();
+                    collected.add(orb);
                 }
             }
         }
@@ -171,8 +217,14 @@ public class LootManager {
      * @param g2d Contexto gráfico
      */
     public void render(Graphics2D g2d) {
+        // Renderizar loot normal
         for (Loot loot : lootItems) {
             loot.render(g2d);
+        }
+        
+        // Renderizar orbes de XP
+        for (XPOrb orb : xpOrbs) {
+            orb.render(g2d);
         }
     }
     
@@ -190,5 +242,13 @@ public class LootManager {
      */
     public int getScrapCount() {
         return currentScrapCount;
+    }
+    
+    /**
+     * Obtiene la cantidad de orbes de XP en el mapa.
+     * @return Cantidad de orbes
+     */
+    public int getXPOrbCount() {
+        return xpOrbs.size();
     }
 }

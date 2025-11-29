@@ -21,6 +21,10 @@ public class Projectile {
     private boolean active;
     private float distanceTraveled;
     private float maxRange;
+    private float impactArea;
+    private float speed;
+    private Color color;
+    private int size;
     
     /**
      * Crea un nuevo proyectil.
@@ -31,13 +35,44 @@ public class Projectile {
      * @param damage Daño que causa el proyectil
      * @param maxRange Rango máximo del proyectil
      */
-    public Projectile(float startX, float startY, float targetX, float targetY, float damage, float maxRange) {
+    public Projectile(float startX, float startY, float targetX, float targetY, 
+                     float damage, float maxRange) {
+        this(startX, startY, targetX, targetY, damage, maxRange, 0, 
+             GameConfig.PROJECTILE_SPEED, Color.YELLOW, GameConfig.PROJECTILE_SIZE);
+    }
+    
+    /**
+     * Crea un nuevo proyectil con área de impacto.
+     * @param startX Posición X inicial
+     * @param startY Posición Y inicial
+     * @param targetX Posición X del objetivo
+     * @param targetY Posición Y del objetivo
+     * @param damage Daño que causa el proyectil
+     * @param maxRange Rango máximo del proyectil
+     * @param impactArea Radio de daño en área (0 para sin área)
+     */
+    public Projectile(float startX, float startY, float targetX, float targetY, 
+                     float damage, float maxRange, float impactArea) {
+        this(startX, startY, targetX, targetY, damage, maxRange, impactArea,
+             GameConfig.PROJECTILE_SPEED, Color.YELLOW, GameConfig.PROJECTILE_SIZE);
+    }
+    
+    /**
+     * Constructor completo para proyectiles personalizados.
+     */
+    public Projectile(float startX, float startY, float targetX, float targetY, 
+                     float damage, float maxRange, float impactArea,
+                     float speed, Color color, int size) {
         this.x = startX;
         this.y = startY;
         this.damage = damage;
         this.active = true;
         this.distanceTraveled = 0;
         this.maxRange = maxRange;
+        this.impactArea = impactArea;
+        this.speed = speed;
+        this.color = color;
+        this.size = size;
         
         // Calcular dirección normalizada
         float dx = targetX - startX;
@@ -45,8 +80,8 @@ public class Projectile {
         float distance = (float) Math.sqrt(dx * dx + dy * dy);
         
         if (distance > 0) {
-            this.velocityX = (dx / distance) * GameConfig.PROJECTILE_SPEED;
-            this.velocityY = (dy / distance) * GameConfig.PROJECTILE_SPEED;
+            this.velocityX = (dx / distance) * speed;
+            this.velocityY = (dy / distance) * speed;
         } else {
             this.velocityX = 0;
             this.velocityY = 0;
@@ -105,17 +140,44 @@ public class Projectile {
             float distance = (float) Math.sqrt(dx * dx + dy * dy);
             
             // Colisión si la distancia es menor que la suma de los radios
-            float collisionDistance = (GameConfig.PROJECTILE_SIZE / 2f) + (enemy.getSize() / 2f);
+            float collisionDistance = (size / 2f) + (enemy.getSize() / 2f);
             
             if (distance <= collisionDistance) {
                 // Aplicar daño
-                enemy.takeDamage(damage);
+                if (impactArea > 0) {
+                    // Daño en área
+                    applyAreaDamage(enemies);
+                } else {
+                    enemy.takeDamage(damage);
+                }
                 active = false;
                 return true;
             }
         }
         
         return false;
+    }
+    
+    /**
+     * Aplica daño en área a todos los enemigos dentro del radio.
+     * @param enemies Lista de enemigos
+     */
+    private void applyAreaDamage(List<Enemy> enemies) {
+        for (Enemy enemy : enemies) {
+            if (!enemy.isAlive()) {
+                continue;
+            }
+            
+            float dx = x - enemy.getCenterX();
+            float dy = y - enemy.getCenterY();
+            float distance = (float) Math.sqrt(dx * dx + dy * dy);
+            
+            if (distance <= impactArea) {
+                // Daño disminuye con la distancia
+                float damageMultiplier = 1.0f - (distance / impactArea) * 0.5f;
+                enemy.takeDamage(damage * damageMultiplier);
+            }
+        }
     }
     
     /**
@@ -127,14 +189,15 @@ public class Projectile {
             return;
         }
         
-        int size = GameConfig.PROJECTILE_SIZE;
         int drawX = (int)(x - size / 2);
         int drawY = (int)(y - size / 2);
         
-        // Proyectil amarillo con borde naranja
-        g2d.setColor(Color.YELLOW);
+        // Proyectil con color personalizado
+        g2d.setColor(color);
         g2d.fillOval(drawX, drawY, size, size);
-        g2d.setColor(Color.ORANGE);
+        
+        // Borde más oscuro
+        g2d.setColor(color.darker());
         g2d.drawOval(drawX, drawY, size, size);
     }
     
@@ -165,5 +228,9 @@ public class Projectile {
     
     public float getDamage() {
         return damage;
+    }
+    
+    public float getImpactArea() {
+        return impactArea;
     }
 }

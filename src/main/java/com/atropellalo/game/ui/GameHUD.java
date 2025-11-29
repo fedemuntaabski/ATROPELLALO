@@ -10,7 +10,7 @@ import java.awt.RenderingHints;
 
 /**
  * Heads-Up Display (HUD) del juego.
- * Muestra información vital del jugador: salud y combustible.
+ * Muestra información vital del jugador: salud, combustible, XP y nivel.
  */
 public class GameHUD {
     
@@ -28,6 +28,13 @@ public class GameHUD {
     private static final Color FUEL_BAR_LOW = new Color(255, 50, 50);
     private static final Color FUEL_BAR_BORDER = new Color(40, 40, 40);
     
+    // Colores para la barra de XP
+    private static final Color XP_BAR_BG = new Color(60, 60, 60, 200);
+    private static final Color XP_BAR_FILL = new Color(100, 180, 255);
+    private static final Color XP_BAR_GLOW = new Color(150, 200, 255);
+    private static final Color XP_BAR_BORDER = new Color(40, 40, 40);
+    private static final Color LEVEL_COLOR = new Color(255, 215, 0);
+    
     // Colores de texto
     private static final Color TEXT_COLOR = Color.WHITE;
     private static final Color TEXT_SHADOW = new Color(0, 0, 0, 150);
@@ -35,6 +42,7 @@ public class GameHUD {
     // Fuentes
     private static final Font LABEL_FONT = new Font("Arial", Font.BOLD, 14);
     private static final Font VALUE_FONT = new Font("Arial", Font.PLAIN, 12);
+    private static final Font LEVEL_FONT = new Font("Arial", Font.BOLD, 16);
     private static final Font GAME_OVER_FONT = new Font("Arial", Font.BOLD, 48);
     private static final Font GAME_OVER_SUB_FONT = new Font("Arial", Font.PLAIN, 18);
     
@@ -63,6 +71,7 @@ public class GameHUD {
         
         renderHealthBar(g2d, player);
         renderFuelBar(g2d, player);
+        renderXPBar(g2d, player);
         
         // Mostrar Game Over si el jugador murió
         if (!player.isAlive()) {
@@ -148,6 +157,61 @@ public class GameHUD {
             g2d.setFont(new Font("Arial", Font.BOLD, 16));
             g2d.drawString("⚠", x + GameConfig.HUD_BAR_WIDTH + 5, y + 15);
         }
+    }
+    
+    /**
+     * Renderiza la barra de experiencia y nivel.
+     */
+    private void renderXPBar(Graphics2D g2d, Player player) {
+        int x = GameConfig.HUD_MARGIN;
+        int y = GameConfig.HUD_MARGIN + (GameConfig.HUD_BAR_HEIGHT + GameConfig.HUD_SPACING + 15) * 2;
+        
+        // Indicador de nivel
+        g2d.setFont(LEVEL_FONT);
+        String levelText = "Nv." + player.getLevel();
+        g2d.setColor(TEXT_SHADOW);
+        g2d.drawString(levelText, x + 1, y - 4);
+        g2d.setColor(LEVEL_COLOR);
+        g2d.drawString(levelText, x, y - 5);
+        
+        // Calcular ancho del texto de nivel para ajustar la barra
+        int levelTextWidth = g2d.getFontMetrics().stringWidth(levelText) + 10;
+        int barX = x + levelTextWidth;
+        int barWidth = GameConfig.HUD_BAR_WIDTH - levelTextWidth;
+        int barHeight = 12; // Barra más pequeña para XP
+        
+        // Fondo de la barra
+        g2d.setColor(XP_BAR_BG);
+        g2d.fillRoundRect(barX, y - 2, barWidth, barHeight, 4, 4);
+        
+        // Calcular porcentaje de XP
+        float xpPercent = player.getXPProgress();
+        
+        // Barra de XP actual
+        int fillWidth = (int) (xpPercent * (barWidth - 4));
+        if (fillWidth > 0) {
+            g2d.setColor(XP_BAR_FILL);
+            g2d.fillRoundRect(barX + 2, y, fillWidth, barHeight - 4, 3, 3);
+            
+            // Efecto de brillo
+            g2d.setColor(XP_BAR_GLOW);
+            g2d.fillRoundRect(barX + 2, y, fillWidth, 3, 3, 3);
+        }
+        
+        // Borde
+        g2d.setColor(XP_BAR_BORDER);
+        g2d.drawRoundRect(barX, y - 2, barWidth, barHeight, 4, 4);
+        
+        // Texto de XP
+        g2d.setFont(new Font("Arial", Font.PLAIN, 10));
+        String xpText = player.getCurrentXP() + "/" + player.getXpToNextLevel();
+        int textWidth = g2d.getFontMetrics().stringWidth(xpText);
+        int textX = barX + (barWidth - textWidth) / 2;
+        
+        g2d.setColor(TEXT_SHADOW);
+        g2d.drawString(xpText, textX + 1, y + 8);
+        g2d.setColor(TEXT_COLOR);
+        g2d.drawString(xpText, textX, y + 7);
     }
     
     /**
