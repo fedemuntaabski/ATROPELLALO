@@ -108,10 +108,6 @@ public final class GameConfig {
     
     // ==================== ENEMIGOS - GENERAL ====================
     
-    
-    /** Daño que hacen los enemigos al jugador por contacto */
-    public static float ENEMY_DAMAGE_TO_PLAYER = 10.0f;
-    
     /** Cooldown de daño al jugador por contacto (segundos) */
     public static float ENEMY_DAMAGE_COOLDOWN = 0.5f;
     
@@ -257,17 +253,6 @@ public final class GameConfig {
     
     /** Velocidad del proyectil de granada */
     public static float GRENADE_PROJECTILE_SPEED = 250.0f;
-    
-    // ==================== ARMAS - PÚAS/SPIKES ====================
-    
-    /** Daño de las púas por contacto (bajo) */
-    public static float SPIKES_DAMAGE = 8.0f;
-    
-    /** Radio de daño de las púas (muy corto) */
-    public static float SPIKES_RANGE = 50.0f;
-    
-    /** Cooldown de daño de las púas */
-    public static float SPIKES_DAMAGE_COOLDOWN = 0.25f;
     
     // ==================== ARMAS - SIERRAS CIRCULARES ====================
     
@@ -430,7 +415,7 @@ public final class GameConfig {
     public static float BRUISER_CHARGE_MIN_DISTANCE = 150.0f;
     
     /** XP otorgado por el Aplastador */
-    public static int XP_BRUISER_BOSS = 500;
+    public static int XP_BRUISER_BOSS = 550;
     
     /** Oleada en la que aparece el Aplastador */
     public static int BRUISER_BOSS_WAVE = 5;
@@ -457,9 +442,6 @@ public final class GameConfig {
     
     /** Intervalo de tick de la nube tóxica (segundos) */
     public static float INFECTOR_TOXIC_TICK_RATE = 0.5f;
-    
-    /** Daño de la bomba química */
-    public static float INFECTOR_CHEMICAL_BOMB_DAMAGE = 30.0f;
     
     /** Radio de la bomba química */
     public static float INFECTOR_CHEMICAL_BOMB_RADIUS = 70.0f;
