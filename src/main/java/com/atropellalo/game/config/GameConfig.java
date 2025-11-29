@@ -51,7 +51,7 @@ public final class GameConfig {
     public static final float FUEL_SPAWN_INTERVAL_MAX = 8.0f;
     
     /** Cantidad máxima de items de combustible en el mapa */
-    public static final int FUEL_MAX_ON_MAP = 10;
+    public static final int FUEL_MAX_ON_MAP = 6;
     
     /** Cantidad inicial de combustible en el mapa */
     public static final int FUEL_INITIAL_SPAWN = 2;
@@ -104,12 +104,10 @@ public final class GameConfig {
     public static final int WORLD_HEIGHT = 1440;
     
     /** Margen de spawn de loot desde los bordes del mundo */
-    public static final int LOOT_SPAWN_MARGIN = 50;
+    public static final int LOOT_SPAWN_MARGIN = 75;
     
     // ==================== ENEMIGOS - GENERAL ====================
     
-    /** Daño que hace el jugador al atropellar enemigos */
-    public static float PLAYER_DAMAGE_TO_ENEMY = 50.0f;
     
     /** Daño que hacen los enemigos al jugador por contacto */
     public static float ENEMY_DAMAGE_TO_PLAYER = 10.0f;
@@ -186,7 +184,7 @@ public final class GameConfig {
     public static int WAVE_ENEMY_INCREMENT = 5;
     
     /** Máximo de enemigos simultáneos en el mapa */
-    public static int MAX_ENEMIES_ON_MAP = 50;
+    public static int MAX_ENEMIES_ON_MAP = 100;
     
     /** Intervalo de spawn entre enemigos de una oleada (segundos) */
     public static float ENEMY_SPAWN_INTERVAL = 0.3f;
@@ -226,13 +224,13 @@ public final class GameConfig {
     // ==================== ARMAS - AMETRALLADORA LIGERA ====================
     
     /** Daño de la ametralladora por disparo (bajo) */
-    public static float LMG_DAMAGE = 5.0f;
+    public static float LMG_DAMAGE = 3.0f;
     
     /** Rango de la ametralladora (medio) */
     public static float LMG_RANGE = 200.0f;
     
     /** Delay entre disparos (muy bajo - alta cadencia) */
-    public static float LMG_FIRE_DELAY = 0.1f;
+    public static float LMG_FIRE_DELAY = 0.15f;
     
     /** Disparos simultáneos de la ametralladora */
     public static int LMG_PROJECTILE_COUNT = 1;
@@ -269,7 +267,7 @@ public final class GameConfig {
     public static float SPIKES_RANGE = 50.0f;
     
     /** Cooldown de daño de las púas */
-    public static float SPIKES_DAMAGE_COOLDOWN = 0.3f;
+    public static float SPIKES_DAMAGE_COOLDOWN = 0.25f;
     
     // ==================== ARMAS - SIERRAS CIRCULARES ====================
     
@@ -331,10 +329,10 @@ public final class GameConfig {
     public static float XP_ORB_MAGNET_DISTANCE = 100.0f;
     
     /** Velocidad de atracción del orbe */
-    public static float XP_ORB_MAGNET_SPEED = 200.0f;
+    public static float XP_ORB_MAGNET_SPEED = 220.0f;
     
     /** Distancia de recolección del orbe */
-    public static float XP_ORB_PICKUP_DISTANCE = 25.0f;
+    public static float XP_ORB_PICKUP_DISTANCE = 20.0f;
     
     /** XP base otorgado por zombie rápido */
     public static int XP_FAST_ZOMBIE = 10;
@@ -392,4 +390,98 @@ public final class GameConfig {
     
     /** Combustible otorgado al subir de nivel */
     public static float LEVEL_UP_FUEL_BONUS = 10.0f;
+    
+    // ==================== JEFE - EL APLASTADOR (BRUISER) - OLEADA 10 ====================
+    
+    /** Salud del Aplastador (muy alta) */
+    public static float BRUISER_BOSS_HEALTH = 700.0f;
+    
+    /** Velocidad del Aplastador (baja-media) */
+    public static float BRUISER_BOSS_SPEED = 60.0f;
+    
+    /** Tamaño del Aplastador */
+    public static int BRUISER_BOSS_SIZE = 74;
+    
+    /** Daño por contacto del Aplastador (alto) */
+    public static float BRUISER_BOSS_CONTACT_DAMAGE = 35.0f;
+    
+    /** Radio del golpe de terremoto */
+    public static float BRUISER_EARTHQUAKE_RADIUS = 150.0f;
+    
+    /** Daño del golpe de terremoto */
+    public static float BRUISER_EARTHQUAKE_DAMAGE = 30.0f;
+    
+    /** Cooldown del golpe de terremoto (segundos) */
+    public static float BRUISER_EARTHQUAKE_COOLDOWN = 4.0f;
+    
+    /** Velocidad de la carga frontal */
+    public static float BRUISER_CHARGE_SPEED = 400.0f;
+    
+    /** Daño de la carga frontal */
+    public static float BRUISER_CHARGE_DAMAGE = 40.0f;
+    
+    /** Duración de la carga (segundos) */
+    public static float BRUISER_CHARGE_DURATION = 2.0f;
+    
+    /** Cooldown de la carga (segundos) */
+    public static float BRUISER_CHARGE_COOLDOWN = 6.0f;
+    
+    /** Distancia mínima para activar carga */
+    public static float BRUISER_CHARGE_MIN_DISTANCE = 150.0f;
+    
+    /** XP otorgado por el Aplastador */
+    public static int XP_BRUISER_BOSS = 500;
+    
+    /** Oleada en la que aparece el Aplastador */
+    public static int BRUISER_BOSS_WAVE = 5;
+    
+    // ==================== JEFE - EL INFECTADOR (INFECTOR) - OLEADA 20 ====================
+    
+    /** Salud del Infectador (media-alta) */
+    public static float INFECTOR_BOSS_HEALTH = 550.0f;
+    
+    /** Velocidad del Infectador (media) */
+    public static float INFECTOR_BOSS_SPEED = 80.0f;
+    
+    /** Tamaño del Infectador */
+    public static int INFECTOR_BOSS_SIZE = 66;
+    
+    /** Daño por contacto del Infectador (medio) */
+    public static float INFECTOR_BOSS_CONTACT_DAMAGE = 25.0f;
+    
+    /** Radio de la nube tóxica periódica */
+    public static float INFECTOR_TOXIC_CLOUD_RADIUS = 100.0f;
+    
+    /** Daño por segundo de la nube tóxica */
+    public static float INFECTOR_TOXIC_CLOUD_DAMAGE = 10.0f;
+    
+    /** Intervalo de tick de la nube tóxica (segundos) */
+    public static float INFECTOR_TOXIC_TICK_RATE = 0.5f;
+    
+    /** Daño de la bomba química */
+    public static float INFECTOR_CHEMICAL_BOMB_DAMAGE = 30.0f;
+    
+    /** Radio de la bomba química */
+    public static float INFECTOR_CHEMICAL_BOMB_RADIUS = 70.0f;
+    
+    /** Duración de la poza tóxica (segundos) */
+    public static float INFECTOR_TOXIC_POOL_DURATION = 6.0f;
+    
+    /** Daño por segundo de la poza tóxica */
+    public static float INFECTOR_TOXIC_POOL_DAMAGE = 8.0f;
+    
+    /** Cooldown de la bomba química (segundos) */
+    public static float INFECTOR_BOMB_COOLDOWN = 3.0f;
+    
+    /** Radio de la explosión final al morir */
+    public static float INFECTOR_DEATH_EXPLOSION_RADIUS = 100.0f;
+    
+    /** Daño de la explosión final */
+    public static float INFECTOR_DEATH_EXPLOSION_DAMAGE = 50.0f;
+    
+    /** XP otorgado por el Infectador */
+    public static int XP_INFECTOR_BOSS = 750;
+    
+    /** Oleada en la que aparece el Infectador */
+    public static int INFECTOR_BOSS_WAVE = 10;
 }

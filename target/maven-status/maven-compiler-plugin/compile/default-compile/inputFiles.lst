@@ -3,6 +3,7 @@ E:\ATROPELLALO\ATROPELLALO\src\main\java\com\atropellalo\game\loot\LootType.java
 E:\ATROPELLALO\ATROPELLALO\src\main\java\com\atropellalo\game\loot\Loot.java
 E:\ATROPELLALO\ATROPELLALO\src\main\java\com\atropellalo\game\weapon\LightMachineGun.java
 E:\ATROPELLALO\ATROPELLALO\src\main\java\com\atropellalo\game\ui\GamePanel.java
+E:\ATROPELLALO\ATROPELLALO\src\main\java\com\atropellalo\game\enemy\InfectorBoss.java
 E:\ATROPELLALO\ATROPELLALO\src\main\java\com\atropellalo\game\ui\UpgradeMenu.java
 E:\ATROPELLALO\ATROPELLALO\src\main\java\com\atropellalo\game\ui\GameHUD.java
 E:\ATROPELLALO\ATROPELLALO\src\main\java\com\atropellalo\game\weapon\WeaponManager.java
@@ -32,5 +33,6 @@ E:\ATROPELLALO\ATROPELLALO\src\main\java\com\atropellalo\game\config\GameConfig.
 E:\ATROPELLALO\ATROPELLALO\src\main\java\com\atropellalo\game\input\InputHandler.java
 E:\ATROPELLALO\ATROPELLALO\src\main\java\com\atropellalo\game\weapon\GrenadeLauncher.java
 E:\ATROPELLALO\ATROPELLALO\src\main\java\com\atropellalo\game\camera\Camera.java
+E:\ATROPELLALO\ATROPELLALO\src\main\java\com\atropellalo\game\enemy\BruiserBoss.java
 E:\ATROPELLALO\ATROPELLALO\src\main\java\com\atropellalo\game\enemy\EnemyType.java
 E:\ATROPELLALO\ATROPELLALO\src\main\java\com\atropellalo\game\weapon\WeaponType.java

@@ -1292,12 +1292,6 @@ MAX_WEAPONS = 3;                    // Máximo de armas
 - **1 / 2 / 3**: Selección directa de opción
 
 ---
-
-## Fase 7: Mejoras de Armas y Escalado de Enemigos (NUEVO)
-
-### Resumen
-Implementación de nueva arma escopeta, cambio de púas por sierras circulares, lanzagranadas aleatorio con efectos de explosión, escalado de enemigos por oleada, y bonificación de combustible al subir de nivel.
-
 ### Nueva Arma: Escopeta (Shotgun)
 
 **Ubicación**: `com.atropellalo.game.weapon.Shotgun`
@@ -1319,8 +1313,7 @@ SHOTGUN_SPREAD_ANGLE = 54.0f;     // 15% de 360°
 SHOTGUN_PROJECTILE_SPEED = 350.0f;
 ```
 
-### Sierras Circulares (Reemplazo de Púas)
-
+### Sierras Circulares 
 **Ubicación**: `com.atropellalo.game.weapon.CircularSaw`
 
 **Cambio**: Las púas (Spikes) fueron reemplazadas por sierras circulares.
@@ -1487,4 +1480,263 @@ LEVEL_UP_FUEL_BONUS = 10.0f;    // Combustible al subir de nivel
 **Fecha de Creación**: 29/11/2025  
 **Última Actualización**: 29/11/2025  
 **Versión**: 1.0-SNAPSHOT  
-**Estado**: Fase 7 Completada - Escopeta, Sierras, Escalado de Enemigos
+**Estado**: Fase 8 Completada - Jefes, Lanzagranadas Mejorado
+
+---
+
+## Fase 8: Jefes y Mejoras de Armas
+
+### Resumen
+- Lanzagranadas ahora apunta al enemigo más cercano (en vez de aleatorio)
+- Dos nuevos jefes: El Aplastador (oleada 10) y El Infectador (oleada 20)
+- Sistema de callbacks para ataques especiales de jefes
+
+### Corrección del Lanzagranadas
+
+**Cambio**: El lanzagranadas ahora usa `findClosestEnemy()` para apuntar al enemigo más cercano, en lugar de disparar en direcciones aleatorias.
+
+**Comportamiento actualizado**:
+1. Busca enemigo más cercano dentro del rango
+2. Si hay enemigo válido y cooldown terminó, dispara
+3. La granada viaja hacia la posición del enemigo
+4. Al impactar, explota con efecto visual y daño en área
+
+### Nuevos Jefes
+
+#### EnemyType (Actualizado)
+**Nuevos valores**:
+- `BOSS_BRUISER`: El Aplastador (oleada 10)
+- `BOSS_INFECTOR`: El Infectador (oleada 20)
+
+#### BruiserBoss - El Aplastador (NUEVO)
+**Ubicación**: `com.atropellalo.game.enemy.BruiserBoss`
+
+**Descripción**: Tanque gigante con ataques devastadores.
+
+**Visual**:
+- Zombie gigante mutado (64 px)
+- Torso acorazado gris metálico
+- Brazo hipertrofiado con puño masivo
+- Ojos rojos brillantes
+- Barra de vida dorada (indica jefe)
+- Etiqueta "★ APLASTADOR ★"
+
+**Estadísticas**:
+```java
+BRUISER_BOSS_HEALTH = 500.0f;          // Muy alta
+BRUISER_BOSS_SPEED = 60.0f;            // Baja-media
+BRUISER_BOSS_SIZE = 64;                // Grande
+BRUISER_BOSS_CONTACT_DAMAGE = 25.0f;   // Alto
+XP_BRUISER_BOSS = 200;                 // Recompensa alta
+BRUISER_BOSS_WAVE = 10;                // Oleada de aparición
+```
+
+**Habilidades**:
+
+1. **Golpe de Terremoto**:
+   - Radio: 120 px
+   - Daño: 30 HP
+   - Cooldown: 4 segundos
+   - Activa cuando el jugador está cerca
+   - Efecto visual: Onda de choque marrón expandiéndose
+
+2. **Carga Frontal**:
+   - Velocidad de carga: 300 px/s
+   - Daño de impacto: 40 HP
+   - Duración: 1 segundo
+   - Cooldown: 6 segundos
+   - Activa cuando el jugador está lejos (>150 px)
+   - Efecto visual: Rastro naranja/rojo
+
+**Estados del Jefe**:
+- `WALKING`: Persigue al jugador
+- `CHARGING`: Ejecutando carga frontal
+- `EARTHQUAKE`: Ejecutando golpe de terremoto
+- `COOLDOWN`: Recuperándose de ataque
+
+#### InfectorBoss - El Infectador (NUEVO)
+**Ubicación**: `com.atropellalo.game.enemy.InfectorBoss`
+
+**Descripción**: Controlador de zonas con ataques de área tóxica.
+
+**Visual**:
+- Zombie hinchado verdoso (56 px)
+- Ampollas químicas amarillo-verdosas
+- Gotas de químico goteando
+- Nube tóxica permanente alrededor
+- Ojos amarillo-verdosos brillantes
+- Barra de vida verde con borde dorado
+- Etiqueta "☣ INFECTADOR ☣"
+
+**Estadísticas**:
+```java
+INFECTOR_BOSS_HEALTH = 350.0f;         // Media-alta
+INFECTOR_BOSS_SPEED = 80.0f;           // Media
+INFECTOR_BOSS_SIZE = 56;               // Grande
+INFECTOR_BOSS_CONTACT_DAMAGE = 15.0f;  // Medio
+XP_INFECTOR_BOSS = 350;                // Recompensa muy alta
+INFECTOR_BOSS_WAVE = 20;               // Oleada de aparición
+```
+
+**Habilidades**:
+
+1. **Nube Tóxica Pasiva**:
+   - Radio: 80 px (siempre activa)
+   - Daño: 5 HP por tick
+   - Tick rate: 0.5 segundos
+   - Efecto visual: Nube verde difusa con partículas flotantes
+
+2. **Bomba Química**:
+   - Radio de poza: 60 px
+   - Duración de poza: 5 segundos
+   - Daño de poza: 8 HP por tick
+   - Cooldown: 3 segundos
+   - Lanza hacia la posición del jugador
+   - Efecto visual: Pozas verdes con burbujas
+
+3. **Explosión Final (al morir)**:
+   - Radio: 150 px
+   - Daño: 35 HP
+   - Duración de animación: 1 segundo
+   - Efecto visual: Onda tóxica expansiva verde brillante
+
+**Estados del Jefe**:
+- `WALKING`: Persigue al jugador, lanza bombas
+- `THROWING_BOMB`: Animación de lanzamiento
+- `DYING`: Secuencia de explosión final
+
+### Actualizaciones a Clases Existentes
+
+#### EnemyManager (Actualizado)
+
+**Nuevas interfaces implementadas**:
+```java
+public class EnemyManager implements 
+    ExplosiveZombie.ExplosionCallback,
+    BruiserBoss.BossDamageCallback,
+    InfectorBoss.BossDamageCallback
+```
+
+**Nuevos campos**:
+- `bossSpawnedThisWave`: Control de spawn de jefe
+- `currentBoss`: Referencia al jefe activo
+
+**Nuevos métodos**:
+- `spawnBoss(EnemyType, float, float)`: Genera jefe con callback
+- `onBossDamage(float)`: Callback unificado para daño de jefe
+
+**Modificaciones**:
+- `startNextWave()`: Log de alerta de oleada de jefe
+- `spawnRandomEnemy()`: Prioriza spawn de jefe si corresponde
+- `cleanupDeadEnemies()`: Maneja secuencia de muerte del Infectador
+- `spawnXPForEnemy()`: XP fijo alto para jefes (sin escalado)
+- `renderWaveInfo()`: Muestra alerta "★ ¡JEFE ACTIVO! ★" y salud
+
+#### GameConfig (Actualizado)
+
+**Nuevas secciones**:
+```java
+// ==================== JEFE - EL APLASTADOR (BRUISER) - OLEADA 10 ====================
+BRUISER_BOSS_HEALTH = 500.0f;
+BRUISER_BOSS_SPEED = 60.0f;
+BRUISER_BOSS_SIZE = 64;
+BRUISER_BOSS_CONTACT_DAMAGE = 25.0f;
+BRUISER_EARTHQUAKE_RADIUS = 120.0f;
+BRUISER_EARTHQUAKE_DAMAGE = 30.0f;
+BRUISER_EARTHQUAKE_COOLDOWN = 4.0f;
+BRUISER_CHARGE_SPEED = 300.0f;
+BRUISER_CHARGE_DAMAGE = 40.0f;
+BRUISER_CHARGE_DURATION = 1.0f;
+BRUISER_CHARGE_COOLDOWN = 6.0f;
+BRUISER_CHARGE_MIN_DISTANCE = 150.0f;
+XP_BRUISER_BOSS = 200;
+BRUISER_BOSS_WAVE = 10;
+
+// ==================== JEFE - EL INFECTADOR (INFECTOR) - OLEADA 20 ====================
+INFECTOR_BOSS_HEALTH = 350.0f;
+INFECTOR_BOSS_SPEED = 80.0f;
+INFECTOR_BOSS_SIZE = 56;
+INFECTOR_BOSS_CONTACT_DAMAGE = 15.0f;
+INFECTOR_TOXIC_CLOUD_RADIUS = 80.0f;
+INFECTOR_TOXIC_CLOUD_DAMAGE = 5.0f;
+INFECTOR_TOXIC_TICK_RATE = 0.5f;
+INFECTOR_CHEMICAL_BOMB_DAMAGE = 20.0f;
+INFECTOR_CHEMICAL_BOMB_RADIUS = 60.0f;
+INFECTOR_TOXIC_POOL_DURATION = 5.0f;
+INFECTOR_TOXIC_POOL_DAMAGE = 8.0f;
+INFECTOR_BOMB_COOLDOWN = 3.0f;
+INFECTOR_DEATH_EXPLOSION_RADIUS = 150.0f;
+INFECTOR_DEATH_EXPLOSION_DAMAGE = 35.0f;
+XP_INFECTOR_BOSS = 350;
+INFECTOR_BOSS_WAVE = 20;
+```
+
+### Sistema de Callbacks de Jefes
+
+**Interface común**:
+```java
+public interface BossDamageCallback {
+    void onBossDamage(float damage);
+}
+```
+
+**Implementación en EnemyManager**:
+```java
+@Override
+public void onBossDamage(float damage) {
+    if (player != null && player.isAlive()) {
+        player.damage(damage);
+    }
+}
+```
+
+**Flujo de daño de jefe**:
+```
+Jefe ejecuta habilidad
+    ↓
+Verifica si jugador en rango
+    ↓
+Llama damageCallback.onBossDamage(damage)
+    ↓
+EnemyManager aplica daño al Player
+```
+
+### Estructura de Archivos Actualizada
+
+```
+enemy/
+├── Enemy.java                 # Clase base
+├── EnemyType.java            # Enum (ahora con BOSS_BRUISER, BOSS_INFECTOR)
+├── EnemyManager.java         # Gestor (actualizado con spawn de jefes)
+├── FastZombie.java           # Zombie rápido
+├── SlowZombie.java           # Zombie lento
+├── ExplosiveZombie.java      # Zombie explosivo
+├── BruiserBoss.java          # NUEVO - El Aplastador
+└── InfectorBoss.java         # NUEVO - El Infectador
+```
+
+### Indicadores Visuales de Jefe
+
+**En el mundo**:
+- Barra de vida más grande con borde dorado
+- Etiqueta con nombre del jefe
+- Efectos visuales de habilidades
+
+**En el HUD**:
+- Texto dorado "★ ¡JEFE ACTIVO! ★"
+- Porcentaje de salud del jefe
+- Reemplaza contador de enemigos mientras el jefe vive
+
+### Estrategia Sugerida vs Jefes
+
+**El Aplastador (Oleada 10)**:
+- Mantener distancia media (evitar terremoto)
+- Moverse lateralmente cuando carga
+- Alto DPS necesario por su salud masiva
+- Armas de rango recomendadas
+
+**El Infectador (Oleada 20)**:
+- Evitar quedarse cerca por la nube tóxica
+- Salir de las pozas químicas inmediatamente
+- Alejarse rápido cuando muere (explosión final)
+- Armas de área ayudan contra sus pozas
