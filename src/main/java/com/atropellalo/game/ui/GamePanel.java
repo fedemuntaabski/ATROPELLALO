@@ -2,11 +2,13 @@ package com.atropellalo.game.ui;
 
 import com.atropellalo.game.camera.Camera;
 import com.atropellalo.game.config.GameConfig;
+import com.atropellalo.game.enemy.EnemyManager;
 import com.atropellalo.game.entity.Player;
 import com.atropellalo.game.input.InputHandler;
 import com.atropellalo.game.loot.Loot;
 import com.atropellalo.game.loot.LootManager;
 import com.atropellalo.game.loot.LootType;
+import com.atropellalo.game.weapon.WeaponManager;
 
 import javax.swing.JPanel;
 import javax.imageio.ImageIO;
@@ -39,6 +41,8 @@ public class GamePanel extends JPanel implements Runnable {
     private Camera camera;
     private InputHandler inputHandler;
     private LootManager lootManager;
+    private EnemyManager enemyManager;
+    private WeaponManager weaponManager;
     private GameHUD gameHUD;
     
     public GamePanel() {
@@ -63,6 +67,13 @@ public class GamePanel extends JPanel implements Runnable {
         
         // Crear sistema de loot
         lootManager = new LootManager();
+        
+        // Crear sistema de enemigos
+        enemyManager = new EnemyManager();
+        enemyManager.setPlayer(player);
+        
+        // Crear sistema de armas
+        weaponManager = new WeaponManager();
         
         // Crear HUD
         gameHUD = new GameHUD(1280, 720);
@@ -138,6 +149,12 @@ public class GamePanel extends JPanel implements Runnable {
             applyLootEffect(loot);
         }
         
+        // Actualizar sistema de enemigos
+        enemyManager.update(deltaTime, player.getCenterX(), player.getCenterY());
+        
+        // Actualizar sistema de armas (disparo automático)
+        weaponManager.update(deltaTime, player.getCenterX(), player.getCenterY(), enemyManager.getEnemies());
+        
         // Actualizar cámara para seguir al jugador
         camera.centerOn(player.getCenterX(), player.getCenterY());
     }
@@ -180,6 +197,8 @@ public class GamePanel extends JPanel implements Runnable {
         
         drawMap(g2d);
         drawLoot(g2d);
+        drawEnemies(g2d);
+        drawProjectiles(g2d);
         drawPlayer(g2d);
         
         // Restaurar transformación para HUD (se dibuja en coordenadas de pantalla)
@@ -187,6 +206,9 @@ public class GamePanel extends JPanel implements Runnable {
         
         // Dibujar HUD
         gameHUD.render(g2d, player);
+        
+        // Dibujar información de oleadas
+        enemyManager.renderWaveInfo(g2d, 1280);
     }
     
     /**
@@ -203,6 +225,20 @@ public class GamePanel extends JPanel implements Runnable {
      */
     private void drawLoot(Graphics2D g2d) {
         lootManager.render(g2d);
+    }
+    
+    /**
+     * Dibuja todos los enemigos.
+     */
+    private void drawEnemies(Graphics2D g2d) {
+        enemyManager.render(g2d);
+    }
+    
+    /**
+     * Dibuja todos los proyectiles.
+     */
+    private void drawProjectiles(Graphics2D g2d) {
+        weaponManager.render(g2d);
     }
     
     /**

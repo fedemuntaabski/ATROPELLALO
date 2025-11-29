@@ -6,7 +6,7 @@
 - **Lenguaje**: Java 11
 - **Framework UI**: Swing
 - **Build Tool**: Maven
-- **Estado**: Fase 3 Completada - Sistema de Loot y HUD
+- **Estado**: Fase 5 Completada - Sistema de Armas con Disparo Automático
 
 ## Pautas de Desarrollo Aplicadas
 
@@ -60,6 +60,13 @@ atropellalo/
         │               │   └── Camera.java            # Sistema de cámara
         │               ├── config/
         │               │   └── GameConfig.java        # Configuración del juego
+        │               ├── enemy/
+        │               │   ├── Enemy.java             # Clase base de enemigos
+        │               │   ├── EnemyType.java         # Tipos de enemigos (enum)
+        │               │   ├── FastZombie.java        # Zombie rápido
+        │               │   ├── SlowZombie.java        # Zombie lento
+        │               │   ├── ExplosiveZombie.java   # Zombie explosivo
+        │               │   └── EnemyManager.java      # Gestor de enemigos y oleadas
         │               ├── entity/
         │               │   └── Player.java            # Jugador con stats
         │               ├── input/
@@ -74,8 +81,13 @@ atropellalo/
         │               │   ├── GameWindow.java        # Ventana del juego
         │               │   ├── GamePanel.java         # Panel con game loop
         │               │   └── GameHUD.java           # HUD del jugador
-        │               └── util/
-        │                   └── MapGenerator.java      # Generador de mapa
+        │               ├── util/
+        │               │   └── MapGenerator.java      # Generador de mapa
+        │               └── weapon/
+        │                   ├── Weapon.java            # Clase base de armas
+        │                   ├── Pistol.java            # Pistola automática
+        │                   ├── Projectile.java        # Proyectil
+        │                   └── WeaponManager.java     # Gestor de armas
         └── resources/
             └── images/
                 └── map.jpg                    # Imagen del mapa (2560x1440)
@@ -239,6 +251,110 @@ atropellalo/
 - **Colisiones**: Distancia de pickup
 - **HUD**: Dimensiones de barras, márgenes
 - **Mundo**: Dimensiones, márgenes de spawn
+- **Enemigos - General**: Daño, colisiones, spawn
+- **Enemigos - Zombie Rápido**: Velocidad, salud, tamaño, daño
+- **Enemigos - Zombie Lento**: Velocidad, salud, tamaño, daño
+- **Enemigos - Zombie Explosivo**: Velocidad, salud, radio de explosión, daño de explosión
+- **Sistema de Oleadas**: Intervalo, enemigos base, incremento, máximo de enemigos
+- **Armas - Pistola**: Daño, rango, delay entre disparos, velocidad y tamaño de proyectil
+
+### 15. EnemyType (NUEVO - Fase 4)
+**Ubicación**: `com.atropellalo.game.enemy.EnemyType`
+
+**Responsabilidad**: Enum que define los tipos de enemigos.
+
+**Valores**:
+- `FAST`: Zombie rápido
+- `SLOW`: Zombie lento
+- `EXPLOSIVE`: Zombie explosivo
+
+### 16. Enemy (NUEVO - Fase 4)
+**Ubicación**: `com.atropellalo.game.enemy.Enemy`
+
+**Responsabilidad**: Clase abstracta base para todos los enemigos.
+
+**Características**:
+- Posición, salud, velocidad, tamaño, daño
+- Comportamiento de persecución hacia el jugador
+- Sistema de cooldown de daño
+- Cálculo de distancias
+- Métodos abstractos para renderizado y tipo
+
+**Métodos Principales**:
+- `update(float, float, float)`: Actualiza posición persiguiendo al jugador
+- `moveTowards(float, float, float)`: Movimiento hacia objetivo
+- `takeDamage(float)`: Recibe daño
+- `onDeath()`: Comportamiento al morir (override en subclases)
+- `distanceToPlayer(float, float)`: Calcula distancia al jugador
+
+### 17. FastZombie (NUEVO - Fase 4)
+**Ubicación**: `com.atropellalo.game.enemy.FastZombie`
+
+**Responsabilidad**: Enemigo rápido con poca vida.
+
+**Características**:
+- Alta velocidad (150 px/s)
+- Baja salud (30 HP)
+- Tamaño pequeño (24 px)
+- Color verde claro
+- Ojos rojos
+- Barra de vida cuando recibe daño
+
+### 18. SlowZombie (NUEVO - Fase 4)
+**Ubicación**: `com.atropellalo.game.enemy.SlowZombie`
+
+**Responsabilidad**: Enemigo lento con mucha vida.
+
+**Características**:
+- Baja velocidad (50 px/s)
+- Alta salud (100 HP)
+- Tamaño grande (36 px)
+- Color púrpura/índigo
+- Ojos amarillos con pupilas
+- Apariencia más pesada
+
+### 19. ExplosiveZombie (NUEVO - Fase 4)
+**Ubicación**: `com.atropellalo.game.enemy.ExplosiveZombie`
+
+**Responsabilidad**: Enemigo que explota al morir.
+
+**Características**:
+- Velocidad media (80 px/s)
+- Salud media (40 HP)
+- Tamaño medio (28 px)
+- Color naranja/rojo con símbolo "!"
+- Al morir:
+  - Explosión con radio de 80 px
+  - Daña al jugador si está en rango (25 HP máx)
+  - Daña a otros enemigos cercanos
+  - Animación de explosión con círculos concéntricos
+
+### 20. EnemyManager (NUEVO - Fase 4)
+**Ubicación**: `com.atropellalo.game.enemy.EnemyManager`
+
+**Responsabilidad**: Gestiona enemigos y sistema de oleadas.
+
+**Características**:
+- Lista de enemigos activos
+- Sistema de oleadas progresivas
+- Spawn aleatorio lejos del jugador
+- Colisiones jugador-enemigo
+- Contador de kills
+- Implementa callback para explosiones
+
+**Sistema de Oleadas**:
+- Primera oleada después de 3 segundos
+- Cada oleada tiene más enemigos
+- Intervalo configurable entre oleadas
+- Spawn gradual durante la oleada
+
+**Métodos Principales**:
+- `update(float, float, float)`: Actualiza oleadas y enemigos
+- `checkPlayerCollisions()`: Detecta colisiones (enemigos dañan al jugador)
+- `render(Graphics2D)`: Dibuja todos los enemigos
+- `renderWaveInfo(Graphics2D, int)`: Dibuja info de oleada en HUD
+- `getEnemies()`: Expone lista de enemigos para sistema de armas
+- `addKill()`: Incrementa contador de kills
 
 ### 9. Loot (NUEVO)
 **Ubicación**: `com.atropellalo.game.loot.Loot`
@@ -315,6 +431,73 @@ atropellalo/
 - Animación de parpadeo en advertencias
 - Overlay semi-transparente en Game Over
 
+### 21. Weapon (NUEVO - Fase 5)
+**Ubicación**: `com.atropellalo.game.weapon.Weapon`
+
+**Responsabilidad**: Clase abstracta base para todas las armas.
+
+**Características**:
+- Daño, rango y delay configurables
+- Sistema de cooldown entre disparos
+- Búsqueda de enemigo más cercano en rango
+- Métodos abstractos para disparo
+
+**Métodos Principales**:
+- `update(float)`: Actualiza cooldown del arma
+- `canFire()`: Verifica si puede disparar
+- `tryFire(float, float, List<Enemy>)`: Intenta disparar (abstracto)
+- `findClosestEnemy()`: Encuentra enemigo más cercano en rango
+
+### 22. Pistol (NUEVO - Fase 5)
+**Ubicación**: `com.atropellalo.game.weapon.Pistol`
+
+**Responsabilidad**: Pistola automática del jugador.
+
+**Características**:
+- Dispara automáticamente al enemigo más cercano
+- Rango configurable (250 px por defecto)
+- Delay entre disparos (0.5 segundos)
+- Daño por disparo (15 HP)
+
+**Comportamiento**:
+1. Busca enemigo más cercano dentro del rango
+2. Si hay enemigo y el cooldown terminó, dispara
+3. Crea proyectil hacia el centro del enemigo
+4. Reinicia cooldown
+
+### 23. Projectile (NUEVO - Fase 5)
+**Ubicación**: `com.atropellalo.game.weapon.Projectile`
+
+**Responsabilidad**: Proyectil disparado por armas.
+
+**Características**:
+- Movimiento en línea recta hacia objetivo
+- Velocidad configurable (400 px/s)
+- Rango máximo (se desactiva al excederlo)
+- Colisión con enemigos
+- Renderizado como círculo amarillo/naranja
+
+**Métodos Principales**:
+- `update(float)`: Actualiza posición, verifica límites
+- `checkCollisions(List<Enemy>)`: Detecta impactos con enemigos
+- `render(Graphics2D)`: Dibuja el proyectil
+
+### 24. WeaponManager (NUEVO - Fase 5)
+**Ubicación**: `com.atropellalo.game.weapon.WeaponManager`
+
+**Responsabilidad**: Gestiona armas y proyectiles del jugador.
+
+**Características**:
+- Maneja arma actual (pistola por defecto)
+- Lista de proyectiles activos
+- Estadísticas de disparos y precisión
+- Disparo automático integrado
+
+**Métodos Principales**:
+- `update(float, float, float, List<Enemy>)`: Actualiza arma y proyectiles
+- `render(Graphics2D)`: Dibuja todos los proyectiles
+- `getAccuracy()`: Calcula porcentaje de precisión
+
 ## Configuración Maven (pom.xml)
 
 ### Propiedades
@@ -370,6 +553,72 @@ Los recursos en `src/main/resources` se incluyen automáticamente en el JAR.
 - **Combustible**: Se consume a 5 unidades/segundo mientras se mueve
 - **Movimiento**: Bloqueado si el combustible llega a 0
 - **Salud**: Si llega a 0, el juego termina (Game Over)
+
+## Sistema de Enemigos 
+
+### Tipos de Zombies
+
+#### Zombie Rápido (FastZombie)
+- **Apariencia**: Círculo verde claro con ojos rojos
+- **Velocidad**: 150 px/s (rápido)
+- **Salud**: 30 HP (baja)
+- **Daño**: 8 HP por contacto
+- **Tamaño**: 24 px (pequeño)
+- **Probabilidad de spawn**: 50%
+
+#### Zombie Lento (SlowZombie)
+- **Apariencia**: Cuadrado redondeado púrpura con ojos amarillos
+- **Velocidad**: 50 px/s (lento)
+- **Salud**: 100 HP (alta)
+- **Daño**: 15 HP por contacto
+- **Tamaño**: 36 px (grande)
+- **Probabilidad de spawn**: 30%
+
+#### Zombie Explosivo (ExplosiveZombie)
+- **Apariencia**: Triángulo naranja con símbolo "!"
+- **Velocidad**: 80 px/s (media)
+- **Salud**: 40 HP (media)
+- **Daño contacto**: 10 HP
+- **Daño explosión**: 25 HP máximo (disminuye con distancia)
+- **Radio de explosión**: 80 px
+- **Tamaño**: 28 px (medio)
+- **Probabilidad de spawn**: 20%
+- **Especial**: Al morir explota, dañando al jugador y otros enemigos
+
+### Sistema de Oleadas
+
+- **Primera oleada**: 3 segundos después de iniciar
+- **Enemigos base**: 5 por oleada
+- **Incremento**: +2 enemigos por oleada
+- **Intervalo entre oleadas**: 15 segundos
+- **Máximo enemigos**: 50 simultáneos
+- **Spawn gradual**: 0.5 segundos entre cada enemigo
+- **Distancia mínima spawn**: 300 px del jugador
+
+### Mecánicas de Combate
+
+#### Disparo Automático (NUEVO - Fase 5)
+- El jugador dispara automáticamente al enemigo más cercano
+- No requiere input del jugador
+- El arma apunta y dispara sola
+- Daño por proyectil: 15 HP
+- Rango de disparo: 250 píxeles
+- Delay entre disparos: 0.5 segundos
+- Velocidad del proyectil: 400 px/s
+
+#### Contacto (Enemigo → Jugador)
+- Si el jugador colisiona con un enemigo, recibe daño
+- Cooldown de 0.5 segundos entre daños
+- Cada tipo de zombie tiene daño diferente
+
+**Nota**: La mecánica de "atropellar" enemigos ha sido removida. El jugador ahora solo puede dañar enemigos con disparos.
+
+#### Explosiones
+- Solo el ExplosiveZombie explota al morir
+- Radio de 80 px
+- Daño decrece con la distancia
+- Afecta al jugador Y a otros enemigos
+- Puede causar reacciones en cadena
 
 ## Sistema de Loot (NUEVO)
 
@@ -443,13 +692,15 @@ Los recursos en `src/main/resources` se incluyen automáticamente en el JAR.
 2. Verificar si el juego terminó
 3. Actualizar input del jugador
 4. Actualizar posición del jugador (consumir combustible)
-5. Actualizar sistema de loot (spawn, timers)
-6. Verificar colisiones con loot
-7. Aplicar efectos de loot recolectado
-8. Actualizar posición de la cámara
-9. Renderizar escena (mapa, loot, jugador)
-10. Renderizar HUD
-11. Sleep para mantener FPS objetivo
+6. Actualizar sistema de loot (spawn, timers)
+7. Verificar colisiones con loot
+8. Aplicar efectos de loot recolectado
+9. Actualizar sistema de enemigos (oleadas, movimiento, colisiones)
+10. Actualizar sistema de armas (disparo automático al enemigo más cercano)
+11. Actualizar posición de la cámara
+12. Renderizar escena (mapa, loot, enemigos, proyectiles, jugador)
+13. Renderizar HUD e info de oleadas
+14. Sleep para mantener FPS objetivo
 
 ## Cómo Ejecutar
 
@@ -490,9 +741,11 @@ java -jar target/atropellalo-game-1.0-SNAPSHOT.jar
 ### Separación de Responsabilidades
 - **UI**: GameWindow, GamePanel, GameHUD
 - **Entidades**: Player
-- **Sistemas**: Camera, InputHandler, LootManager
+- **Enemigos**: Enemy (abstract), FastZombie, SlowZombie, ExplosiveZombie
+- **Sistemas**: Camera, InputHandler, LootManager, EnemyManager, WeaponManager
 - **Configuración**: GameConfig
 - **Loot**: Loot (abstract), Fuel, Scrap, LootType
+- **Armas**: Weapon (abstract), Pistol, Projectile, WeaponManager
 - **Utilidades**: MapGenerator
 
 ### Game Loop Pattern
@@ -507,26 +760,31 @@ InputHandler actúa como observer del teclado, manteniendo estado de teclas.
 ### Camera Pattern
 Sistema de cámara desacoplado que puede seguir cualquier objetivo.
 
-### Template Method Pattern (Loot)
-Loot define el esqueleto para items coleccionables, Fuel y Scrap implementan los detalles.
+### Template Method Pattern (Loot/Enemy)
+Loot y Enemy definen el esqueleto para items/enemigos, las subclases implementan detalles.
 
-### Manager Pattern (LootManager)
-Centraliza la gestión de todos los items de loot en el juego.
+### Manager Pattern (LootManager/EnemyManager)
+Centraliza la gestión de entidades relacionadas.
+
+### Callback Pattern (Explosiones)
+ExplosiveZombie usa callback para notificar daño al jugador.
 
 ## Próximos Pasos Sugeridos (No Implementados)
 
 Para continuar el desarrollo del juego estilo Survivor, se sugiere:
 
-1. **Enemigos**: Sistema de spawn y comportamiento de enemigos
-2. **Colisiones**: Detección de colisiones entre jugador y enemigos (daño al jugador)
-3. **Armas/Ataques**: Sistema de combate automático (característica principal de Vampire Survivors)
-4. **Experiencia/Nivel**: Sistema de progresión
-5. **Power-ups adicionales**: Mejoras temporales y habilidades
-6. **Partículas**: Efectos visuales al recolectar loot
-7. **Audio**: Música y efectos de sonido
-8. **Sprite del jugador**: Reemplazar cuadrado con sprite animado
-9. **Mapa mejorado**: Diseño de nivel más detallado
-10. **Reinicio de partida**: Opción para reiniciar después del Game Over
+1. ~~**Enemigos**: Sistema de spawn y comportamiento de enemigos~~ ✅ COMPLETADO
+2. ~~**Colisiones**: Detección de colisiones entre jugador y enemigos~~ ✅ COMPLETADO
+3. ~~**Armas/Ataques**: Sistema de combate automático~~ ✅ COMPLETADO
+4. **Más Armas**: Agregar variedad de armas (escopeta, rifle, etc.)
+5. **Experiencia/Nivel**: Sistema de progresión
+6. **Power-ups adicionales**: Mejoras temporales y habilidades
+7. **Partículas**: Efectos visuales al recolectar loot y disparar
+8. **Audio**: Música y efectos de sonido
+9. **Sprite del jugador**: Reemplazar cuadrado con sprite animado
+10. **Mapa mejorado**: Diseño de nivel más detallado
+11. **Reinicio de partida**: Opción para reiniciar después del Game Over
+12. **Mejoras de armas**: Sistema de upgrades para las armas
 
 ## Notas Técnicas
 
@@ -594,9 +852,62 @@ SCRAP_MAX_ON_MAP = 8;            // Máximo simultáneo en mapa
 SCRAP_INITIAL_SPAWN = 3;         // Cantidad inicial
 ```
 
+### Enemigos (NUEVO - Fase 4)
+```java
+// General
+PLAYER_DAMAGE_TO_ENEMY = 50.0f;      // Daño al atropellar
+ENEMY_DAMAGE_TO_PLAYER = 10.0f;      // Daño base de contacto
+ENEMY_DAMAGE_COOLDOWN = 0.5f;        // Cooldown de daño (segundos)
+ENEMY_COLLISION_DISTANCE = 25.0f;    // Distancia de colisión
+ENEMY_MIN_SPAWN_DISTANCE = 300.0f;   // Distancia mínima de spawn
+
+// Zombie Rápido
+FAST_ZOMBIE_SPEED = 150.0f;          // Velocidad (px/s)
+FAST_ZOMBIE_HEALTH = 30.0f;          // Salud
+FAST_ZOMBIE_SIZE = 24;               // Tamaño
+FAST_ZOMBIE_DAMAGE = 8.0f;           // Daño al jugador
+
+// Zombie Lento
+SLOW_ZOMBIE_SPEED = 50.0f;           // Velocidad (px/s)
+SLOW_ZOMBIE_HEALTH = 100.0f;         // Salud
+SLOW_ZOMBIE_SIZE = 36;               // Tamaño
+SLOW_ZOMBIE_DAMAGE = 15.0f;          // Daño al jugador
+
+// Zombie Explosivo
+EXPLOSIVE_ZOMBIE_SPEED = 80.0f;      // Velocidad (px/s)
+EXPLOSIVE_ZOMBIE_HEALTH = 40.0f;     // Salud
+EXPLOSIVE_ZOMBIE_SIZE = 28;          // Tamaño
+EXPLOSIVE_ZOMBIE_DAMAGE = 10.0f;     // Daño contacto
+EXPLOSIVE_ZOMBIE_RADIUS = 80.0f;     // Radio de explosión
+EXPLOSIVE_ZOMBIE_EXPLOSION_DAMAGE = 25.0f; // Daño explosión
+
+// Sistema de Oleadas
+WAVE_INTERVAL = 15.0f;               // Segundos entre oleadas
+WAVE_BASE_ENEMIES = 5;               // Enemigos base por oleada
+WAVE_ENEMY_INCREMENT = 2;            // Incremento por oleada
+MAX_ENEMIES_ON_MAP = 50;             // Máximo simultáneo
+ENEMY_SPAWN_INTERVAL = 0.5f;         // Segundos entre spawns
+
+// Probabilidades de spawn (deben sumar 100)
+FAST_ZOMBIE_SPAWN_CHANCE = 50;       // 50% rápidos
+SLOW_ZOMBIE_SPAWN_CHANCE = 30;       // 30% lentos
+EXPLOSIVE_ZOMBIE_SPAWN_CHANCE = 20;  // 20% explosivos
+```
+
+### Armas - Pistola (NUEVO - Fase 5)
+```java
+PISTOL_DAMAGE = 15.0f;          // Daño por disparo
+PISTOL_RANGE = 250.0f;          // Rango de alcance (px)
+PISTOL_FIRE_DELAY = 0.5f;       // Segundos entre disparos
+PROJECTILE_SPEED = 400.0f;      // Velocidad del proyectil (px/s)
+PROJECTILE_SIZE = 8;            // Tamaño del proyectil (px)
+```
+
+**Nota**: Las configuraciones de enemigos usan `static` (no `static final`) para permitir modificación en tiempo real durante pruebas.
+
 ---
 
 **Fecha de Creación**: 29/11/2025  
 **Última Actualización**: 29/11/2025  
 **Versión**: 1.0-SNAPSHOT  
-**Estado**: Fase 3 Completada - Sistema de Loot, HUD y Mecánicas de Supervivencia
+**Estado**: Fase 5 Completada - Sistema de Armas con Disparo Automático

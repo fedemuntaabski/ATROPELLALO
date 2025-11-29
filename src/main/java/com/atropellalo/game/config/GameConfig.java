@@ -62,7 +62,7 @@ public final class GameConfig {
     public static final float SCRAP_HEAL_AMOUNT = 15.0f;
     
     /** Tamaño del item de chatarra en píxeles */
-    public static final int SCRAP_SIZE = 20;
+    public static final int SCRAP_SIZE = 22;
     
     /** Intervalo mínimo de spawn de chatarra (segundos) */
     public static final float SCRAP_SPAWN_INTERVAL_MIN = 5.0f;
@@ -71,7 +71,7 @@ public final class GameConfig {
     public static final float SCRAP_SPAWN_INTERVAL_MAX = 10.0f;
     
     /** Cantidad máxima de items de chatarra en el mapa */
-    public static final int SCRAP_MAX_ON_MAP = 8;
+    public static final int SCRAP_MAX_ON_MAP = 4;
     
     /** Cantidad inicial de chatarra en el mapa */
     public static final int SCRAP_INITIAL_SPAWN = 1;
@@ -105,4 +105,115 @@ public final class GameConfig {
     
     /** Margen de spawn de loot desde los bordes del mundo */
     public static final int LOOT_SPAWN_MARGIN = 50;
+    
+    // ==================== ENEMIGOS - GENERAL ====================
+    
+    /** Daño que hace el jugador al atropellar enemigos */
+    public static float PLAYER_DAMAGE_TO_ENEMY = 50.0f;
+    
+    /** Daño que hacen los enemigos al jugador por contacto */
+    public static float ENEMY_DAMAGE_TO_PLAYER = 10.0f;
+    
+    /** Cooldown de daño al jugador por contacto (segundos) */
+    public static float ENEMY_DAMAGE_COOLDOWN = 0.5f;
+    
+    /** Distancia de colisión entre jugador y enemigo */
+    public static float ENEMY_COLLISION_DISTANCE = 25.0f;
+    
+    /** Margen de spawn de enemigos desde los bordes */
+    public static int ENEMY_SPAWN_MARGIN = 100;
+    
+    /** Distancia mínima de spawn desde el jugador */
+    public static float ENEMY_MIN_SPAWN_DISTANCE = 200.0f;
+    
+    // ==================== ENEMIGOS - ZOMBIE RÁPIDO ====================
+    
+    /** Velocidad del zombie rápido (píxeles/segundo) */
+    public static float FAST_ZOMBIE_SPEED = 150.0f;
+    
+    /** Salud del zombie rápido */
+    public static float FAST_ZOMBIE_HEALTH = 30.0f;
+    
+    /** Tamaño del zombie rápido */
+    public static int FAST_ZOMBIE_SIZE = 24;
+    
+    /** Daño del zombie rápido al jugador */
+    public static float FAST_ZOMBIE_DAMAGE = 8.0f;
+    
+    // ==================== ENEMIGOS - ZOMBIE LENTO ====================
+    
+    /** Velocidad del zombie lento (píxeles/segundo) */
+    public static float SLOW_ZOMBIE_SPEED = 50.0f;
+    
+    /** Salud del zombie lento */
+    public static float SLOW_ZOMBIE_HEALTH = 100.0f;
+    
+    /** Tamaño del zombie lento */
+    public static int SLOW_ZOMBIE_SIZE = 36;
+    
+    /** Daño del zombie lento al jugador */
+    public static float SLOW_ZOMBIE_DAMAGE = 15.0f;
+    
+    // ==================== ENEMIGOS - ZOMBIE EXPLOSIVO ====================
+    
+    /** Velocidad del zombie explosivo (píxeles/segundo) */
+    public static float EXPLOSIVE_ZOMBIE_SPEED = 80.0f;
+    
+    /** Salud del zombie explosivo */
+    public static float EXPLOSIVE_ZOMBIE_HEALTH = 40.0f;
+    
+    /** Tamaño del zombie explosivo */
+    public static int EXPLOSIVE_ZOMBIE_SIZE = 28;
+    
+    /** Daño del zombie explosivo al jugador (contacto) */
+    public static float EXPLOSIVE_ZOMBIE_DAMAGE = 10.0f;
+    
+    /** Radio de explosión al morir */
+    public static float EXPLOSIVE_ZOMBIE_RADIUS = 80.0f;
+    
+    /** Daño de la explosión */
+    public static float EXPLOSIVE_ZOMBIE_EXPLOSION_DAMAGE = 25.0f;
+    
+    // ==================== SISTEMA DE OLEADAS ====================
+    
+    /** Tiempo entre oleadas (segundos) */
+    public static float WAVE_INTERVAL = 5.0f;
+    
+    /** Número base de enemigos por oleada */
+    public static int WAVE_BASE_ENEMIES = 5;
+    
+    /** Incremento de enemigos por oleada */
+    public static int WAVE_ENEMY_INCREMENT = 5;
+    
+    /** Máximo de enemigos simultáneos en el mapa */
+    public static int MAX_ENEMIES_ON_MAP = 50;
+    
+    /** Intervalo de spawn entre enemigos de una oleada (segundos) */
+    public static float ENEMY_SPAWN_INTERVAL = 0.3f;
+    
+    /** Probabilidad de zombie rápido (0-100) */
+    public static int FAST_ZOMBIE_SPAWN_CHANCE = 50;
+    
+    /** Probabilidad de zombie lento (0-100) */
+    public static int SLOW_ZOMBIE_SPAWN_CHANCE = 30;
+    
+    /** Probabilidad de zombie explosivo (0-100) */
+    public static int EXPLOSIVE_ZOMBIE_SPAWN_CHANCE = 20;
+    
+    // ==================== ARMAS - PISTOLA ====================
+    
+    /** Daño de la pistola por disparo */
+    public static float PISTOL_DAMAGE = 15.0f;
+    
+    /** Rango de la pistola (píxeles) */
+    public static float PISTOL_RANGE = 250.0f;
+    
+    /** Delay entre disparos (segundos) */
+    public static float PISTOL_FIRE_DELAY = 0.5f;
+    
+    /** Velocidad del proyectil (píxeles/segundo) */
+    public static float PROJECTILE_SPEED = 400.0f;
+    
+    /** Tamaño del proyectil (píxeles) */
+    public static int PROJECTILE_SIZE = 8;
 }
