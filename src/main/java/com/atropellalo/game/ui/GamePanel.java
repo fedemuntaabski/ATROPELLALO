@@ -1,8 +1,12 @@
 package com.atropellalo.game.ui;
 
 import com.atropellalo.game.camera.Camera;
+import com.atropellalo.game.config.GameConfig;
 import com.atropellalo.game.entity.Player;
 import com.atropellalo.game.input.InputHandler;
+import com.atropellalo.game.loot.Loot;
+import com.atropellalo.game.loot.LootManager;
+import com.atropellalo.game.loot.LootType;
 
 import javax.swing.JPanel;
 import javax.imageio.ImageIO;
@@ -11,6 +15,7 @@ import java.awt.Graphics2D;
 import java.awt.RenderingHints;
 import java.awt.image.BufferedImage;
 import java.io.IOException;
+import java.util.List;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -26,10 +31,6 @@ public class GamePanel extends JPanel implements Runnable {
     private static final int TARGET_FPS = 60;
     private static final long OPTIMAL_TIME = 1000000000 / TARGET_FPS;
     
-    // Tamaño del mundo (mapa más grande que la ventana)
-    private static final int WORLD_WIDTH = 2560;  // 2x el ancho de la ventana
-    private static final int WORLD_HEIGHT = 1440; // 2x el alto de la ventana
-    
     private BufferedImage mapImage;
     private Thread gameThread;
     private boolean running;
@@ -37,6 +38,8 @@ public class GamePanel extends JPanel implements Runnable {
     private Player player;
     private Camera camera;
     private InputHandler inputHandler;
+    private LootManager lootManager;
+    private GameHUD gameHUD;
     
     public GamePanel() {
         loadMapImage();
@@ -49,16 +52,22 @@ public class GamePanel extends JPanel implements Runnable {
      */
     private void initializeGame() {
         // Crear jugador en el centro del mundo
-        player = new Player(WORLD_WIDTH / 2f, WORLD_HEIGHT / 2f);
+        player = new Player(GameConfig.WORLD_WIDTH / 2f, GameConfig.WORLD_HEIGHT / 2f);
         
         // Crear cámara
-        camera = new Camera(1280, 720, WORLD_WIDTH, WORLD_HEIGHT);
+        camera = new Camera(1280, 720, GameConfig.WORLD_WIDTH, GameConfig.WORLD_HEIGHT);
         
         // Crear y configurar input handler
         inputHandler = new InputHandler();
         addKeyListener(inputHandler);
         
-        LOGGER.info("Juego inicializado - Mundo: " + WORLD_WIDTH + "x" + WORLD_HEIGHT);
+        // Crear sistema de loot
+        lootManager = new LootManager();
+        
+        // Crear HUD
+        gameHUD = new GameHUD(1280, 720);
+        
+        LOGGER.info("Juego inicializado - Mundo: " + GameConfig.WORLD_WIDTH + "x" + GameConfig.WORLD_HEIGHT);
     }
     
     /**
@@ -109,14 +118,41 @@ public class GamePanel extends JPanel implements Runnable {
      * Actualiza la lógica del juego.
      */
     private void update(float deltaTime) {
+        // No actualizar si el juego terminó
+        if (!player.isAlive()) {
+            return;
+        }
+        
         // Actualizar movimiento del jugador
         int moveX = inputHandler.getHorizontalDirection();
         int moveY = inputHandler.getVerticalDirection();
         player.setMovement(moveX, moveY);
         player.update(deltaTime);
         
+        // Actualizar sistema de loot
+        lootManager.update(deltaTime);
+        
+        // Verificar colisiones con loot
+        List<Loot> collected = lootManager.checkCollisions(player.getCenterX(), player.getCenterY());
+        for (Loot loot : collected) {
+            applyLootEffect(loot);
+        }
+        
         // Actualizar cámara para seguir al jugador
         camera.centerOn(player.getCenterX(), player.getCenterY());
+    }
+    
+    /**
+     * Aplica el efecto del loot recolectado al jugador.
+     */
+    private void applyLootEffect(Loot loot) {
+        if (loot.getType() == LootType.FUEL) {
+            player.addFuel(loot.getValue());
+            LOGGER.fine("Combustible recolectado: +" + loot.getValue());
+        } else if (loot.getType() == LootType.SCRAP) {
+            player.heal(loot.getValue());
+            LOGGER.fine("Chatarra recolectada: +" + loot.getValue() + " HP");
+        }
     }
     
     /**
@@ -143,10 +179,14 @@ public class GamePanel extends JPanel implements Runnable {
         g2d.translate(-camera.getOffsetX(), -camera.getOffsetY());
         
         drawMap(g2d);
+        drawLoot(g2d);
         drawPlayer(g2d);
         
-        // Restaurar transformación
+        // Restaurar transformación para HUD (se dibuja en coordenadas de pantalla)
         g2d.translate(camera.getOffsetX(), camera.getOffsetY());
+        
+        // Dibujar HUD
+        gameHUD.render(g2d, player);
     }
     
     /**
@@ -154,8 +194,15 @@ public class GamePanel extends JPanel implements Runnable {
      */
     private void drawMap(Graphics2D g2d) {
         if (mapImage != null) {
-            g2d.drawImage(mapImage, 0, 0, WORLD_WIDTH, WORLD_HEIGHT, null);
+            g2d.drawImage(mapImage, 0, 0, GameConfig.WORLD_WIDTH, GameConfig.WORLD_HEIGHT, null);
         }
+    }
+    
+    /**
+     * Dibuja todos los items de loot.
+     */
+    private void drawLoot(Graphics2D g2d) {
+        lootManager.render(g2d);
     }
     
     /**
