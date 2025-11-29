@@ -1,0 +1,8 @@
+com\atropellalo\Game.class
+com\atropellalo\game\ui\GameWindow$1.class
+com\atropellalo\game\camera\Camera.class
+com\atropellalo\game\ui\GamePanel.class
+com\atropellalo\game\entity\Player.class
+com\atropellalo\game\input\InputHandler.class
+com\atropellalo\game\util\MapGenerator.class
+com\atropellalo\game\ui\GameWindow.class
