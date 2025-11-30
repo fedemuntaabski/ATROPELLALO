@@ -1,10 +1,13 @@
 package com.atropellalo.game.enemy;
 
 import com.atropellalo.game.config.GameConfig;
+import com.atropellalo.game.sprite.Animation;
 import com.atropellalo.game.sprite.AnimationState;
-import com.atropellalo.game.sprite.BossSpriteGenerator;
 
 import java.awt.*;
+import java.awt.image.BufferedImage;
+import java.io.IOException;
+import javax.imageio.ImageIO;
 
 /**
  * El Aplastador (Bruiser Boss) - Jefe de la oleada 10.
@@ -13,9 +16,17 @@ import java.awt.*;
  * - Golpe de Terremoto: Crea una onda de choque circular que daña al jugador
  * - Carga Frontal: Embiste al jugador en línea recta con alto daño
  * 
- * Visual: Zombie gigante mutado con torso acorazado y brazo hipertrofiado.
+ * Usa sprite personalizado BruiserBoss.png.
  */
 public class BruiserBoss extends Enemy {
+    
+    private static final String SPRITE_PATH = "/images/BruiserBoss.png";
+    private static final float SPRITE_SCALE = 3.0f;
+    
+    // Sprite compartido para todos los BruiserBoss
+    private static BufferedImage sprite = null;
+    private static int spriteWidth = 0;
+    private static int spriteHeight = 0;
     
     // Estados del jefe
     private enum BossState {
@@ -70,9 +81,39 @@ public class BruiserBoss extends Enemy {
               GameConfig.BRUISER_BOSS_CONTACT_DAMAGE);
         this.xpMultiplier = (float) GameConfig.XP_BRUISER_BOSS / GameConfig.XP_SLOW_ZOMBIE;
         
-        // Cargar animaciones del Bruiser Boss
-        this.animations = BossSpriteGenerator.generateBruiserAnimations();
+        loadSprite();
+        initializeAnimations();
         this.currentAnimState = AnimationState.IDLE;
+    }
+    
+    /**
+     * Carga el sprite desde recursos (lazy loading).
+     */
+    private void loadSprite() {
+        if (sprite == null) {
+            try {
+                sprite = ImageIO.read(getClass().getResourceAsStream(SPRITE_PATH));
+                if (sprite != null) {
+                    spriteWidth = sprite.getWidth();
+                    spriteHeight = sprite.getHeight();
+                }
+            } catch (IOException e) {
+                System.err.println("Error cargando " + SPRITE_PATH + ": " + e.getMessage());
+            }
+        }
+    }
+    
+    /**
+     * Inicializa las animaciones con el sprite cargado.
+     */
+    private void initializeAnimations() {
+        if (sprite != null) {
+            this.animations = new java.util.HashMap<>();
+            this.animations.put(AnimationState.IDLE, new Animation(sprite));
+            this.animations.put(AnimationState.MOVING, new Animation(sprite));
+            this.animations.put(AnimationState.ATTACK, new Animation(sprite));
+            this.animations.put(AnimationState.DEATH, new Animation(sprite));
+        }
     }
     
     /**
@@ -294,33 +335,46 @@ public class BruiserBoss extends Enemy {
         int renderX = (int) x - size / 2;
         int renderY = (int) y - size / 2;
         
-        // Renderizar efecto de terremoto si está activo
         if (currentState == BossState.EARTHQUAKE) {
             renderEarthquakeEffect(g2d);
         }
         
-        // Calcular escala para el sprite
-        float scale = (float) size / BossSpriteGenerator.BRUISER_WIDTH;
-        
-        // Intentar renderizar con animación
         if (animations != null && !animations.isEmpty()) {
+            float scale = calculateScale();
             renderWithAnimation(g2d, scale);
         } else {
-            // Fallback al render original
             renderFallback(g2d, renderX, renderY);
         }
         
-        // Efecto de carga (rastro)
         if (currentState == BossState.CHARGING) {
             g2d.setColor(new Color(255, 100, 50, 100));
             g2d.fillOval(renderX - 10, renderY - 5, size + 20, size + 10);
         }
         
-        // Barra de vida del jefe (más grande y visible)
         renderBossHealthBar(g2d, renderX, renderY);
-        
-        // Indicador de jefe
         renderBossIndicator(g2d, renderX, renderY);
+    }
+    
+    /**
+     * Calcula el factor de escala del sprite.
+     * @return Factor de escala
+     */
+    private float calculateScale() {
+        return (spriteWidth > 0) ? ((float) size / spriteWidth) * SPRITE_SCALE : SPRITE_SCALE;
+    }
+    
+    /**
+     * Renderizado con animación sin rotación.
+     * El sprite se mantiene siempre en la misma orientación.
+     */
+    @Override
+    protected void renderWithAnimation(Graphics2D g2d, float scale) {
+        if (animations != null && animations.containsKey(currentAnimState)) {
+            Animation anim = animations.get(currentAnimState);
+            if (anim.getCurrentFrame() != null) {
+                anim.renderScaled(g2d, getCenterX(), getCenterY(), scale);
+            }
+        }
     }
     
     /**

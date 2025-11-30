@@ -3,15 +3,16 @@ package com.atropellalo.game.enemy;
 import com.atropellalo.game.config.GameConfig;
 import com.atropellalo.game.sprite.Animation;
 import com.atropellalo.game.sprite.AnimationState;
-import com.atropellalo.game.sprite.ZombieSpriteGenerator;
 
 import java.awt.Color;
 import java.awt.Graphics2D;
 import java.awt.geom.Ellipse2D;
+import java.awt.image.BufferedImage;
+import java.io.IOException;
 import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
+import javax.imageio.ImageIO;
 
 /**
  * Zombie escupidor - Enemigo a distancia que dispara proyectiles de ácido.
@@ -21,8 +22,18 @@ import java.util.List;
  * - Dispara proyectiles de ácido a intervalos regulares
  * - Los proyectiles dejan charcos corrosivos al impactar
  * - Los charcos hacen daño continuo al jugador que los pisa
+ * 
+ * Usa sprite personalizado SpitterZombie.png.
  */
 public class SpitterZombie extends Enemy {
+    
+    private static final String SPRITE_PATH = "/images/SpitterZombie.png";
+    private static final float SPRITE_SCALE = 3.0f;
+    
+    // Sprite compartido para todos los SpitterZombies
+    private static BufferedImage sprite = null;
+    private static int spriteWidth = 0;
+    private static int spriteHeight = 0;
     
     // Sistema de disparo
     private float fireTimer;
@@ -82,25 +93,38 @@ public class SpitterZombie extends Enemy {
         this.projectileSpeed = GameConfig.SPITTER_PROJECTILE_SPEED;
         this.projectileDamage = GameConfig.SPITTER_PROJECTILE_DAMAGE * damageScale;
         
-        // Cargar animaciones
-        loadAnimations();
+        loadSprite();
+        initializeAnimations();
     }
     
     /**
-     * Carga las animaciones del escupidor.
+     * Carga el sprite desde recursos (lazy loading).
      */
-    private void loadAnimations() {
-        animations = new HashMap<>();
-        
-        // Generar sprites usando ZombieSpriteGenerator con colores personalizados
-        animations.put(AnimationState.IDLE, ZombieSpriteGenerator.generateZombieAnimation(
-            AnimationState.IDLE, size, BODY_COLOR, BODY_DARK, EYE_COLOR));
-        animations.put(AnimationState.MOVING, ZombieSpriteGenerator.generateZombieAnimation(
-            AnimationState.MOVING, size, BODY_COLOR, BODY_DARK, EYE_COLOR));
-        animations.put(AnimationState.DEATH, ZombieSpriteGenerator.generateZombieAnimation(
-            AnimationState.DEATH, size, BODY_COLOR, BODY_DARK, EYE_COLOR));
-        
-        currentAnimState = AnimationState.IDLE;
+    private void loadSprite() {
+        if (sprite == null) {
+            try {
+                sprite = ImageIO.read(getClass().getResourceAsStream(SPRITE_PATH));
+                if (sprite != null) {
+                    spriteWidth = sprite.getWidth();
+                    spriteHeight = sprite.getHeight();
+                }
+            } catch (IOException e) {
+                System.err.println("Error cargando " + SPRITE_PATH + ": " + e.getMessage());
+            }
+        }
+    }
+    
+    /**
+     * Inicializa las animaciones con el sprite cargado.
+     */
+    private void initializeAnimations() {
+        if (sprite != null) {
+            this.animations = new java.util.HashMap<>();
+            this.animations.put(AnimationState.IDLE, new Animation(sprite));
+            this.animations.put(AnimationState.MOVING, new Animation(sprite));
+            this.animations.put(AnimationState.DEATH, new Animation(sprite));
+            currentAnimState = AnimationState.IDLE;
+        }
     }
     
     /**
@@ -149,9 +173,8 @@ public class SpitterZombie extends Enemy {
                 y += (dy / len) * speed * deltaTime;
             }
         } else if (distance > attackRange * 0.9f) {
-            // Demasiado lejos - acercarse usando pathfinding
-            updatePath(deltaTime, playerX, playerY);
-            moveTowardsWithAStar(playerX, playerY, deltaTime);
+            // Demasiado lejos - acercarse directamente
+            moveTowardsDirect(playerX, playerY, deltaTime);
         }
         // Si está en rango óptimo, se queda quieto
         
@@ -268,23 +291,16 @@ public class SpitterZombie extends Enemy {
             return;
         }
         
-        // Renderizar con animación
         if (animations != null && animations.containsKey(currentAnimState)) {
-            Animation anim = animations.get(currentAnimState);
-            if (anim.getCurrentFrame() != null) {
-                anim.renderScaled(g2d, getCenterX(), getCenterY(), rotation, 1.0f);
-            } else {
-                renderFallback(g2d);
-            }
+            float scale = calculateScale();
+            renderWithAnimation(g2d, scale);
         } else {
             renderFallback(g2d);
         }
         
-        // Renderizar barra de vida
         if (alive) {
             renderHealthBar(g2d);
             
-            // Indicador de carga de disparo
             if (fireTimer > 0 && fireTimer < fireRate) {
                 float chargePercent = fireTimer / fireRate;
                 int barWidth = size;
@@ -296,6 +312,28 @@ public class SpitterZombie extends Enemy {
                 g2d.fillRect(barX, barY, barWidth, barHeight);
                 g2d.setColor(ACID_COLOR);
                 g2d.fillRect(barX, barY, (int)(barWidth * chargePercent), barHeight);
+            }
+        }
+    }
+    
+    /**
+     * Calcula el factor de escala del sprite.
+     * @return Factor de escala
+     */
+    private float calculateScale() {
+        return (spriteWidth > 0) ? ((float) size / spriteWidth) * SPRITE_SCALE : SPRITE_SCALE;
+    }
+    
+    /**
+     * Renderizado con animación sin rotación.
+     * El sprite se mantiene siempre en la misma orientación.
+     */
+    @Override
+    protected void renderWithAnimation(Graphics2D g2d, float scale) {
+        if (animations != null && animations.containsKey(currentAnimState)) {
+            Animation anim = animations.get(currentAnimState);
+            if (anim.getCurrentFrame() != null) {
+                anim.renderScaled(g2d, getCenterX(), getCenterY(), scale);
             }
         }
     }

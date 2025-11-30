@@ -5,13 +5,23 @@ import com.atropellalo.game.enemy.Enemy;
 
 import java.awt.Color;
 import java.awt.Graphics2D;
+import java.awt.geom.AffineTransform;
+import java.awt.image.BufferedImage;
+import java.io.IOException;
 import java.util.List;
+import javax.imageio.ImageIO;
 
 /**
  * Representa un proyectil disparado por un arma.
  * Se mueve en línea recta hacia una dirección y daña enemigos al contacto.
  */
 public class Projectile {
+    
+    private static final String SPRITE_PATH = "/images/Bullet.png";
+    private static final float SPRITE_SCALE = 0.03f;
+    private static BufferedImage sprite = null;
+    private static int spriteWidth = 0;
+    private static int spriteHeight = 0;
     
     private float x;
     private float y;
@@ -39,6 +49,7 @@ public class Projectile {
                      float damage, float maxRange) {
         this(startX, startY, targetX, targetY, damage, maxRange, 0, 
              GameConfig.PROJECTILE_SPEED, Color.YELLOW, GameConfig.PROJECTILE_SIZE);
+        loadSprite();
     }
     
     /**
@@ -55,6 +66,7 @@ public class Projectile {
                      float damage, float maxRange, float impactArea) {
         this(startX, startY, targetX, targetY, damage, maxRange, impactArea,
              GameConfig.PROJECTILE_SPEED, Color.YELLOW, GameConfig.PROJECTILE_SIZE);
+        loadSprite();
     }
     
     /**
@@ -74,6 +86,8 @@ public class Projectile {
         this.color = color;
         this.size = size;
         
+        loadSprite();
+        
         // Calcular dirección normalizada
         float dx = targetX - startX;
         float dy = targetY - startY;
@@ -87,6 +101,34 @@ public class Projectile {
             this.velocityY = 0;
             this.active = false;
         }
+    }
+    
+    /**
+     * Carga el sprite de la bala desde el archivo.
+     */
+    private void loadSprite() {
+        if (sprite == null) {
+            try {
+                sprite = ImageIO.read(getClass().getResourceAsStream(SPRITE_PATH));
+                if (sprite != null) {
+                    spriteWidth = sprite.getWidth();
+                    spriteHeight = sprite.getHeight();
+                }
+            } catch (IOException e) {
+                System.err.println("Error cargando " + SPRITE_PATH + ": " + e.getMessage());
+            }
+        }
+    }
+    
+    /**
+     * Calcula el tamaño de renderizado del sprite.
+     */
+    private int calculateScale() {
+        if (sprite == null || spriteWidth == 0 || spriteHeight == 0) {
+            return size;
+        }
+        int maxDimension = Math.max(spriteWidth, spriteHeight);
+        return (int) (maxDimension * SPRITE_SCALE);
     }
     
     /**
@@ -189,6 +231,35 @@ public class Projectile {
             return;
         }
         
+        if (sprite != null) {
+            int scale = calculateScale();
+            int drawX = (int) (x - scale / 2);
+            int drawY = (int) (y - scale / 2);
+            
+            // Calcular ángulo de rotación basado en la dirección del proyectil
+            // Sumamos π/2 porque la imagen apunta hacia arriba (90 grados)
+            double angle = Math.atan2(velocityY, velocityX) + Math.PI / 2;
+            
+            // Guardar transformación original
+            AffineTransform oldTransform = g2d.getTransform();
+            
+            // Rotar el contexto gráfico
+            g2d.rotate(angle, x, y);
+            
+            // Dibujar la bala rotada
+            g2d.drawImage(sprite, drawX, drawY, scale, scale, null);
+            
+            // Restaurar transformación
+            g2d.setTransform(oldTransform);
+        } else {
+            renderFallback(g2d);
+        }
+    }
+    
+    /**
+     * Renderiza el proyectil usando gráficos procedurales como fallback.
+     */
+    private void renderFallback(Graphics2D g2d) {
         int drawX = (int)(x - size / 2);
         int drawY = (int)(y - size / 2);
         

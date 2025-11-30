@@ -10,18 +10,19 @@ import com.atropellalo.game.loot.Loot;
 import com.atropellalo.game.loot.LootManager;
 import com.atropellalo.game.loot.LootType;
 import com.atropellalo.game.loot.XPOrb;
-import com.atropellalo.game.map.CityMap;
-import com.atropellalo.game.pathfinding.AStarPathfinder;
 import com.atropellalo.game.upgrade.UpgradeManager;
 import com.atropellalo.game.upgrade.UpgradeOption;
 import com.atropellalo.game.weapon.WeaponManager;
 
 import javax.swing.JPanel;
+import javax.imageio.ImageIO;
 import java.awt.Graphics;
 import java.awt.Graphics2D;
 import java.awt.RenderingHints;
 import java.awt.event.KeyEvent;
 import java.awt.event.KeyListener;
+import java.awt.image.BufferedImage;
+import java.io.IOException;
 import java.util.List;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -34,6 +35,7 @@ import java.util.logging.Logger;
 public class GamePanel extends JPanel implements Runnable, KeyListener {
     
     private static final Logger LOGGER = Logger.getLogger(GamePanel.class.getName());
+    private static final String MAP_IMAGE_PATH = "/images/Map.png";
     private static final int TARGET_FPS = 60;
     private static final long OPTIMAL_TIME = 1000000000 / TARGET_FPS;
     
@@ -41,11 +43,8 @@ public class GamePanel extends JPanel implements Runnable, KeyListener {
     private boolean running;
     private boolean paused;
     
-    // Mapa de la ciudad
-    private CityMap cityMap;
-    
-    // Pathfinder A*
-    private AStarPathfinder pathfinder;
+    // Imagen del mapa de estacionamiento
+    private BufferedImage mapImage;
     
     private Player player;
     private Camera camera;
@@ -61,39 +60,34 @@ public class GamePanel extends JPanel implements Runnable, KeyListener {
     
     public GamePanel() {
         setFocusable(true);
+        loadMapImage();
         initializeGame();
+    }
+    
+    /**
+     * Carga la imagen del mapa de estacionamiento.
+     */
+    private void loadMapImage() {
+        try {
+            mapImage = ImageIO.read(getClass().getResourceAsStream(MAP_IMAGE_PATH));
+            LOGGER.info("Mapa de estacionamiento cargado exitosamente: " + MAP_IMAGE_PATH);
+        } catch (IOException e) {
+            LOGGER.log(Level.SEVERE, "Error al cargar la imagen del mapa: " + MAP_IMAGE_PATH, e);
+        }
     }
     
     /**
      * Inicializa los componentes del juego.
      */
     private void initializeGame() {
-        // Crear mapa de la ciudad (con semilla fija para consistencia durante desarrollo)
-        cityMap = new CityMap(12345L);
-        
-        // Crear pathfinder A* y configurarlo para los enemigos
-        pathfinder = new AStarPathfinder(cityMap);
-        Enemy.setPathfinder(pathfinder);
-        
-        // Crear jugador en el centro del mundo (zona de spawn segura)
+        // Crear jugador en el centro del mundo
         player = new Player(GameConfig.WORLD_WIDTH / 2f, GameConfig.WORLD_HEIGHT / 2f);
         
         // Configurar callback de subida de nivel
         player.setLevelUpCallback(this::onPlayerLevelUp);
         
-        // Configurar callback de colisión con el mapa de la ciudad
-        player.setCollisionCallback(new Player.CollisionCallback() {
-            @Override
-            public boolean checkCollision(float x, float y, float width, float height) {
-                return cityMap.checkCollision(x, y, width, height);
-            }
-            
-            @Override
-            public float[] resolveCollision(float oldX, float oldY, float newX, float newY, 
-                                             float width, float height) {
-                return cityMap.resolveCollision(oldX, oldY, newX, newY, width, height);
-            }
-        });
+        // Sin callback de colisión - el estacionamiento no tiene obstáculos
+        player.setCollisionCallback(null);
         
         // Crear cámara
         camera = new Camera(1280, 720, GameConfig.WORLD_WIDTH, GameConfig.WORLD_HEIGHT);
@@ -108,15 +102,13 @@ public class GamePanel extends JPanel implements Runnable, KeyListener {
         addKeyListener(inputHandler);
         addKeyListener(this); // Para el menú de mejoras y reinicio
         
-        // Crear sistema de loot con referencia al mapa para spawn válido
+        // Crear sistema de loot (sin mapa de colisiones)
         lootManager = new LootManager();
-        lootManager.setCityMap(cityMap);
         
-        // Crear sistema de enemigos con referencia al mapa
+        // Crear sistema de enemigos (sin mapa de colisiones)
         enemyManager = new EnemyManager();
         enemyManager.setPlayer(player);
         enemyManager.setLootManager(lootManager);
-        enemyManager.setCityMap(cityMap);
         
         // Crear sistema de armas
         weaponManager = new WeaponManager();
@@ -133,7 +125,7 @@ public class GamePanel extends JPanel implements Runnable, KeyListener {
         paused = false;
         
         LOGGER.info("Juego inicializado - Mundo: " + GameConfig.WORLD_WIDTH + "x" + GameConfig.WORLD_HEIGHT);
-        LOGGER.info("Mapa de ciudad generado con semilla: " + cityMap.getSeed());
+        LOGGER.info("Mapa de estacionamiento cargado - Sin obstáculos");
     }
     
     /**
@@ -282,8 +274,12 @@ public class GamePanel extends JPanel implements Runnable, KeyListener {
         g2d.setRenderingHint(RenderingHints.KEY_RENDERING, RenderingHints.VALUE_RENDER_QUALITY);
         g2d.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
         
+        // Guardar el offset de la cámara para restauración exacta
+        int offsetX = camera.getOffsetX();
+        int offsetY = camera.getOffsetY();
+        
         // Aplicar transformación de cámara
-        g2d.translate(-camera.getOffsetX(), -camera.getOffsetY());
+        g2d.translate(-offsetX, -offsetY);
         
         drawMap(g2d);
         drawLoot(g2d);
@@ -291,8 +287,8 @@ public class GamePanel extends JPanel implements Runnable, KeyListener {
         drawProjectiles(g2d);
         drawPlayer(g2d);
         
-        // Restaurar transformación para HUD (se dibuja en coordenadas de pantalla)
-        g2d.translate(camera.getOffsetX(), camera.getOffsetY());
+        // Restaurar transformación usando los mismos valores para evitar temblor del HUD
+        g2d.translate(offsetX, offsetY);
         
         // Dibujar HUD
         gameHUD.render(g2d, player);
@@ -307,10 +303,12 @@ public class GamePanel extends JPanel implements Runnable, KeyListener {
     }
     
     /**
-     * Dibuja el mapa de la ciudad.
+     * Dibuja el mapa de estacionamiento.
      */
     private void drawMap(Graphics2D g2d) {
-        cityMap.render(g2d);
+        if (mapImage != null) {
+            g2d.drawImage(mapImage, 0, 0, GameConfig.WORLD_WIDTH, GameConfig.WORLD_HEIGHT, null);
+        }
     }
     
     /**

@@ -25,7 +25,8 @@ java -jar target/atropellalo-game-1.0-SNAPSHOT.jar
 ## Estado Actual
 
 ✅ Ventana del juego (1280x720)  
-✅ Mapa de fondo más grande que la ventana (2560x1440)  
+✅ Mapa de estacionamiento rodeado por avenidas (2560x1440)  
+✅ Sin obstáculos colisionables  
 ✅ Jugador controlable (cuadrado rojo - prototipo)  
 ✅ Movimiento con WASD  
 ✅ Cámara que sigue al jugador  

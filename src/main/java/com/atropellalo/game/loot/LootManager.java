@@ -1,7 +1,6 @@
 package com.atropellalo.game.loot;
 
 import com.atropellalo.game.config.GameConfig;
-import com.atropellalo.game.map.CityMap;
 
 import java.awt.Graphics2D;
 import java.util.ArrayList;
@@ -30,9 +29,6 @@ public class LootManager {
     private int currentFuelCount;
     private int currentScrapCount;
     
-    // Referencia al mapa para spawn válido
-    private CityMap cityMap;
-    
     /**
      * Crea un nuevo gestor de loot.
      */
@@ -47,14 +43,6 @@ public class LootManager {
         
         calculateNextSpawnTimes();
         spawnInitialLoot();
-    }
-    
-    /**
-     * Establece la referencia al mapa de la ciudad para spawn válido.
-     * @param cityMap Mapa de la ciudad
-     */
-    public void setCityMap(CityMap cityMap) {
-        this.cityMap = cityMap;
     }
     
     /**
@@ -144,51 +132,21 @@ public class LootManager {
         float finalX = x + offsetX;
         float finalY = y + offsetY;
         
-        // Verificar colisión con obstáculos y ajustar si es necesario
-        if (cityMap != null && cityMap.checkCollision(finalX, finalY, GameConfig.XP_ORB_SIZE, GameConfig.XP_ORB_SIZE)) {
-            // Intentar sin offset si colisiona
-            finalX = x;
-            finalY = y;
-            
-            // Si aún colisiona, buscar posición cercana válida
-            if (cityMap.checkCollision(finalX, finalY, GameConfig.XP_ORB_SIZE, GameConfig.XP_ORB_SIZE)) {
-                for (int i = 0; i < 8; i++) {
-                    float angle = (float) (i * Math.PI / 4);
-                    float testX = x + (float) Math.cos(angle) * 30;
-                    float testY = y + (float) Math.sin(angle) * 30;
-                    if (!cityMap.checkCollision(testX, testY, GameConfig.XP_ORB_SIZE, GameConfig.XP_ORB_SIZE)) {
-                        finalX = testX;
-                        finalY = testY;
-                        break;
-                    }
-                }
-            }
-        }
+        // Sin colisiones en el estacionamiento - spawns siempre válidos
         
         xpOrbs.add(new XPOrb(finalX, finalY, xpValue));
     }
     
     /**
      * Genera un nuevo item de combustible en posición aleatoria válida.
-     * Verifica que no colisione con obstáculos si hay mapa configurado.
      */
     private void spawnFuel() {
         float x, y;
-        int attempts = 0;
-        int maxAttempts = 30;
         
-        do {
-            x = GameConfig.LOOT_SPAWN_MARGIN + 
-                random.nextFloat() * (GameConfig.WORLD_WIDTH - 2 * GameConfig.LOOT_SPAWN_MARGIN - GameConfig.FUEL_SIZE);
-            y = GameConfig.LOOT_SPAWN_MARGIN + 
-                random.nextFloat() * (GameConfig.WORLD_HEIGHT - 2 * GameConfig.LOOT_SPAWN_MARGIN - GameConfig.FUEL_SIZE);
-            attempts++;
-            
-            // Si no hay mapa o no hay colisión, posición válida
-            if (cityMap == null || !cityMap.checkCollision(x, y, GameConfig.FUEL_SIZE, GameConfig.FUEL_SIZE)) {
-                break;
-            }
-        } while (attempts < maxAttempts);
+        x = GameConfig.LOOT_SPAWN_MARGIN + 
+            random.nextFloat() * (GameConfig.WORLD_WIDTH - 2 * GameConfig.LOOT_SPAWN_MARGIN - GameConfig.FUEL_SIZE);
+        y = GameConfig.LOOT_SPAWN_MARGIN + 
+            random.nextFloat() * (GameConfig.WORLD_HEIGHT - 2 * GameConfig.LOOT_SPAWN_MARGIN - GameConfig.FUEL_SIZE);
         
         lootItems.add(new Fuel(x, y));
         currentFuelCount++;
@@ -196,25 +154,14 @@ public class LootManager {
     
     /**
      * Genera un nuevo item de chatarra en posición aleatoria válida.
-     * Verifica que no colisione con obstáculos si hay mapa configurado.
      */
     private void spawnScrap() {
         float x, y;
-        int attempts = 0;
-        int maxAttempts = 30;
         
-        do {
-            x = GameConfig.LOOT_SPAWN_MARGIN + 
-                random.nextFloat() * (GameConfig.WORLD_WIDTH - 2 * GameConfig.LOOT_SPAWN_MARGIN - GameConfig.SCRAP_SIZE);
-            y = GameConfig.LOOT_SPAWN_MARGIN + 
-                random.nextFloat() * (GameConfig.WORLD_HEIGHT - 2 * GameConfig.LOOT_SPAWN_MARGIN - GameConfig.SCRAP_SIZE);
-            attempts++;
-            
-            // Si no hay mapa o no hay colisión, posición válida
-            if (cityMap == null || !cityMap.checkCollision(x, y, GameConfig.SCRAP_SIZE, GameConfig.SCRAP_SIZE)) {
-                break;
-            }
-        } while (attempts < maxAttempts);
+        x = GameConfig.LOOT_SPAWN_MARGIN + 
+            random.nextFloat() * (GameConfig.WORLD_WIDTH - 2 * GameConfig.LOOT_SPAWN_MARGIN - GameConfig.SCRAP_SIZE);
+        y = GameConfig.LOOT_SPAWN_MARGIN + 
+            random.nextFloat() * (GameConfig.WORLD_HEIGHT - 2 * GameConfig.LOOT_SPAWN_MARGIN - GameConfig.SCRAP_SIZE);
         
         lootItems.add(new Scrap(x, y));
         currentScrapCount++;
@@ -280,13 +227,15 @@ public class LootManager {
      * @param g2d Contexto gráfico
      */
     public void render(Graphics2D g2d) {
-        // Renderizar loot normal
-        for (Loot loot : lootItems) {
+        // Renderizar loot normal (copia para evitar ConcurrentModificationException)
+        List<Loot> lootCopy = new ArrayList<>(lootItems);
+        for (Loot loot : lootCopy) {
             loot.render(g2d);
         }
         
-        // Renderizar orbes de XP
-        for (XPOrb orb : xpOrbs) {
+        // Renderizar orbes de XP (copia para evitar ConcurrentModificationException)
+        List<XPOrb> orbsCopy = new ArrayList<>(xpOrbs);
+        for (XPOrb orb : orbsCopy) {
             orb.render(g2d);
         }
     }

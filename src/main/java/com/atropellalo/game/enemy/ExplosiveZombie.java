@@ -1,22 +1,35 @@
 package com.atropellalo.game.enemy;
 
 import com.atropellalo.game.config.GameConfig;
-import com.atropellalo.game.sprite.ZombieSpriteGenerator;
+import com.atropellalo.game.sprite.Animation;
+import com.atropellalo.game.sprite.AnimationState;
 
 import java.awt.Color;
 import java.awt.Graphics2D;
+import java.awt.image.BufferedImage;
+import java.io.IOException;
 import java.util.List;
+import javax.imageio.ImageIO;
 
 /**
  * Zombie explosivo - Explota al morir, dañando al jugador y otros enemigos.
- * Representado en color naranja/rojo con advertencia visual.
+ * Usa sprite personalizado ExplosiveZombie.png.
  */
 public class ExplosiveZombie extends Enemy {
     
-    private static final Color BODY_COLOR = new Color(255, 69, 0); // Naranja rojizo
-    private static final Color BORDER_COLOR = new Color(139, 0, 0); // Rojo oscuro
-    private static final Color WARNING_COLOR = new Color(255, 255, 0); // Amarillo
+    private static final String SPRITE_PATH = "/images/ExplosiveZombie.png";
+    private static final float SPRITE_SCALE = 3.0f;
+    
+    // Colores de fallback
+    private static final Color BODY_COLOR = new Color(255, 69, 0);
+    private static final Color BORDER_COLOR = new Color(139, 0, 0);
+    private static final Color WARNING_COLOR = new Color(255, 255, 0);
     private static final Color EYE_COLOR = Color.WHITE;
+    
+    // Sprite compartido para todos los ExplosiveZombies
+    private static BufferedImage sprite = null;
+    private static int spriteWidth = 0;
+    private static int spriteHeight = 0;
     
     private boolean exploded;
     private float explosionTimer;
@@ -62,8 +75,37 @@ public class ExplosiveZombie extends Enemy {
         this.exploded = false;
         this.explosionTimer = 0;
         
-        // Cargar animaciones del zombie explosivo
-        this.animations = ZombieSpriteGenerator.generateExplosiveZombieAnimations();
+        loadSprite();
+        initializeAnimations();
+    }
+    
+    /**
+     * Carga el sprite desde recursos (lazy loading).
+     */
+    private void loadSprite() {
+        if (sprite == null) {
+            try {
+                sprite = ImageIO.read(getClass().getResourceAsStream(SPRITE_PATH));
+                if (sprite != null) {
+                    spriteWidth = sprite.getWidth();
+                    spriteHeight = sprite.getHeight();
+                }
+            } catch (IOException e) {
+                System.err.println("Error cargando " + SPRITE_PATH + ": " + e.getMessage());
+            }
+        }
+    }
+    
+    /**
+     * Inicializa las animaciones con el sprite cargado.
+     */
+    private void initializeAnimations() {
+        if (sprite != null) {
+            this.animations = new java.util.HashMap<>();
+            this.animations.put(AnimationState.IDLE, new Animation(sprite));
+            this.animations.put(AnimationState.MOVING, new Animation(sprite));
+            this.animations.put(AnimationState.DEATH, new Animation(sprite));
+        }
     }
     
     /**
@@ -145,36 +187,50 @@ public class ExplosiveZombie extends Enemy {
         int px = (int) x;
         int py = (int) y;
         
-        // Si explotó, mostrar efecto de explosión
         if (exploded) {
             renderExplosionEffect(g2d, px, py);
             return;
         }
         
-        // Calcular escala para ajustar el sprite al tamaño del enemigo
-        float scale = (float) size / ZombieSpriteGenerator.EXPLOSIVE_WIDTH;
-        
-        // Intentar renderizar con animación
         if (animations != null && !animations.isEmpty()) {
+            float scale = calculateScale();
             renderWithAnimation(g2d, scale);
             
-            // Barra de vida
             if (health < maxHealth) {
                 renderHealthBar(g2d);
             }
         } else {
-            // Fallback al render original
             renderFallback(g2d, px, py);
         }
     }
     
     /**
-     * Renderizado de respaldo cuando no hay animaciones.
+     * Calcula el factor de escala del sprite.
+     * @return Factor de escala
+     */
+    private float calculateScale() {
+        return (spriteWidth > 0) ? ((float) size / spriteWidth) * SPRITE_SCALE : SPRITE_SCALE;
+    }
+    
+    /**
+     * Renderizado con animación sin rotación.
+     * El sprite se mantiene siempre en la misma orientación.
+     */
+    @Override
+    protected void renderWithAnimation(Graphics2D g2d, float scale) {
+        if (animations != null && animations.containsKey(currentAnimState)) {
+            Animation anim = animations.get(currentAnimState);
+            if (anim.getCurrentFrame() != null) {
+                anim.renderScaled(g2d, getCenterX(), getCenterY(), scale);
+            }
+        }
+    }
+    
+    /**
+     * Renderizado de respaldo cuando no hay sprite disponible.
      */
     private void renderFallback(Graphics2D g2d, int px, int py) {
-        if (!alive) {
-            return;
-        }
+        if (!alive) return;
         
         // Cuerpo principal (triangular para verse peligroso)
         g2d.setColor(BODY_COLOR);

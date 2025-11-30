@@ -7,12 +7,47 @@ import java.awt.Color;
 import java.awt.Font;
 import java.awt.Graphics2D;
 import java.awt.RenderingHints;
+import java.awt.image.BufferedImage;
+import java.io.IOException;
+import javax.imageio.ImageIO;
 
 /**
  * Heads-Up Display (HUD) del juego.
  * Muestra información vital del jugador: salud, combustible, XP y nivel.
  */
 public class GameHUD {
+    
+    private static final String HUD_SPRITE_PATH = "/images/HUD.png";
+    private static BufferedImage hudSprite = null;
+    
+    // Posiciones y dimensiones del HUD y las barras
+    private static final int HUD_X = 20;
+    private static final int HUD_Y = 20;
+    private static final float HUD_SCALE = 0.3f;
+    
+    // Escala independiente para las barras dinámicas
+    private static final float BAR_SCALE = 0.5f;
+    
+    // Coordenadas relativas de las barras dentro del HUD (en píxeles de la imagen original)
+    private static final int HEALTH_BAR_X = 145;
+    private static final int HEALTH_BAR_Y = 170;
+    private static final int HEALTH_BAR_WIDTH = 328;
+    private static final int HEALTH_BAR_HEIGHT = 40;
+    
+    private static final int FUEL_BAR_X = 157;
+    private static final int FUEL_BAR_Y = 296;
+    private static final int FUEL_BAR_WIDTH = 319;
+    private static final int FUEL_BAR_HEIGHT = 40;
+    
+    private static final int LEVEL_BAR_X = 145;
+    private static final int LEVEL_BAR_Y = 420;
+    private static final int LEVEL_BAR_WIDTH = 320;
+    private static final int LEVEL_BAR_HEIGHT = 40;
+    
+    // Colores para las barras dinámicas
+    private static final Color HEALTH_BAR_COLOR = new Color(139, 37, 37, 220);
+    private static final Color FUEL_BAR_COLOR = new Color(139, 90, 43, 220);
+    private static final Color LEVEL_BAR_COLOR = new Color(100, 100, 100, 220);
     
     // Colores para la barra de salud
     private static final Color HEALTH_BAR_BG = new Color(60, 60, 60, 200);
@@ -69,6 +104,20 @@ public class GameHUD {
         this.screenWidth = screenWidth;
         this.screenHeight = screenHeight;
         this.restartCallback = null;
+        loadHudSprite();
+    }
+    
+    /**
+     * Carga el sprite del HUD desde el archivo.
+     */
+    private void loadHudSprite() {
+        if (hudSprite == null) {
+            try {
+                hudSprite = ImageIO.read(getClass().getResourceAsStream(HUD_SPRITE_PATH));
+            } catch (IOException e) {
+                System.err.println("Error cargando " + HUD_SPRITE_PATH + ": " + e.getMessage());
+            }
+        }
     }
     
     /**
@@ -100,9 +149,22 @@ public class GameHUD {
         g2d.setRenderingHint(RenderingHints.KEY_TEXT_ANTIALIASING, 
                             RenderingHints.VALUE_TEXT_ANTIALIAS_ON);
         
-        renderHealthBar(g2d, player);
-        renderFuelBar(g2d, player);
-        renderXPBar(g2d, player);
+        // Dibujar el sprite del HUD como base
+        if (hudSprite != null) {
+            int scaledWidth = (int) (hudSprite.getWidth() * HUD_SCALE);
+            int scaledHeight = (int) (hudSprite.getHeight() * HUD_SCALE);
+            g2d.drawImage(hudSprite, HUD_X, HUD_Y, scaledWidth, scaledHeight, null);
+            
+            // Dibujar las barras dinámicas encima
+            renderHealthBar(g2d, player);
+            renderFuelBar(g2d, player);
+            renderLevelBar(g2d, player);
+        } else {
+            // Fallback al HUD antiguo si no se puede cargar el sprite
+            renderHealthBarOld(g2d, player);
+            renderFuelBarOld(g2d, player);
+            renderXPBarOld(g2d, player);
+        }
         
         // Mostrar Game Over si el jugador murió
         if (!player.isAlive()) {
@@ -116,9 +178,66 @@ public class GameHUD {
     }
     
     /**
-     * Renderiza la barra de salud.
+     * Renderiza la barra de salud sobre el HUD sprite.
      */
     private void renderHealthBar(Graphics2D g2d, Player player) {
+        float healthPercent = player.getHealth() / player.getMaxHealth();
+        
+        int scaledX = (int) (HEALTH_BAR_X * BAR_SCALE);
+        int scaledY = (int) (HEALTH_BAR_Y * BAR_SCALE);
+        int scaledWidth = (int) (HEALTH_BAR_WIDTH * BAR_SCALE);
+        int scaledHeight = (int) (HEALTH_BAR_HEIGHT * BAR_SCALE);
+        
+        int barWidth = (int) (healthPercent * scaledWidth);
+        
+        if (barWidth > 0) {
+            g2d.setColor(HEALTH_BAR_COLOR);
+            g2d.fillRect(HUD_X + scaledX, HUD_Y + scaledY, barWidth, scaledHeight);
+        }
+    }
+    
+    /**
+     * Renderiza la barra de combustible sobre el HUD sprite.
+     */
+    private void renderFuelBar(Graphics2D g2d, Player player) {
+        float fuelPercent = player.getFuel() / player.getMaxFuel();
+        
+        int scaledX = (int) (FUEL_BAR_X * BAR_SCALE);
+        int scaledY = (int) (FUEL_BAR_Y * BAR_SCALE);
+        int scaledWidth = (int) (FUEL_BAR_WIDTH * BAR_SCALE);
+        int scaledHeight = (int) (FUEL_BAR_HEIGHT * BAR_SCALE);
+        
+        int barWidth = (int) (fuelPercent * scaledWidth);
+        
+        if (barWidth > 0) {
+            g2d.setColor(FUEL_BAR_COLOR);
+            g2d.fillRect(HUD_X + scaledX, HUD_Y + scaledY, barWidth, scaledHeight);
+        }
+    }
+    
+    /**
+     * Renderiza la barra de nivel sobre el HUD sprite.
+     */
+    private void renderLevelBar(Graphics2D g2d, Player player) {
+        float xpPercent = player.getXPProgress();
+        
+        int scaledX = (int) (LEVEL_BAR_X * BAR_SCALE);
+        int scaledY = (int) (LEVEL_BAR_Y * BAR_SCALE);
+        int scaledWidth = (int) (LEVEL_BAR_WIDTH * BAR_SCALE);
+        int scaledHeight = (int) (LEVEL_BAR_HEIGHT * BAR_SCALE);
+        
+        int barWidth = (int) (xpPercent * scaledWidth);
+        
+        if (barWidth > 0) {
+            g2d.setColor(LEVEL_BAR_COLOR);
+            g2d.fillRect(HUD_X + scaledX, HUD_Y + scaledY, barWidth, scaledHeight);
+        }
+    }
+    
+    /**
+     * Renderiza la barra de salud (versión antigua, fallback).
+     */
+    private void renderHealthBarOld(Graphics2D g2d, Player player) {
         int x = GameConfig.HUD_MARGIN;
         int y = GameConfig.HUD_MARGIN;
         
@@ -150,9 +269,9 @@ public class GameHUD {
     }
     
     /**
-     * Renderiza la barra de combustible.
+     * Renderiza la barra de combustible (versión antigua, fallback).
      */
-    private void renderFuelBar(Graphics2D g2d, Player player) {
+    private void renderFuelBarOld(Graphics2D g2d, Player player) {
         int x = GameConfig.HUD_MARGIN;
         int y = GameConfig.HUD_MARGIN + GameConfig.HUD_BAR_HEIGHT + GameConfig.HUD_SPACING + 15;
         
@@ -191,9 +310,9 @@ public class GameHUD {
     }
     
     /**
-     * Renderiza la barra de experiencia y nivel.
+     * Renderiza la barra de experiencia y nivel (versión antigua, fallback).
      */
-    private void renderXPBar(Graphics2D g2d, Player player) {
+    private void renderXPBarOld(Graphics2D g2d, Player player) {
         int x = GameConfig.HUD_MARGIN;
         int y = GameConfig.HUD_MARGIN + (GameConfig.HUD_BAR_HEIGHT + GameConfig.HUD_SPACING + 15) * 2;
         

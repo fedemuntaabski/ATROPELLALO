@@ -610,7 +610,40 @@ Genera iconos estándar 48x48 píxeles para cada tipo de mejora.
 
 ## Mapa Urbano
 
-### CityMap.java
+### Diseño Actual: Estacionamiento
+El mapa consiste en un gran estacionamiento rodeado por cuatro avenidas principales, sin obstáculos colisionables.
+
+**Características**:
+- **Área central**: Gran estacionamiento de asfalto (2320x1200 px)
+- **Avenidas**: 4 calles perimetrales de 120px de ancho cada una
+- **Sin colisiones**: Todo el espacio es transitable
+- **Dimensiones totales**: 2560x1440 píxeles
+
+**Elementos visuales**:
+- Líneas amarillas de estacionamiento (80x120 px por espacio)
+- Líneas blancas punteadas en las avenidas
+- Veredas grises en los bordes
+- Textura de asfalto con manchas de desgaste
+
+**Paleta de colores**:
+- Asfalto estacionamiento: RGB(45, 45, 45)
+- Asfalto avenidas: RGB(35, 35, 35)
+- Líneas viales: RGB(255, 255, 255)
+- Líneas estacionamiento: RGB(200, 200, 50)
+- Veredas: RGB(160, 160, 160)
+
+### MapGenerator.java
+**Ubicación**: `com.atropellalo.game.util.MapGenerator`
+
+Genera la imagen del mapa proceduralmente.
+
+**Métodos principales**:
+- `drawParkingLot()`: Dibuja área central de estacionamiento
+- `drawAvenues()`: Dibuja 4 avenidas perimetrales con líneas
+- `drawParkingLines()`: Dibuja líneas de demarcación de espacios
+- `addAsphaltTexture()`: Agrega manchas para textura realista
+
+### CityMap.java (Deshabilitado)
 **Ubicación**: `com.atropellalo.game.map.CityMap`
 
 Mapa de ciudad generado proceduralmente.

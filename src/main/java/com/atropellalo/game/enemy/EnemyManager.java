@@ -3,7 +3,6 @@ package com.atropellalo.game.enemy;
 import com.atropellalo.game.config.GameConfig;
 import com.atropellalo.game.entity.Player;
 import com.atropellalo.game.loot.LootManager;
-import com.atropellalo.game.map.CityMap;
 
 import java.awt.Color;
 import java.awt.Font;
@@ -46,9 +45,6 @@ public class EnemyManager implements ExplosiveZombie.ExplosionCallback,
     // Referencia al LootManager para generar XP orbs
     private LootManager lootManager;
     
-    // Referencia al mapa para spawn válido
-    private CityMap cityMap;
-    
     // Estadísticas
     private int totalKills;
     
@@ -82,14 +78,6 @@ public class EnemyManager implements ExplosiveZombie.ExplosionCallback,
      */
     public void setLootManager(LootManager lootManager) {
         this.lootManager = lootManager;
-    }
-    
-    /**
-     * Establece la referencia al mapa de la ciudad para spawn válido.
-     * @param cityMap Mapa de la ciudad
-     */
-    public void setCityMap(CityMap cityMap) {
-        this.cityMap = cityMap;
     }
     
     /**
@@ -214,11 +202,6 @@ public class EnemyManager implements ExplosiveZombie.ExplosionCallback,
                 continue;
             }
             
-            // Verificar colisión con obstáculos si hay mapa configurado
-            if (cityMap != null && cityMap.checkCollision(x - 15, y - 15, 30, 30)) {
-                continue;
-            }
-            
             break;
         } while (attempts < maxAttempts);
         
@@ -248,11 +231,6 @@ public class EnemyManager implements ExplosiveZombie.ExplosionCallback,
                 continue;
             }
             
-            // Verificar colisión con obstáculos si hay mapa configurado (jefes son más grandes)
-            if (cityMap != null && cityMap.checkCollision(x - 35, y - 35, 70, 70)) {
-                continue;
-            }
-            
             break;
         } while (attempts < maxAttempts);
         
@@ -267,11 +245,6 @@ public class EnemyManager implements ExplosiveZombie.ExplosionCallback,
             infector.setDamageCallback(this);
             boss = infector;
             LOGGER.info("¡El Infectador ha aparecido en (" + (int)x + ", " + (int)y + ")!");
-        }
-        
-        // Configurar verificador de colisiones para el jefe
-        if (cityMap != null) {
-            boss.setCollisionChecker((ex, ey, ew, eh) -> cityMap.checkCollision(ex, ey, ew, eh));
         }
         
         currentBoss = boss;
@@ -374,11 +347,6 @@ public class EnemyManager implements ExplosiveZombie.ExplosionCallback,
                 enemy = new FastZombie(x, y, healthScale, speedScale, damageScale);
         }
         
-        // Configurar verificador de colisiones si hay mapa
-        if (cityMap != null) {
-            enemy.setCollisionChecker((ex, ey, ew, eh) -> cityMap.checkCollision(ex, ey, ew, eh));
-        }
-        
         return enemy;
     }
     
@@ -462,20 +430,8 @@ public class EnemyManager implements ExplosiveZombie.ExplosionCallback,
             x = Math.max(20, Math.min(x, GameConfig.WORLD_WIDTH - 20));
             y = Math.max(20, Math.min(y, GameConfig.WORLD_HEIGHT - 20));
             
-            // Verificar colisión con edificios
-            if (cityMap != null && cityMap.checkCollision(x - 10, y - 10, 20, 20)) {
-                // Intentar spawn en la posición original
-                x = spawnX;
-                y = spawnY;
-            }
-            
             // Crear zombie rápido con stats reducidos
             FastZombie spawn = new FastZombie(x, y, healthScale, 1.0f, damageScale);
-            
-            // Configurar colisiones
-            if (cityMap != null) {
-                spawn.setCollisionChecker((ex, ey, ew, eh) -> cityMap.checkCollision(ex, ey, ew, eh));
-            }
             
             spawnedEnemies.add(spawn);
             enemies.add(spawn);
@@ -598,8 +554,9 @@ public class EnemyManager implements ExplosiveZombie.ExplosionCallback,
         // Renderizar proyectiles y charcos de los Spitters (debajo de los enemigos)
         SpitterZombie.renderProjectilesAndPuddles(g2d);
         
-        // Renderizar enemigos
-        for (Enemy enemy : enemies) {
+        // Renderizar enemigos (copia para evitar ConcurrentModificationException)
+        List<Enemy> enemiesCopy = new ArrayList<>(enemies);
+        for (Enemy enemy : enemiesCopy) {
             enemy.render(g2d);
         }
     }

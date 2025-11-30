@@ -4,12 +4,21 @@ import com.atropellalo.game.config.GameConfig;
 
 import java.awt.Color;
 import java.awt.Graphics2D;
+import java.awt.image.BufferedImage;
+import java.io.IOException;
+import javax.imageio.ImageIO;
 
 /**
  * Item de loot de chatarra.
  * Restaura la salud del jugador al ser recolectado.
  */
 public class Scrap extends Loot {
+    
+    private static final String SPRITE_PATH = "/images/Scrap.png";
+    private static final float SPRITE_SCALE = 0.05f;
+    private static BufferedImage sprite = null;
+    private static int spriteWidth = 0;
+    private static int spriteHeight = 0;
     
     private static final Color SCRAP_COLOR = new Color(128, 128, 128); // Gris
     private static final Color SCRAP_DARK = new Color(80, 80, 80); // Gris oscuro
@@ -23,6 +32,35 @@ public class Scrap extends Loot {
      */
     public Scrap(float x, float y) {
         super(x, y, GameConfig.SCRAP_SIZE);
+        loadSprite();
+    }
+    
+    /**
+     * Carga el sprite de chatarra desde el archivo.
+     */
+    private void loadSprite() {
+        if (sprite == null) {
+            try {
+                sprite = ImageIO.read(getClass().getResourceAsStream(SPRITE_PATH));
+                if (sprite != null) {
+                    spriteWidth = sprite.getWidth();
+                    spriteHeight = sprite.getHeight();
+                }
+            } catch (IOException e) {
+                System.err.println("Error cargando " + SPRITE_PATH + ": " + e.getMessage());
+            }
+        }
+    }
+    
+    /**
+     * Calcula el tamaño de renderizado del sprite.
+     */
+    private int calculateScale() {
+        if (sprite == null || spriteWidth == 0 || spriteHeight == 0) {
+            return size;
+        }
+        int maxDimension = Math.max(spriteWidth, spriteHeight);
+        return (int) (maxDimension * SPRITE_SCALE);
     }
     
     @Override
@@ -31,6 +69,20 @@ public class Scrap extends Loot {
             return;
         }
         
+        if (sprite != null) {
+            int scale = calculateScale();
+            int drawX = (int) (x - scale / 2);
+            int drawY = (int) (y - scale / 2);
+            g2d.drawImage(sprite, drawX, drawY, scale, scale, null);
+        } else {
+            renderFallback(g2d);
+        }
+    }
+    
+    /**
+     * Renderiza el sprite de chatarra usando gráficos procedurales como fallback.
+     */
+    private void renderFallback(Graphics2D g2d) {
         int px = (int) x;
         int py = (int) y;
         

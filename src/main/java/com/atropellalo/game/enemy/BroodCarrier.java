@@ -157,8 +157,7 @@ public class BroodCarrier extends Enemy {
         float oldY = y;
         
         // Moverse hacia el jugador usando pathfinding
-        updatePath(deltaTime, playerX, playerY);
-        moveTowardsWithAStar(playerX, playerY, deltaTime);
+        moveTowardsDirect(playerX, playerY, deltaTime);
         
         // Verificar colisiones
         if (collisionChecker != null && collisionChecker.checkCollision(x, y, size, size)) {

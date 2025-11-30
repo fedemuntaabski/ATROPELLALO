@@ -6,10 +6,14 @@ import com.atropellalo.game.enemy.Enemy;
 import java.awt.BasicStroke;
 import java.awt.Color;
 import java.awt.Graphics2D;
+import java.awt.geom.AffineTransform;
 import java.awt.geom.Line2D;
+import java.awt.image.BufferedImage;
+import java.io.IOException;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
+import javax.imageio.ImageIO;
 
 /**
  * Proyectil penetrante que atraviesa múltiples enemigos.
@@ -21,6 +25,12 @@ import java.util.Set;
  * - Se renderiza como un proyectil rápido con estela corta
  */
 public class PenetratingProjectile extends Projectile {
+    
+    private static final String SPRITE_PATH = "/images/Bullet.png";
+    private static final float SPRITE_SCALE = 0.04f;
+    private static BufferedImage sprite = null;
+    private static int spriteWidth = 0;
+    private static int spriteHeight = 0;
     
     /** Cantidad máxima de enemigos que puede atravesar */
     private int maxPenetration;
@@ -70,6 +80,35 @@ public class PenetratingProjectile extends Projectile {
         this.prevY = startY;
         this.bulletWidth = GameConfig.SNIPER_RAY_WIDTH;
         this.trailTimer = 0;
+        loadSprite();
+    }
+    
+    /**
+     * Carga el sprite de la bala desde el archivo.
+     */
+    private void loadSprite() {
+        if (sprite == null) {
+            try {
+                sprite = ImageIO.read(getClass().getResourceAsStream(SPRITE_PATH));
+                if (sprite != null) {
+                    spriteWidth = sprite.getWidth();
+                    spriteHeight = sprite.getHeight();
+                }
+            } catch (IOException e) {
+                System.err.println("Error cargando " + SPRITE_PATH + ": " + e.getMessage());
+            }
+        }
+    }
+    
+    /**
+     * Calcula el tamaño de renderizado del sprite.
+     */
+    private int calculateScale() {
+        if (sprite == null || spriteWidth == 0 || spriteHeight == 0) {
+            return (int) bulletWidth;
+        }
+        int maxDimension = Math.max(spriteWidth, spriteHeight);
+        return (int) (maxDimension * SPRITE_SCALE);
     }
     
     @Override
@@ -143,6 +182,54 @@ public class PenetratingProjectile extends Projectile {
         float currentX = getX();
         float currentY = getY();
         
+        if (sprite != null) {
+            // Calcular dirección para la estela y rotación
+            float dx = currentX - prevX;
+            float dy = currentY - prevY;
+            float dist = (float) Math.sqrt(dx * dx + dy * dy);
+            
+            Graphics2D g2dCopy = (Graphics2D) g2d.create();
+            
+            if (dist > 0) {
+                // Normalizar y calcular punto de inicio de estela
+                float trailStartX = currentX - (dx / dist) * TRAIL_LENGTH;
+                float trailStartY = currentY - (dy / dist) * TRAIL_LENGTH;
+                
+                // Estela (línea fina que se desvanece)
+                g2dCopy.setColor(TRAIL_COLOR);
+                g2dCopy.setStroke(new BasicStroke(2f, BasicStroke.CAP_ROUND, BasicStroke.JOIN_ROUND));
+                g2dCopy.draw(new Line2D.Float(trailStartX, trailStartY, currentX, currentY));
+            }
+            
+            // Renderizar el sprite de la bala
+            int scale = calculateScale();
+            int drawX = (int) (currentX - scale / 2);
+            int drawY = (int) (currentY - scale / 2);
+            
+            // Calcular ángulo de rotación basado en la velocidad
+            double angle = Math.atan2(dy, dx) + Math.PI / 2;
+            
+            // Guardar transformación original
+            AffineTransform oldTransform = g2dCopy.getTransform();
+            
+            // Rotar el contexto gráfico
+            g2dCopy.rotate(angle, currentX, currentY);
+            
+            // Dibujar la bala rotada
+            g2dCopy.drawImage(sprite, drawX, drawY, scale, scale, null);
+            
+            // Restaurar transformación
+            g2dCopy.setTransform(oldTransform);
+            g2dCopy.dispose();
+        } else {
+            renderFallback(g2d, currentX, currentY);
+        }
+    }
+    
+    /**
+     * Renderiza el proyectil usando gráficos procedurales como fallback.
+     */
+    private void renderFallback(Graphics2D g2d, float currentX, float currentY) {
         Graphics2D g2dCopy = (Graphics2D) g2d.create();
         
         // Calcular dirección para la estela

@@ -3,17 +3,28 @@ package com.atropellalo.game.entity;
 import com.atropellalo.game.config.GameConfig;
 import com.atropellalo.game.sprite.Animation;
 import com.atropellalo.game.sprite.AnimationState;
-import com.atropellalo.game.sprite.TruckSpriteGenerator;
 
 import java.awt.Color;
 import java.awt.Graphics2D;
+import java.awt.image.BufferedImage;
+import java.io.IOException;
 import java.util.Map;
+import javax.imageio.ImageIO;
 
 /**
  * Representa al jugador en el juego.
  * Gestiona posición, movimiento, salud, combustible y experiencia.
+ * Usa sprite personalizado Player.png.
  */
 public class Player {
+    
+    private static final String SPRITE_PATH = "/images/Player.png";
+    private static final float SPRITE_SCALE = 4.5f;
+    
+    // Sprite compartido
+    private static BufferedImage sprite = null;
+    private static int spriteWidth = 0;
+    private static int spriteHeight = 0;
     
     private float x;
     private float y;
@@ -103,10 +114,39 @@ public class Player {
         this.isMoving = false;
         this.isAlive = true;
         
-        // Inicializar sistema de animaciones
-        this.animations = TruckSpriteGenerator.generateAllAnimations();
+        loadSprite();
+        initializeAnimations();
         this.currentAnimState = AnimationState.IDLE;
         this.rotation = 0; // Mirando hacia arriba por defecto
+    }
+    
+    /**
+     * Carga el sprite desde recursos (lazy loading).
+     */
+    private void loadSprite() {
+        if (sprite == null) {
+            try {
+                sprite = ImageIO.read(getClass().getResourceAsStream(SPRITE_PATH));
+                if (sprite != null) {
+                    spriteWidth = sprite.getWidth();
+                    spriteHeight = sprite.getHeight();
+                }
+            } catch (IOException e) {
+                System.err.println("Error cargando " + SPRITE_PATH + ": " + e.getMessage());
+            }
+        }
+    }
+    
+    /**
+     * Inicializa las animaciones con el sprite cargado.
+     */
+    private void initializeAnimations() {
+        if (sprite != null) {
+            this.animations = new java.util.HashMap<>();
+            this.animations.put(AnimationState.IDLE, new Animation(sprite));
+            this.animations.put(AnimationState.MOVING, new Animation(sprite));
+            this.animations.put(AnimationState.DEATH, new Animation(sprite));
+        }
     }
     
     /**
@@ -202,21 +242,16 @@ public class Player {
         Animation currentAnim = animations.get(currentAnimState);
         
         if (currentAnim != null && currentAnim.getCurrentFrame() != null) {
-            // Calcular posición centrada del sprite
-            int spriteWidth = TruckSpriteGenerator.SPRITE_WIDTH;
-            int spriteHeight = TruckSpriteGenerator.SPRITE_HEIGHT;
+            // Calcular escala del sprite
+            float scale = calculateScale();
             
-            // Escalar el sprite al tamaño del jugador
-            float scale = (float) GameConfig.PLAYER_SIZE / Math.max(spriteWidth, spriteHeight);
-            
-            // Renderizar sprite con rotación
+            // Renderizar sprite con rotación (el sprite mantiene rotación)
             currentAnim.renderScaled(g2d, 
                                      x + GameConfig.PLAYER_SIZE / 2f, 
                                      y + GameConfig.PLAYER_SIZE / 2f, 
                                      rotation, 
                                      scale);
         } else {
-            // Fallback: renderizado simple si no hay sprite
             renderFallback(g2d);
         }
         
@@ -228,6 +263,18 @@ public class Player {
             g2d.setColor(Color.RED);
             g2d.drawString("X", (int)x + GameConfig.PLAYER_SIZE / 2 - 4, (int)y - 5);
         }
+    }
+    
+    /**
+     * Calcula el factor de escala del sprite.
+     * @return Factor de escala
+     */
+    private float calculateScale() {
+        if (spriteWidth > 0 && spriteHeight > 0) {
+            float maxDimension = Math.max(spriteWidth, spriteHeight);
+            return ((float) GameConfig.PLAYER_SIZE / maxDimension) * SPRITE_SCALE;
+        }
+        return SPRITE_SCALE;
     }
     
     /**

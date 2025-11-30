@@ -159,9 +159,8 @@ public class BufferZombie extends Enemy {
             }
         }
         
-        // Moverse usando pathfinding
-        updatePath(deltaTime, targetX, targetY);
-        moveTowardsWithAStar(targetX, targetY, deltaTime);
+        // Moverse directamente hacia el objetivo
+        moveTowardsDirect(targetX, targetY, deltaTime);
         
         // Verificar colisiones
         if (collisionChecker != null && collisionChecker.checkCollision(x, y, size, size)) {
