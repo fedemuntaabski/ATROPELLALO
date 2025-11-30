@@ -15,10 +15,8 @@ com\atropellalo\game\entity\Player$CollisionCallback.class
 com\atropellalo\game\loot\LootManager.class
 com\atropellalo\game\loot\LootType.class
 com\atropellalo\game\upgrade\UpgradeManager.class
-com\atropellalo\game\enemy\BruiserBoss$1.class
 com\atropellalo\game\enemy\InfectorBoss$BossState.class
 com\atropellalo\game\loot\XPOrb.class
-com\atropellalo\game\sprite\BossSpriteGenerator$1.class
 com\atropellalo\game\sprite\ZombieSpriteGenerator.class
 com\atropellalo\game\sprite\UpgradeIconGenerator.class
 com\atropellalo\game\weapon\Pistol.class
@@ -71,6 +69,4 @@ com\atropellalo\game\upgrade\UpgradeOption.class
 com\atropellalo\game\enemy\EnemyManager$1.class
 com\atropellalo\game\enemy\Enemy.class
 com\atropellalo\game\enemy\EnemyManager.class
-com\atropellalo\game\enemy\InfectorBoss$1.class
-com\atropellalo\game\weapon\CircularSaw.class
 com\atropellalo\game\upgrade\UpgradeManager$1.class

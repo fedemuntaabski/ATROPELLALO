@@ -9,8 +9,8 @@ import java.util.List;
 
 /**
  * Ametralladora ligera con alta cadencia de fuego y bajo daño.
- * Dispara automáticamente al enemigo más cercano.
- * Proyectiles múltiples van TODOS en la misma dirección.
+ * Dispara automáticamente a los enemigos más cercanos.
+ * Con mejoras de multi-target, dispara a múltiples enemigos simultáneamente.
  */
 public class LightMachineGun extends Weapon {
     
@@ -38,17 +38,18 @@ public class LightMachineGun extends Weapon {
             return projectiles;
         }
         
-        Enemy target = findClosestEnemy(playerX, playerY, enemies);
+        // Buscar los N enemigos más cercanos según targetCount
+        List<Enemy> targets = findClosestEnemies(playerX, playerY, enemies, targetCount);
         
-        if (target == null) {
+        if (targets.isEmpty()) {
             return projectiles;
         }
         
-        float targetX = target.getCenterX();
-        float targetY = target.getCenterY();
-        
-        // Todos los proyectiles van en la MISMA dirección (sin spread)
-        for (int i = 0; i < projectileCount; i++) {
+        // Crear un proyectil por cada objetivo
+        for (Enemy target : targets) {
+            float targetX = target.getCenterX();
+            float targetY = target.getCenterY();
+            
             Projectile projectile = new Projectile(
                 playerX, playerY,
                 targetX, targetY,

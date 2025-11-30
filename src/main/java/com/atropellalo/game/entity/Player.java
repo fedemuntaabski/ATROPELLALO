@@ -183,7 +183,7 @@ public class Player {
         }
         
         // Determinar estado de animación
-        AnimationState newState = isMoving && fuel > 0 ? AnimationState.MOVING : AnimationState.IDLE;
+        AnimationState newState = isMoving ? AnimationState.MOVING : AnimationState.IDLE;
         if (newState != currentAnimState && currentAnimState != AnimationState.DEATH) {
             currentAnimState = newState;
             animations.get(currentAnimState).reset();
@@ -192,13 +192,16 @@ public class Player {
         // Actualizar animación actual
         animations.get(currentAnimState).update(deltaTime);
         
-        // Consumir combustible si se está moviendo y hay combustible
+        // Consumir combustible solo si hay y se está moviendo
         if (isMoving && fuel > 0) {
             fuel -= GameConfig.FUEL_CONSUMPTION_RATE * deltaTime;
             if (fuel < 0) {
                 fuel = 0;
             }
-            
+        }
+        
+        // El jugador puede moverse siempre (con o sin combustible)
+        if (isMoving) {
             // Calcular nueva posición
             float newX = x + velocityX * deltaTime;
             float newY = y + velocityY * deltaTime;
@@ -299,20 +302,19 @@ public class Player {
     
     /**
      * Establece la velocidad del jugador basado en input.
+     * Si no hay combustible, la velocidad se reduce según NO_FUEL_SPEED_PENALTY.
      * @param moveX Dirección horizontal (-1, 0, 1)
      * @param moveY Dirección vertical (-1, 0, 1)
      */
     public void setMovement(int moveX, int moveY) {
-        // No puede moverse sin combustible
+        // Calcular velocidad efectiva (reducida si no hay combustible)
+        float effectiveSpeed = speed;
         if (fuel <= 0) {
-            velocityX = 0;
-            velocityY = 0;
-            isMoving = false;
-            return;
+            effectiveSpeed = speed * (1.0f - GameConfig.NO_FUEL_SPEED_PENALTY);
         }
         
-        velocityX = moveX * speed;
-        velocityY = moveY * speed;
+        velocityX = moveX * effectiveSpeed;
+        velocityY = moveY * effectiveSpeed;
         
         // Normalizar velocidad diagonal
         if (moveX != 0 && moveY != 0) {

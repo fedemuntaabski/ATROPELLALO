@@ -27,6 +27,7 @@ public class Flamethrower extends Weapon {
     private float aimAngle;
     private boolean active;
     private final Random random;
+    private float coneAngle; // Ángulo del cono (modificable con mejoras)
     
     // Partículas de fuego para efecto visual
     private final List<FlameParticle> particles;
@@ -48,6 +49,7 @@ public class Flamethrower extends Weapon {
         this.active = false;
         this.random = new Random();
         this.particles = new ArrayList<>();
+        this.coneAngle = GameConfig.FLAMETHROWER_CONE_ANGLE;
     }
     
     @Override
@@ -94,11 +96,12 @@ public class Flamethrower extends Weapon {
         // Actualizar timer de tick
         tickTimer += deltaTime;
         
+        // Aplicar daño en cada tick (fireDelay = tick rate)
         if (tickTimer >= fireDelay) {
             tickTimer = 0;
             
-            // Dañar a todos los enemigos en el cono
-            float halfCone = (float) Math.toRadians(GameConfig.FLAMETHROWER_CONE_ANGLE / 2);
+            // Dañar a TODOS los enemigos dentro del cono
+            float halfCone = (float) Math.toRadians(coneAngle / 2);
             
             for (Enemy enemy : enemies) {
                 if (!enemy.isAlive()) {
@@ -109,6 +112,7 @@ public class Flamethrower extends Weapon {
                 float edy = enemy.getCenterY() - playerY;
                 float distance = (float) Math.sqrt(edx * edx + edy * edy);
                 
+                // Verificar si está dentro del rango
                 if (distance > range) {
                     continue;
                 }
@@ -118,9 +122,10 @@ public class Flamethrower extends Weapon {
                 float angleDiff = Math.abs(normalizeAngle(enemyAngle - aimAngle));
                 
                 if (angleDiff <= halfCone) {
-                    // Daño que disminuye con la distancia
-                    float damageMultiplier = 1.0f - (distance / range) * 0.3f;
-                    enemy.takeDamage(damage * damageMultiplier * fireDelay);
+                    // Daño base que disminuye ligeramente con la distancia
+                    float damageMultiplier = 1.0f - (distance / range) * 0.2f;
+                    float finalDamage = damage * damageMultiplier;
+                    enemy.takeDamage(finalDamage);
                 }
             }
         }
@@ -133,7 +138,7 @@ public class Flamethrower extends Weapon {
         }
         
         // Dibujar cono de fuego
-        float halfCone = GameConfig.FLAMETHROWER_CONE_ANGLE / 2;
+        float halfCone = coneAngle / 2;
         float startAngle = (float) Math.toDegrees(-aimAngle) - halfCone;
         
         // Múltiples capas de fuego con diferentes transparencias
@@ -147,7 +152,7 @@ public class Flamethrower extends Weapon {
                 layerRange * 2,
                 layerRange * 2,
                 startAngle,
-                GameConfig.FLAMETHROWER_CONE_ANGLE,
+                coneAngle,
                 Arc2D.PIE
             );
             g2d.fill(arc);
@@ -169,6 +174,36 @@ public class Flamethrower extends Weapon {
     }
     
     /**
+     * Mejora el ángulo del cono del lanzallamas.
+     * @param amount Cantidad de grados a incrementar
+     * @return true si se aplicó la mejora
+     */
+    @Override
+    public boolean upgradeConeAngle(float amount) {
+        if (coneAngle >= GameConfig.FLAMETHROWER_MAX_CONE_ANGLE) {
+            return false;
+        }
+        coneAngle = Math.min(coneAngle + amount, GameConfig.FLAMETHROWER_MAX_CONE_ANGLE);
+        return true;
+    }
+    
+    /**
+     * Obtiene el ángulo actual del cono.
+     * @return Ángulo en grados
+     */
+    public float getConeAngle() {
+        return coneAngle;
+    }
+    
+    /**
+     * Verifica si puede mejorar el ángulo del cono.
+     * @return true si no ha llegado al máximo
+     */
+    public boolean canUpgradeConeAngle() {
+        return coneAngle < GameConfig.FLAMETHROWER_MAX_CONE_ANGLE;
+    }
+    
+    /**
      * Partícula de fuego para efectos visuales.
      */
     private class FlameParticle {
@@ -179,7 +214,7 @@ public class Flamethrower extends Weapon {
         private int colorIndex;
         
         FlameParticle(float baseAngle, float range) {
-            float angle = baseAngle + (float) ((random.nextFloat() - 0.5f) * Math.toRadians(GameConfig.FLAMETHROWER_CONE_ANGLE));
+            float angle = baseAngle + (float) ((random.nextFloat() - 0.5f) * Math.toRadians(coneAngle));
             float speed = 100 + random.nextFloat() * 150;
             
             this.x = 0;

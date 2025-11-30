@@ -9,8 +9,8 @@ import java.util.List;
 
 /**
  * Lanzagranadas con alto daño explosivo en área y baja cadencia.
- * Dispara granadas al enemigo más cercano.
- * Los proyectiles explotan al impactar con efecto visual.
+ * Dispara granadas a los enemigos más cercanos.
+ * Con mejoras de multi-target, dispara a múltiples enemigos simultáneamente.
  */
 public class GrenadeLauncher extends Weapon {
     
@@ -39,18 +39,18 @@ public class GrenadeLauncher extends Weapon {
             return projectiles;
         }
         
-        // Buscar enemigo más cercano
-        Enemy target = findClosestEnemy(playerX, playerY, enemies);
+        // Buscar los N enemigos más cercanos según targetCount
+        List<Enemy> targets = findClosestEnemies(playerX, playerY, enemies, targetCount);
         
-        if (target == null) {
+        if (targets.isEmpty()) {
             return projectiles;
         }
         
-        // Apuntar al enemigo más cercano
-        float targetX = target.getCenterX();
-        float targetY = target.getCenterY();
-        
-        for (int i = 0; i < projectileCount; i++) {
+        // Crear una granada por cada objetivo
+        for (Enemy target : targets) {
+            float targetX = target.getCenterX();
+            float targetY = target.getCenterY();
+            
             GrenadeProjectile grenade = new GrenadeProjectile(
                 playerX, playerY,
                 targetX, targetY,

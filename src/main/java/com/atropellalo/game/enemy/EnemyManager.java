@@ -112,6 +112,7 @@ public class EnemyManager implements ExplosiveZombie.ExplosionCallback,
     
     /**
      * Actualiza el sistema de oleadas.
+     * Las oleadas se inician inmediatamente sin tiempo de espera.
      */
     private void updateWaveSystem(float deltaTime, float playerX, float playerY) {
         if (waveInProgress) {
@@ -126,17 +127,14 @@ public class EnemyManager implements ExplosiveZombie.ExplosionCallback,
                     }
                 }
             } else if (enemies.isEmpty()) {
-                // Oleada completada
+                // Oleada completada - iniciar siguiente inmediatamente
                 waveInProgress = false;
-                waveTimer = GameConfig.WAVE_INTERVAL;
                 LOGGER.info("Oleada " + currentWave + " completada!");
-            }
-        } else {
-            // Esperar siguiente oleada
-            waveTimer -= deltaTime;
-            if (waveTimer <= 0) {
                 startNextWave();
             }
+        } else {
+            // Iniciar primera oleada inmediatamente
+            startNextWave();
         }
     }
     
@@ -165,7 +163,8 @@ public class EnemyManager implements ExplosiveZombie.ExplosionCallback,
     }
     
     /**
-     * Genera un enemigo aleatorio en una posición válida (en las calles).
+     * Genera un enemigo aleatorio en los bordes del mapa.
+     * Los enemigos siempre aparecen desde los bordes buscando al jugador.
      * En oleadas de jefe, genera el jefe primero.
      */
     private void spawnRandomEnemy(float playerX, float playerY) {
@@ -185,25 +184,29 @@ public class EnemyManager implements ExplosiveZombie.ExplosionCallback,
         // Determinar tipo de enemigo normal
         EnemyType type = getRandomEnemyType();
         
-        // Encontrar posición válida (lejos del jugador y en las calles)
+        // Generar posición en los bordes del mapa
         float x, y;
-        int attempts = 0;
-        int maxAttempts = 50;
+        int edge = random.nextInt(4); // 0=arriba, 1=abajo, 2=izquierda, 3=derecha
         
-        do {
-            x = GameConfig.ENEMY_SPAWN_MARGIN + 
-                random.nextFloat() * (GameConfig.WORLD_WIDTH - 2 * GameConfig.ENEMY_SPAWN_MARGIN);
-            y = GameConfig.ENEMY_SPAWN_MARGIN + 
-                random.nextFloat() * (GameConfig.WORLD_HEIGHT - 2 * GameConfig.ENEMY_SPAWN_MARGIN);
-            attempts++;
-            
-            // Verificar distancia del jugador
-            if (distanceToPoint(x, y, playerX, playerY) < GameConfig.ENEMY_MIN_SPAWN_DISTANCE) {
-                continue;
-            }
-            
-            break;
-        } while (attempts < maxAttempts);
+        switch (edge) {
+            case 0: // Borde superior
+                x = random.nextFloat() * GameConfig.WORLD_WIDTH;
+                y = GameConfig.ENEMY_SPAWN_MARGIN;
+                break;
+            case 1: // Borde inferior
+                x = random.nextFloat() * GameConfig.WORLD_WIDTH;
+                y = GameConfig.WORLD_HEIGHT - GameConfig.ENEMY_SPAWN_MARGIN;
+                break;
+            case 2: // Borde izquierdo
+                x = GameConfig.ENEMY_SPAWN_MARGIN;
+                y = random.nextFloat() * GameConfig.WORLD_HEIGHT;
+                break;
+            case 3: // Borde derecho
+            default:
+                x = GameConfig.WORLD_WIDTH - GameConfig.ENEMY_SPAWN_MARGIN;
+                y = random.nextFloat() * GameConfig.WORLD_HEIGHT;
+                break;
+        }
         
         // Crear enemigo
         Enemy enemy = createEnemy(type, x, y);
@@ -211,28 +214,32 @@ public class EnemyManager implements ExplosiveZombie.ExplosionCallback,
     }
     
     /**
-     * Genera un jefe en una posición válida (en las calles).
+     * Genera un jefe en los bordes del mapa.
      */
     private void spawnBoss(EnemyType bossType, float playerX, float playerY) {
-        // Encontrar posición válida para el jefe (lejos del jugador y en las calles)
+        // Generar posición en los bordes del mapa (lejos del jugador)
         float x, y;
-        int attempts = 0;
-        int maxAttempts = 50;
+        int edge = random.nextInt(4);
         
-        do {
-            x = GameConfig.ENEMY_SPAWN_MARGIN + 
-                random.nextFloat() * (GameConfig.WORLD_WIDTH - 2 * GameConfig.ENEMY_SPAWN_MARGIN);
-            y = GameConfig.ENEMY_SPAWN_MARGIN + 
-                random.nextFloat() * (GameConfig.WORLD_HEIGHT - 2 * GameConfig.ENEMY_SPAWN_MARGIN);
-            attempts++;
-            
-            // Verificar distancia del jugador
-            if (distanceToPoint(x, y, playerX, playerY) < GameConfig.ENEMY_MIN_SPAWN_DISTANCE * 1.5f) {
-                continue;
-            }
-            
-            break;
-        } while (attempts < maxAttempts);
+        switch (edge) {
+            case 0: // Borde superior
+                x = random.nextFloat() * GameConfig.WORLD_WIDTH;
+                y = GameConfig.ENEMY_SPAWN_MARGIN;
+                break;
+            case 1: // Borde inferior
+                x = random.nextFloat() * GameConfig.WORLD_WIDTH;
+                y = GameConfig.WORLD_HEIGHT - GameConfig.ENEMY_SPAWN_MARGIN;
+                break;
+            case 2: // Borde izquierdo
+                x = GameConfig.ENEMY_SPAWN_MARGIN;
+                y = random.nextFloat() * GameConfig.WORLD_HEIGHT;
+                break;
+            case 3: // Borde derecho
+            default:
+                x = GameConfig.WORLD_WIDTH - GameConfig.ENEMY_SPAWN_MARGIN;
+                y = random.nextFloat() * GameConfig.WORLD_HEIGHT;
+                break;
+        }
         
         Enemy boss;
         if (bossType == EnemyType.BOSS_BRUISER) {

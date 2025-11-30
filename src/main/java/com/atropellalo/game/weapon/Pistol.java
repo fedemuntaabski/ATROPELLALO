@@ -9,7 +9,7 @@ import java.util.List;
 /**
  * Pistola básica del jugador.
  * Dispara automáticamente al enemigo más cercano dentro de su rango.
- * Los proyectiles múltiples van TODOS en la misma dirección.
+ * Con mejoras de multi-target, dispara a múltiples enemigos simultáneamente.
  */
 public class Pistol extends Weapon {
     
@@ -28,8 +28,8 @@ public class Pistol extends Weapon {
     }
     
     /**
-     * Intenta disparar al enemigo más cercano.
-     * Todos los proyectiles van en la MISMA dirección (sin spread).
+     * Intenta disparar a los enemigos más cercanos.
+     * Con multi-target, dispara a múltiples enemigos simultáneamente.
      * @param playerX Posición X del jugador (centro)
      * @param playerY Posición Y del jugador (centro)
      * @param enemies Lista de enemigos
@@ -43,19 +43,18 @@ public class Pistol extends Weapon {
             return projectiles;
         }
         
-        // Buscar enemigo más cercano
-        Enemy target = findClosestEnemy(playerX, playerY, enemies);
+        // Buscar los N enemigos más cercanos según targetCount
+        List<Enemy> targets = findClosestEnemies(playerX, playerY, enemies, targetCount);
         
-        if (target == null) {
+        if (targets.isEmpty()) {
             return projectiles; // No hay enemigos en rango
         }
         
-        // Crear proyectiles - TODOS en la misma dirección
-        float targetX = target.getCenterX();
-        float targetY = target.getCenterY();
-        
-        for (int i = 0; i < projectileCount; i++) {
-            // Sin spread - todos van al mismo objetivo
+        // Crear un proyectil por cada objetivo
+        for (Enemy target : targets) {
+            float targetX = target.getCenterX();
+            float targetY = target.getCenterY();
+            
             Projectile projectile = new Projectile(
                 playerX,
                 playerY,

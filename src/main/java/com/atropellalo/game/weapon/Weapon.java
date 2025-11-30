@@ -18,6 +18,8 @@ public abstract class Weapon {
     protected int projectileCount;
     protected float impactArea;
     protected WeaponType weaponType;
+    protected int targetCount;        // Cantidad de objetivos simultáneos
+    protected int multiTargetUpgrades; // Contador de mejoras de multi-target
     
     /**
      * Constructor base para armas.
@@ -34,6 +36,8 @@ public abstract class Weapon {
         this.projectileCount = 1;
         this.impactArea = 0;
         this.weaponType = weaponType;
+        this.targetCount = 1;
+        this.multiTargetUpgrades = 0;
     }
     
     /**
@@ -48,6 +52,8 @@ public abstract class Weapon {
         this.projectileCount = projectileCount;
         this.impactArea = impactArea;
         this.weaponType = weaponType;
+        this.targetCount = 1;
+        this.multiTargetUpgrades = 0;
     }
     
     /**
@@ -128,6 +134,50 @@ public abstract class Weapon {
     }
     
     /**
+     * Encuentra los N enemigos más cercanos dentro del rango.
+     * @param playerX Posición X del jugador
+     * @param playerY Posición Y del jugador
+     * @param enemies Lista de enemigos
+     * @param count Cantidad de enemigos a encontrar
+     * @return Lista de enemigos más cercanos
+     */
+    protected List<Enemy> findClosestEnemies(float playerX, float playerY, List<Enemy> enemies, int count) {
+        List<Enemy> result = new java.util.ArrayList<>();
+        List<Enemy> sortedEnemies = new java.util.ArrayList<>();
+        
+        // Filtrar enemigos vivos en rango
+        for (Enemy enemy : enemies) {
+            if (!enemy.isAlive()) {
+                continue;
+            }
+            
+            float dx = enemy.getCenterX() - playerX;
+            float dy = enemy.getCenterY() - playerY;
+            float distance = (float) Math.sqrt(dx * dx + dy * dy);
+            
+            if (distance <= range) {
+                sortedEnemies.add(enemy);
+            }
+        }
+        
+        // Ordenar por distancia
+        final float px = playerX;
+        final float py = playerY;
+        sortedEnemies.sort((e1, e2) -> {
+            float d1 = (float) Math.sqrt(Math.pow(e1.getCenterX() - px, 2) + Math.pow(e1.getCenterY() - py, 2));
+            float d2 = (float) Math.sqrt(Math.pow(e2.getCenterX() - px, 2) + Math.pow(e2.getCenterY() - py, 2));
+            return Float.compare(d1, d2);
+        });
+        
+        // Tomar los N más cercanos
+        for (int i = 0; i < Math.min(count, sortedEnemies.size()); i++) {
+            result.add(sortedEnemies.get(i));
+        }
+        
+        return result;
+    }
+    
+    /**
      * Reinicia el cooldown del arma.
      */
     protected void resetCooldown() {
@@ -164,11 +214,45 @@ public abstract class Weapon {
     }
     
     /**
+     * Incrementa la cantidad de objetivos simultáneos.
+     * @param amount Cantidad a incrementar
+     * @return true si se aplicó la mejora
+     */
+    public boolean upgradeTargetCount(int amount) {
+        if (multiTargetUpgrades >= com.atropellalo.game.config.GameConfig.MAX_MULTI_TARGET_UPGRADES) {
+            return false;
+        }
+        this.targetCount += amount;
+        this.multiTargetUpgrades++;
+        return true;
+    }
+    
+    /**
+     * Mejora el ángulo del cono (solo para lanzallamas).
+     * @param amount Cantidad de grados a incrementar
+     * @return true si se aplicó la mejora
+     */
+    public boolean upgradeConeAngle(float amount) {
+        // Solo aplica a lanzallamas - se sobrescribe en Flamethrower
+        return false;
+    }
+    
+    /**
      * Incrementa la cantidad de disparos simultáneos.
      * @param amount Cantidad a incrementar
+     * @deprecated Usar upgradeTargetCount para multi-objetivo
      */
+    @Deprecated
     public void upgradeProjectileCount(int amount) {
         this.projectileCount += amount;
+    }
+    
+    /**
+     * Verifica si puede recibir más mejoras de multi-target.
+     * @return true si puede mejorar
+     */
+    public boolean canUpgradeMultiTarget() {
+        return multiTargetUpgrades < com.atropellalo.game.config.GameConfig.MAX_MULTI_TARGET_UPGRADES;
     }
     
     // Getters
@@ -199,5 +283,13 @@ public abstract class Weapon {
     
     public WeaponType getWeaponType() {
         return weaponType;
+    }
+    
+    public int getTargetCount() {
+        return targetCount;
+    }
+    
+    public int getMultiTargetUpgrades() {
+        return multiTargetUpgrades;
     }
 }

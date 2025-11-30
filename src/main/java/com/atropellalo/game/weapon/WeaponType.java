@@ -14,9 +14,6 @@ public enum WeaponType {
     /** Lanzagranadas - alto daño en área, baja cadencia, disparo aleatorio */
     GRENADE_LAUNCHER("Lanzagranadas", "Daño explosivo en área, disparo aleatorio"),
     
-    /** Sierras circulares - daño pasivo en los costados */
-    CIRCULAR_SAW("Sierras Circulares", "Sierras giratorias a los costados"),
-    
     /** Lanzallamas - daño continuo en cono */
     FLAMETHROWER("Lanzallamas", "Daño continuo en área cercana"),
     

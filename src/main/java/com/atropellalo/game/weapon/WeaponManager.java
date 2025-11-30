@@ -184,8 +184,6 @@ public class WeaponManager {
                 return new LightMachineGun();
             case GRENADE_LAUNCHER:
                 return new GrenadeLauncher();
-            case CIRCULAR_SAW:
-                return new CircularSaw();
             case FLAMETHROWER:
                 return new Flamethrower();
             case SHOTGUN:
