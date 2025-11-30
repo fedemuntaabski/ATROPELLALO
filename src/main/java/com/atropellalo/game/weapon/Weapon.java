@@ -18,6 +18,7 @@ public abstract class Weapon {
     protected int projectileCount;
     protected float impactArea;
     protected WeaponType weaponType;
+    protected int level;
     
     /**
      * Constructor base para armas.
@@ -34,6 +35,7 @@ public abstract class Weapon {
         this.projectileCount = 1;
         this.impactArea = 0;
         this.weaponType = weaponType;
+        this.level = 1;
     }
     
     /**
@@ -48,6 +50,7 @@ public abstract class Weapon {
         this.projectileCount = projectileCount;
         this.impactArea = impactArea;
         this.weaponType = weaponType;
+        this.level = 1;
     }
     
     /**
@@ -162,7 +165,6 @@ public abstract class Weapon {
     public void upgradeImpactArea(float factor) {
         this.impactArea *= factor;
     }
-    
     /**
      * Incrementa la cantidad de disparos simultáneos.
      * @param amount Cantidad a incrementar
@@ -171,6 +173,40 @@ public abstract class Weapon {
         this.projectileCount += amount;
     }
     
+    /**
+     * Incrementa el nivel del arma.
+     */
+    public void upgradeLevel() {
+        this.level++;
+    }
+    
+    // ==================== MÉTODOS PARA UI ====================
+    
+    /**
+     * Obtiene el nombre del arma.
+     * @return Nombre del arma
+     */
+    public String getName() {
+        return weaponType.getDisplayName();
+    }
+    
+    /**
+     * Obtiene la velocidad de proyectil.
+     * @return Velocidad del proyectil o 0 si no aplica
+     */
+    public float getProjectileSpeed() {
+        return 0; // Override en armas con proyectiles
+    }
+    
+    /**
+     * Obtiene la cadencia de fuego (disparos por segundo).
+     * @return Delay entre disparos
+     */
+    public float getFireRate() {
+        return fireDelay;
+    }
+    
+    // Getters
     // Getters
     
     public float getDamage() {
@@ -199,5 +235,9 @@ public abstract class Weapon {
     
     public WeaponType getWeaponType() {
         return weaponType;
+    }
+    
+    public int getLevel() {
+        return level;
     }
 }

@@ -12,6 +12,7 @@ com\atropellalo\game\ui\GameWindow$1.class
 com\atropellalo\game\enemy\SpitterZombie$CorrosivePuddle.class
 com\atropellalo\game\loot\Scrap.class
 com\atropellalo\game\entity\Player$CollisionCallback.class
+com\atropellalo\game\ui\PauseMenu.class
 com\atropellalo\game\loot\LootManager.class
 com\atropellalo\game\loot\LootType.class
 com\atropellalo\game\upgrade\UpgradeManager.class
@@ -40,6 +41,7 @@ com\atropellalo\game\enemy\EnemyType.class
 com\atropellalo\game\sprite\Animation.class
 com\atropellalo\game\enemy\Enemy$CollisionChecker.class
 com\atropellalo\game\enemy\InfectorBoss.class
+com\atropellalo\game\ui\PauseMenu$PauseMenuCallback.class
 com\atropellalo\game\weapon\Flamethrower$FlameParticle.class
 com\atropellalo\game\enemy\SpitterZombie$AcidProjectile.class
 com\atropellalo\game\sprite\BossSpriteGenerator$InfectorState.class
@@ -54,6 +56,7 @@ com\atropellalo\game\weapon\GrenadeLauncher.class
 com\atropellalo\game\sprite\BossSpriteGenerator$BruiserState.class
 com\atropellalo\game\weapon\WeaponManager.class
 com\atropellalo\game\sprite\TruckSpriteGenerator.class
+com\atropellalo\game\ui\GamePanel$1.class
 com\atropellalo\game\weapon\WeaponManager$1.class
 com\atropellalo\game\weapon\WeaponType.class
 com\atropellalo\game\weapon\SniperRailgun.class

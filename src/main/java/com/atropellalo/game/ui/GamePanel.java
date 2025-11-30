@@ -42,6 +42,7 @@ public class GamePanel extends JPanel implements Runnable, KeyListener {
     private Thread gameThread;
     private boolean running;
     private boolean paused;
+    private boolean pausedByMenu;
     
     // Imagen del mapa de estacionamiento
     private BufferedImage mapImage;
@@ -57,6 +58,9 @@ public class GamePanel extends JPanel implements Runnable, KeyListener {
     // Sistema de mejoras
     private UpgradeManager upgradeManager;
     private UpgradeMenu upgradeMenu;
+    
+    // Menú de pausa
+    private PauseMenu pauseMenu;
     
     public GamePanel() {
         setFocusable(true);
@@ -122,7 +126,29 @@ public class GamePanel extends JPanel implements Runnable, KeyListener {
         upgradeMenu = new UpgradeMenu(1280, 720);
         upgradeMenu.setCallback(this::onUpgradeSelected);
         
+        // Crear menú de pausa
+        pauseMenu = new PauseMenu(1280, 720);
+        pauseMenu.setCallback(new PauseMenu.PauseMenuCallback() {
+            @Override
+            public void onResume() {
+                resumeGame();
+            }
+            
+            @Override
+            public void onQuit() {
+                quitToDesktop();
+            }
+        });
+        
+        // Agregar listener para scroll con rueda del mouse
+        addMouseWheelListener(pauseMenu);
+        
+        // Agregar listeners para click y hover del mouse
+        addMouseListener(pauseMenu);
+        addMouseMotionListener(pauseMenu);
+        
         paused = false;
+        pausedByMenu = false;
         
         LOGGER.info("Juego inicializado - Mundo: " + GameConfig.WORLD_WIDTH + "x" + GameConfig.WORLD_HEIGHT);
         LOGGER.info("Mapa de estacionamiento cargado - Sin obstáculos");
@@ -169,6 +195,35 @@ public class GamePanel extends JPanel implements Runnable, KeyListener {
         
         // Reanudar el juego
         paused = false;
+    }
+    
+    /**
+     * Muestra el menú de pausa.
+     */
+    private void showPauseMenu() {
+        if (!player.isAlive() || paused) {
+            return; // No pausar si está muerto o ya pausado por nivel
+        }
+        
+        pausedByMenu = true;
+        pauseMenu.show();
+    }
+    
+    /**
+     * Reanuda el juego desde el menú de pausa.
+     */
+    private void resumeGame() {
+        LOGGER.info("Reanudando juego desde menú de pausa");
+        pausedByMenu = false;
+        pauseMenu.hide();
+    }
+    
+    /**
+     * Sale al escritorio.
+     */
+    private void quitToDesktop() {
+        LOGGER.info("Saliendo del juego...");
+        System.exit(0);
     }
     
     /**
@@ -220,7 +275,7 @@ public class GamePanel extends JPanel implements Runnable, KeyListener {
      */
     private void update(float deltaTime) {
         // No actualizar si el juego terminó o está pausado
-        if (!player.isAlive() || paused) {
+        if (!player.isAlive() || paused || pausedByMenu) {
             return;
         }
         
@@ -300,6 +355,11 @@ public class GamePanel extends JPanel implements Runnable, KeyListener {
         if (upgradeMenu.isVisible()) {
             upgradeMenu.render(g2d);
         }
+        
+        // Dibujar menú de pausa si está visible
+        if (pauseMenu.isVisible()) {
+            pauseMenu.render(g2d, player, weaponManager);
+        }
     }
     
     /**
@@ -343,6 +403,18 @@ public class GamePanel extends JPanel implements Runnable, KeyListener {
     
     @Override
     public void keyPressed(KeyEvent e) {
+        // Prioridad al menú de pausa
+        if (pauseMenu.isVisible()) {
+            pauseMenu.handleKeyPress(e.getKeyCode());
+            return;
+        }
+        
+        // ESC abre el menú de pausa
+        if (e.getKeyCode() == KeyEvent.VK_ESCAPE) {
+            showPauseMenu();
+            return;
+        }
+        
         if (upgradeMenu.isVisible()) {
             upgradeMenu.handleKeyPress(e.getKeyCode());
         } else if (!player.isAlive()) {
