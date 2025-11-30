@@ -87,6 +87,9 @@ public class SniperRailgun extends Weapon {
             projectiles.add(railProjectile);
         }
         
+        // Reproducir sonido de disparo
+        playFireSound();
+        
         resetCooldown();
         
         return projectiles;

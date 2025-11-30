@@ -62,6 +62,9 @@ public class GrenadeLauncher extends Weapon {
             projectiles.add(grenade);
         }
         
+        // Reproducir sonido de disparo
+        playFireSound();
+        
         resetCooldown();
         return projectiles;
     }

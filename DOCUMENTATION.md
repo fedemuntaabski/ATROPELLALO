@@ -6,7 +6,7 @@
 - **Lenguaje**: Java 11
 - **Framework UI**: Swing
 - **Build Tool**: Maven
-- **Estado**: Fase 14 Completada - Oleadas Continuas, Multi-Objetivo y Mejora de Ángulo
+- **Estado**: Fase 16 Completada - Sistema de Efectos Visuales
 
 ---
 
@@ -989,6 +989,188 @@ El lanzallamas no estaba aplicando daño correctamente porque:
 
 ---
 
+## Fase 15 - Sistema de Sonidos para Armas
+
+### Descripción
+Implementación de un sistema de sonidos para todas las armas del juego, con soporte para reproducción en loop y configuración centralizada de volumen.
+
+### Archivos de Sonido
+Los archivos MP3 se encuentran en `src/main/resources/sounds/`:
+
+| Archivo | Arma |
+|---------|------|
+| `pistol.mp3` | Pistola |
+| `machinegun.mp3` | Ametralladora Ligera |
+| `grenade-launcher.mp3` | Lanzagranadas |
+| `fireflammer.mp3` | Lanzallamas |
+| `shotgun.mp3` | Escopeta |
+| `sniperrifle.mp3` | Rifle de Francotirador |
+
+### Nuevas Clases
+
+#### SoundManager.java
+Gestor singleton de sonidos del juego:
+- Carga y reproduce sonidos de armas
+- Soporta reproducción única y en loop
+- Control de volumen maestro y por categoría
+- Conversión automática de MP3 a PCM
+
+### Configuración en GameConfig
+```java
+// Sonido
+SOUND_ENABLED = true              // Habilitar/deshabilitar sonido
+SOUND_MASTER_VOLUME = 0.8f        // Volumen maestro (0.0 - 1.0)
+SOUND_WEAPON_VOLUME = 0.7f        // Volumen de armas (0.0 - 1.0)
+SOUND_WEAPON_LOOP_ENABLED = true  // Usar loop para armas continuas
+```
+
+### Integración con Armas
+- **Armas de disparo único** (Pistol, LMG, Shotgun, GrenadeLauncher, SniperRailgun): Reproducen sonido en cada disparo
+- **Armas continuas** (Flamethrower): Reproducen sonido en loop mientras están activas
+
+### Dependencias Agregadas (pom.xml)
+```xml
+<dependency>
+    <groupId>com.googlecode.soundlibs</groupId>
+    <artifactId>mp3spi</artifactId>
+    <version>1.9.5.4</version>
+</dependency>
+<dependency>
+    <groupId>com.googlecode.soundlibs</groupId>
+    <artifactId>jlayer</artifactId>
+    <version>1.0.1.4</version>
+</dependency>
+<dependency>
+    <groupId>com.googlecode.soundlibs</groupId>
+    <artifactId>tritonus-share</artifactId>
+    <version>0.3.7.4</version>
+</dependency>
+```
+
+### Archivos Modificados
+- `pom.xml`: Dependencias de audio MP3
+- `GameConfig.java`: Configuración de sonido
+- `Weapon.java`: Método `playFireSound()`
+- `Pistol.java`, `LightMachineGun.java`, `Shotgun.java`, `GrenadeLauncher.java`, `SniperRailgun.java`: Integración de sonido al disparar
+- `Flamethrower.java`: Sonido en loop mientras está activo
+
+### Archivos Nuevos
+- `src/main/java/com/atropellalo/game/sound/SoundManager.java`
+- `src/main/resources/sounds/*.mp3` (6 archivos)
+
+---
+
+## Fase 16 - Sistema de Efectos Visuales
+
+### Descripción
+Implementación de un sistema de efectos visuales procedurales para mejorar el feedback visual del juego. Se crearon efectos para las explosiones de zombies explosivos y para el lanzallamas.
+
+### Arquitectura del Sistema VFX
+
+#### Interfaz Base: `VisualEffect`
+```java
+public interface VisualEffect {
+    void update(float deltaTime);
+    void render(Graphics2D g2d);
+    boolean isAlive();
+    float getX();
+    float getY();
+}
+```
+
+#### Gestor Centralizado: `VisualEffectManager`
+- **Patrón**: Singleton
+- **Responsabilidades**:
+  - Crear y gestionar efectos temporales (explosiones)
+  - Gestionar efectos persistentes (lanzallamas)
+  - Actualizar y renderizar todos los efectos
+
+```java
+// Crear explosión
+VisualEffectManager.getInstance().createExplosion(x, y, radius);
+
+// Actualizar lanzallamas
+VisualEffectManager.getInstance().updateFlamethrower(x, y, angle, coneAngle, range, active);
+```
+
+### Efectos Implementados
+
+#### 1. ExplosionEffect (Zombies Explosivos)
+Efecto de explosión animado con múltiples capas:
+- **Ondas de choque**: 3 anillos expansivos con desvanecimiento
+- **Núcleo de fuego**: Círculo central con gradiente radial
+- **Partículas de escombros**: 12 fragmentos con física de gravedad
+- **Duración**: Configurable (0.5s por defecto)
+
+```java
+// Configuración en GameConfig
+VFX_EXPLOSION_DURATION = 0.5f
+VFX_EXPLOSION_SHOCKWAVE_COUNT = 3
+VFX_EXPLOSION_PARTICLE_COUNT = 12
+```
+
+#### 2. FlamethrowerEffect (Lanzallamas)
+Efecto continuo de cono de fuego:
+- **Cono base**: 5 capas con gradiente de colores (blanco → amarillo → naranja → rojo)
+- **Partículas de fuego**: Generación continua con física de calor (sube)
+- **Brasas/chispas**: Partículas pequeñas con parpadeo
+- **Distorsión de calor**: Ondas animadas semi-transparentes
+
+```java
+// Configuración en GameConfig
+VFX_FLAME_PARTICLES_PER_SECOND = 60f
+VFX_FLAME_EMBER_CHANCE = 0.3f
+```
+
+### Paleta de Colores del Fuego
+```java
+FLAME_COLORS = {
+    Color(255, 255, 220, 220),  // Núcleo blanco-amarillo
+    Color(255, 220, 100, 200),  // Amarillo brillante
+    Color(255, 150, 50, 180),   // Naranja
+    Color(255, 80, 20, 150),    // Rojo-naranja
+    Color(200, 50, 10, 100)     // Rojo oscuro exterior
+}
+```
+
+### Integración con el Juego
+
+#### GamePanel
+- `update()`: Llama a `VisualEffectManager.getInstance().update(deltaTime)`
+- `paintComponent()`: Llama a `drawVisualEffects(g2d)` entre proyectiles y jugador
+
+#### ExplosiveZombie
+- `triggerExplosion()`: Crea efecto con `VisualEffectManager.getInstance().createExplosion()`
+
+#### Flamethrower
+- `update()`: Actualiza parámetros del efecto con `VisualEffectManager.getInstance().updateFlamethrower()`
+- Método `render()` vacío - los efectos son renderizados centralizadamente
+
+### Archivos Modificados
+- `GameConfig.java`: Constantes VFX_* para configuración de efectos
+- `GamePanel.java`: Integración de VisualEffectManager (update/render)
+- `ExplosiveZombie.java`: Uso de VisualEffectManager para explosiones
+- `Flamethrower.java`: Delegación de renderizado visual a VisualEffectManager, corrección de gestión de sonido
+
+### Archivos Nuevos
+- `src/main/java/com/atropellalo/game/effect/VisualEffect.java`
+- `src/main/java/com/atropellalo/game/effect/ExplosionEffect.java`
+- `src/main/java/com/atropellalo/game/effect/FlamethrowerEffect.java`
+- `src/main/java/com/atropellalo/game/effect/VisualEffectManager.java`
+
+### Correcciones Fase 16.1
+- **Sonido del lanzallamas**: Movida la gestión del sonido de `update()` a `processContinuousDamage()` para que el estado `active` esté actualizado correctamente antes de verificar cambios
+- **Orden de renderizado VFX**: Ajustado para que las partículas VFX se rendericen primero (debajo) y el cono base después (encima)
+
+### Beneficios del Sistema
+1. **Centralizado**: Un solo punto de gestión para todos los efectos
+2. **Extensible**: Fácil agregar nuevos tipos de efectos
+3. **Configurable**: Parámetros en GameConfig
+4. **Eficiente**: Efectos con ciclo de vida gestionado automáticamente
+5. **Independiente**: No requiere archivos de video externos
+
+---
+
 **Fecha de Creación**: 29/11/2025  
-**Última Actualización**: 30/11/2025 - Fase 14.1  
+**Última Actualización**: 30/11/2025 - Fase 16  
 **Versión**: 1.0-SNAPSHOT

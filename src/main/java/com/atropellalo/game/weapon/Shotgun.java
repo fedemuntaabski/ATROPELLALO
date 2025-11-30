@@ -80,6 +80,9 @@ public class Shotgun extends Weapon {
             projectiles.add(pellet);
         }
         
+        // Reproducir sonido de disparo
+        playFireSound();
+        
         resetCooldown();
         return projectiles;
     }

@@ -61,6 +61,9 @@ public class LightMachineGun extends Weapon {
             projectiles.add(projectile);
         }
         
+        // Reproducir sonido de disparo
+        playFireSound();
+        
         resetCooldown();
         return projectiles;
     }

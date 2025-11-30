@@ -408,7 +408,7 @@ public final class GameConfig {
     public static float SNIPER_RANGE = 500.0f;
     
     /** Delay entre disparos (muy alto - cadencia baja) */
-    public static float SNIPER_FIRE_DELAY = 4f;
+    public static float SNIPER_FIRE_DELAY = 4.5f;
     
     /** Cantidad de enemigos que atraviesa el proyectil */
     public static int SNIPER_PENETRATION = 3;
@@ -604,4 +604,35 @@ public final class GameConfig {
     
     /** Oleada en la que aparece el Infectador */
     public static int INFECTOR_BOSS_WAVE = 10;
+    
+    // ==================== SONIDO ====================
+    
+    /** Habilitar/deshabilitar sonido global */
+    public static boolean SOUND_ENABLED = true;
+    
+    /** Volumen maestro (0.0 - 1.0) */
+    public static float SOUND_MASTER_VOLUME = 0.8f;
+    
+    /** Volumen de efectos de armas (0.0 - 1.0) */
+    public static float SOUND_WEAPON_VOLUME = 0.55f;
+    
+    /** Usar loop para armas continuas (lanzallamas) */
+    public static boolean SOUND_WEAPON_LOOP_ENABLED = true;
+    
+    // ==================== EFECTOS VISUALES (VFX) ====================
+    
+    /** Duración del efecto de explosión (segundos) */
+    public static float VFX_EXPLOSION_DURATION = 0.5f;
+    
+    /** Cantidad de partículas en explosión */
+    public static int VFX_EXPLOSION_PARTICLE_COUNT = 20;
+    
+    /** Cantidad de chispas en explosión */
+    public static int VFX_EXPLOSION_SPARK_COUNT = 15;
+    
+    /** Partículas por segundo del lanzallamas */
+    public static float VFX_FLAME_PARTICLES_PER_SECOND = 60f;
+    
+    /** Probabilidad de generar brasas (por frame a 60fps) */
+    public static float VFX_FLAME_EMBER_CHANCE = 0.3f;
 }

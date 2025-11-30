@@ -1,6 +1,7 @@
 package com.atropellalo.game.enemy;
 
 import com.atropellalo.game.config.GameConfig;
+import com.atropellalo.game.effect.VisualEffectManager;
 import com.atropellalo.game.sprite.Animation;
 import com.atropellalo.game.sprite.AnimationState;
 
@@ -160,6 +161,11 @@ public class ExplosiveZombie extends Enemy {
         float explosionRadius = GameConfig.EXPLOSIVE_ZOMBIE_RADIUS;
         float explosionDamage = GameConfig.EXPLOSIVE_ZOMBIE_EXPLOSION_DAMAGE;
         
+        // Crear efecto visual de explosión
+        VisualEffectManager.getInstance().createExplosion(
+            getCenterX(), getCenterY(), explosionRadius
+        );
+        
         // Dañar al jugador si está en rango
         float distToPlayer = distanceToPlayer(playerX, playerY);
         if (distToPlayer <= explosionRadius && explosionCallback != null) {
@@ -187,8 +193,8 @@ public class ExplosiveZombie extends Enemy {
         int px = (int) x;
         int py = (int) y;
         
+        // Si explotó, el efecto visual lo maneja VisualEffectManager
         if (exploded) {
-            renderExplosionEffect(g2d, px, py);
             return;
         }
         
@@ -257,80 +263,6 @@ public class ExplosiveZombie extends Enemy {
         // Barra de vida
         if (health < maxHealth) {
             renderHealthBar(g2d);
-        }
-    }
-    
-    /**
-     * Dibuja el efecto visual de explosión mejorado.
-     */
-    private void renderExplosionEffect(Graphics2D g2d, int px, int py) {
-        float progress = explosionTimer / EXPLOSION_DURATION;
-        int maxRadius = (int) GameConfig.EXPLOSIVE_ZOMBIE_RADIUS;
-        
-        // El radio crece rápidamente al principio y luego se estabiliza
-        float easedProgress = 1f - (1f - progress) * (1f - progress);
-        int currentRadius = (int) (maxRadius * easedProgress);
-        
-        int centerX = px + size / 2;
-        int centerY = py + size / 2;
-        
-        // Alpha disminuye con el tiempo
-        int baseAlpha = (int) ((1 - progress) * 255);
-        
-        // Ondas de choque (anillos que se expanden)
-        for (int ring = 0; ring < 3; ring++) {
-            float ringOffset = ring * 0.15f;
-            float ringProgress = Math.min(1f, easedProgress + ringOffset);
-            int ringRadius = (int) (maxRadius * ringProgress * 0.8f);
-            int ringAlpha = Math.max(0, (int)(baseAlpha * (1f - ringOffset * 2)));
-            
-            g2d.setColor(new Color(255, 200, 100, ringAlpha / 3));
-            g2d.setStroke(new java.awt.BasicStroke(3 - ring));
-            g2d.drawOval(centerX - ringRadius, centerY - ringRadius, 
-                        ringRadius * 2, ringRadius * 2);
-        }
-        
-        // Círculo exterior de fuego (naranja)
-        int outerAlpha = Math.max(0, baseAlpha - 50);
-        g2d.setColor(new Color(255, 120, 0, outerAlpha));
-        g2d.fillOval(centerX - currentRadius, centerY - currentRadius, 
-                     currentRadius * 2, currentRadius * 2);
-        
-        // Círculo medio (rojo-naranja)
-        int middleRadius = (int)(currentRadius * 0.7f);
-        int middleAlpha = Math.max(0, baseAlpha);
-        g2d.setColor(new Color(255, 60, 0, middleAlpha));
-        g2d.fillOval(centerX - middleRadius, centerY - middleRadius, 
-                     middleRadius * 2, middleRadius * 2);
-        
-        // Núcleo brillante (amarillo-blanco)
-        int coreRadius = (int)(currentRadius * 0.35f);
-        int coreAlpha = Math.max(0, (int)(baseAlpha * 1.2f));
-        coreAlpha = Math.min(255, coreAlpha);
-        g2d.setColor(new Color(255, 255, 150, coreAlpha));
-        g2d.fillOval(centerX - coreRadius, centerY - coreRadius, 
-                     coreRadius * 2, coreRadius * 2);
-        
-        // Centro blanco muy brillante
-        int hotCoreRadius = (int)(currentRadius * 0.15f);
-        g2d.setColor(new Color(255, 255, 255, coreAlpha));
-        g2d.fillOval(centerX - hotCoreRadius, centerY - hotCoreRadius, 
-                     hotCoreRadius * 2, hotCoreRadius * 2);
-        
-        // Partículas de escombros (pequeños círculos que salen)
-        java.util.Random rand = new java.util.Random((long)(x * 1000 + y));
-        int particleCount = 8;
-        for (int i = 0; i < particleCount; i++) {
-            float angle = (float)(i * Math.PI * 2 / particleCount) + rand.nextFloat() * 0.5f;
-            float particleDist = currentRadius * (0.8f + rand.nextFloat() * 0.4f);
-            int particleX = centerX + (int)(Math.cos(angle) * particleDist);
-            int particleY = centerY + (int)(Math.sin(angle) * particleDist);
-            int particleSize = 3 + rand.nextInt(4);
-            
-            int particleAlpha = Math.max(0, baseAlpha - 30);
-            g2d.setColor(new Color(255, 150, 50, particleAlpha));
-            g2d.fillOval(particleX - particleSize/2, particleY - particleSize/2, 
-                        particleSize, particleSize);
         }
     }
     

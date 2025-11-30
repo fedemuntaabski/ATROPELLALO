@@ -1,36 +1,27 @@
 package com.atropellalo.game.weapon;
 
 import com.atropellalo.game.config.GameConfig;
+import com.atropellalo.game.effect.VisualEffectManager;
 import com.atropellalo.game.enemy.Enemy;
+import com.atropellalo.game.sound.SoundManager;
 
-import java.awt.Color;
 import java.awt.Graphics2D;
-import java.awt.geom.Arc2D;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Random;
 
 /**
  * Lanzallamas - Arma de daño continuo en cono.
  * Daña a los enemigos dentro de un cono frente al jugador.
+ * Los efectos visuales son manejados por VisualEffectManager.
  */
 public class Flamethrower extends Weapon {
-    
-    private static final Color[] FLAME_COLORS = {
-        new Color(255, 200, 50, 180),
-        new Color(255, 150, 30, 160),
-        new Color(255, 100, 20, 140),
-        new Color(255, 50, 10, 120)
-    };
     
     private float tickTimer;
     private float aimAngle;
     private boolean active;
-    private final Random random;
-    private float coneAngle; // Ángulo del cono (modificable con mejoras)
-    
-    // Partículas de fuego para efecto visual
-    private final List<FlameParticle> particles;
+    private float coneAngle;
+    private float lastPlayerX;
+    private float lastPlayerY;
     
     /**
      * Crea un nuevo lanzallamas con valores de configuración.
@@ -47,8 +38,6 @@ public class Flamethrower extends Weapon {
         this.tickTimer = 0;
         this.aimAngle = 0;
         this.active = false;
-        this.random = new Random();
-        this.particles = new ArrayList<>();
         this.coneAngle = GameConfig.FLAMETHROWER_CONE_ANGLE;
     }
     
@@ -62,22 +51,24 @@ public class Flamethrower extends Weapon {
     public void update(float deltaTime) {
         super.update(deltaTime);
         
-        // Actualizar partículas
-        particles.removeIf(p -> {
-            p.update(deltaTime);
-            return !p.isAlive();
-        });
+        // Actualizar efecto visual del lanzallamas
+        VisualEffectManager.getInstance().updateFlamethrower(
+            lastPlayerX, lastPlayerY, aimAngle, coneAngle, range, active
+        );
         
-        // Generar nuevas partículas si está activo
-        if (active) {
-            for (int i = 0; i < 3; i++) {
-                particles.add(new FlameParticle(aimAngle, range));
-            }
-        }
+        // Nota: La gestión del sonido se hace en processContinuousDamage
+        // porque necesita el estado actualizado de 'active'
     }
     
     @Override
     public void processContinuousDamage(float deltaTime, float playerX, float playerY, List<Enemy> enemies) {
+        // Guardar posición del jugador para el efecto visual
+        this.lastPlayerX = playerX;
+        this.lastPlayerY = playerY;
+        
+        // Guardar estado previo para detección de cambios
+        boolean previousActive = active;
+        
         // Buscar enemigo más cercano para apuntar
         Enemy target = findClosestEnemy(playerX, playerY, enemies);
         
@@ -129,39 +120,21 @@ public class Flamethrower extends Weapon {
                 }
             }
         }
+        
+        // Gestionar sonido en loop (después de actualizar estado de active)
+        if (GameConfig.SOUND_WEAPON_LOOP_ENABLED) {
+            if (active && !previousActive) {
+                SoundManager.getInstance().startWeaponLoop(weaponType);
+            } else if (!active && previousActive) {
+                SoundManager.getInstance().stopWeaponLoop(weaponType);
+            }
+        }
     }
     
     @Override
     public void render(Graphics2D g2d, float playerX, float playerY) {
-        if (!active) {
-            return;
-        }
-        
-        // Dibujar cono de fuego
-        float halfCone = coneAngle / 2;
-        float startAngle = (float) Math.toDegrees(-aimAngle) - halfCone;
-        
-        // Múltiples capas de fuego con diferentes transparencias
-        for (int layer = FLAME_COLORS.length - 1; layer >= 0; layer--) {
-            float layerRange = range * (0.5f + 0.5f * layer / FLAME_COLORS.length);
-            
-            g2d.setColor(FLAME_COLORS[layer]);
-            Arc2D arc = new Arc2D.Float(
-                playerX - layerRange,
-                playerY - layerRange,
-                layerRange * 2,
-                layerRange * 2,
-                startAngle,
-                coneAngle,
-                Arc2D.PIE
-            );
-            g2d.fill(arc);
-        }
-        
-        // Dibujar partículas
-        for (FlameParticle particle : particles) {
-            particle.render(g2d, playerX, playerY);
-        }
+        // Los efectos visuales son renderizados por VisualEffectManager
+        // Este método se mantiene vacío para evitar duplicación
     }
     
     /**
@@ -201,58 +174,5 @@ public class Flamethrower extends Weapon {
      */
     public boolean canUpgradeConeAngle() {
         return coneAngle < GameConfig.FLAMETHROWER_MAX_CONE_ANGLE;
-    }
-    
-    /**
-     * Partícula de fuego para efectos visuales.
-     */
-    private class FlameParticle {
-        private float x, y;
-        private float vx, vy;
-        private float life;
-        private float maxLife;
-        private int colorIndex;
-        
-        FlameParticle(float baseAngle, float range) {
-            float angle = baseAngle + (float) ((random.nextFloat() - 0.5f) * Math.toRadians(coneAngle));
-            float speed = 100 + random.nextFloat() * 150;
-            
-            this.x = 0;
-            this.y = 0;
-            this.vx = (float) Math.cos(angle) * speed;
-            this.vy = (float) Math.sin(angle) * speed;
-            this.maxLife = 0.3f + random.nextFloat() * 0.2f;
-            this.life = maxLife;
-            this.colorIndex = random.nextInt(FLAME_COLORS.length);
-        }
-        
-        void update(float deltaTime) {
-            x += vx * deltaTime;
-            y += vy * deltaTime;
-            life -= deltaTime;
-            
-            // Desacelerar
-            vx *= 0.95f;
-            vy *= 0.95f;
-        }
-        
-        boolean isAlive() {
-            return life > 0;
-        }
-        
-        void render(Graphics2D g2d, float playerX, float playerY) {
-            float alpha = life / maxLife;
-            Color baseColor = FLAME_COLORS[colorIndex];
-            Color color = new Color(
-                baseColor.getRed(),
-                baseColor.getGreen(),
-                baseColor.getBlue(),
-                (int) (baseColor.getAlpha() * alpha)
-            );
-            
-            g2d.setColor(color);
-            int size = (int) (8 * alpha);
-            g2d.fillOval((int)(playerX + x - size/2), (int)(playerY + y - size/2), size, size);
-        }
     }
 }

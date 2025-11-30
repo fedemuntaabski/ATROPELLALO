@@ -1,6 +1,7 @@
 package com.atropellalo.game.weapon;
 
 import com.atropellalo.game.enemy.Enemy;
+import com.atropellalo.game.sound.SoundManager;
 
 import java.awt.Graphics2D;
 import java.util.List;
@@ -182,6 +183,14 @@ public abstract class Weapon {
      */
     protected void resetCooldown() {
         currentCooldown = fireDelay;
+    }
+    
+    /**
+     * Reproduce el sonido del arma.
+     * Las armas individuales pueden sobrescribir este método.
+     */
+    protected void playFireSound() {
+        SoundManager.getInstance().playWeaponSound(weaponType);
     }
     
     // ==================== MÉTODOS DE MEJORA ====================
