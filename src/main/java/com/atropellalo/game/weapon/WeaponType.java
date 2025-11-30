@@ -21,7 +21,10 @@ public enum WeaponType {
     FLAMETHROWER("Lanzallamas", "Daño continuo en área cercana"),
     
     /** Escopeta - alto daño, rango corto, múltiples proyectiles */
-    SHOTGUN("Escopeta", "Alto daño, rango corto, 5 proyectiles");
+    SHOTGUN("Escopeta", "Alto daño, rango corto, 5 proyectiles"),
+    
+    /** Rifle de francotirador - daño puntual altísimo, penetración */
+    SNIPER_RAILGUN("Rifle de Francotirador", "Daño extremo, atraviesa 3 enemigos");
     
     private final String displayName;
     private final String description;

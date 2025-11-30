@@ -45,9 +45,20 @@ public class GameHUD {
     private static final Font LEVEL_FONT = new Font("Arial", Font.BOLD, 16);
     private static final Font GAME_OVER_FONT = new Font("Arial", Font.BOLD, 48);
     private static final Font GAME_OVER_SUB_FONT = new Font("Arial", Font.PLAIN, 18);
+    private static final Font RESTART_FONT = new Font("Arial", Font.BOLD, 20);
     
     private final int screenWidth;
     private final int screenHeight;
+    
+    // Callback para reiniciar el juego
+    private RestartCallback restartCallback;
+    
+    /**
+     * Interface para callback de reinicio del juego.
+     */
+    public interface RestartCallback {
+        void onRestart();
+    }
     
     /**
      * Crea un nuevo HUD.
@@ -57,6 +68,26 @@ public class GameHUD {
     public GameHUD(int screenWidth, int screenHeight) {
         this.screenWidth = screenWidth;
         this.screenHeight = screenHeight;
+        this.restartCallback = null;
+    }
+    
+    /**
+     * Establece el callback para reiniciar el juego.
+     * @param callback Callback a ejecutar cuando se quiera reiniciar
+     */
+    public void setRestartCallback(RestartCallback callback) {
+        this.restartCallback = callback;
+    }
+    
+    /**
+     * Maneja la tecla presionada para reiniciar.
+     * @param keyCode Código de la tecla
+     */
+    public void handleKeyPress(int keyCode) {
+        // R para reiniciar cuando está en Game Over
+        if (keyCode == java.awt.event.KeyEvent.VK_R && restartCallback != null) {
+            restartCallback.onRestart();
+        }
     }
     
     /**
@@ -215,7 +246,7 @@ public class GameHUD {
     }
     
     /**
-     * Renderiza pantalla de Game Over.
+     * Renderiza pantalla de Game Over con opción de reiniciar.
      */
     private void renderGameOver(Graphics2D g2d) {
         // Fondo semi-transparente
@@ -227,7 +258,7 @@ public class GameHUD {
         String gameOverText = "GAME OVER";
         int textWidth = g2d.getFontMetrics().stringWidth(gameOverText);
         int x = (screenWidth - textWidth) / 2;
-        int y = screenHeight / 2;
+        int y = screenHeight / 2 - 40;
         
         // Sombra
         g2d.setColor(Color.BLACK);
@@ -244,6 +275,24 @@ public class GameHUD {
         x = (screenWidth - textWidth) / 2;
         g2d.setColor(Color.WHITE);
         g2d.drawString(subText, x, y + 40);
+        
+        // Texto de reinicio (parpadeante)
+        g2d.setFont(RESTART_FONT);
+        String restartText = "Presiona R para reiniciar";
+        textWidth = g2d.getFontMetrics().stringWidth(restartText);
+        x = (screenWidth - textWidth) / 2;
+        
+        // Efecto de parpadeo
+        if ((System.currentTimeMillis() / 500) % 2 == 0) {
+            // Fondo para el botón de reinicio
+            g2d.setColor(new Color(50, 50, 50, 200));
+            g2d.fillRoundRect(x - 15, y + 60, textWidth + 30, 40, 10, 10);
+            g2d.setColor(new Color(100, 200, 100));
+            g2d.drawRoundRect(x - 15, y + 60, textWidth + 30, 40, 10, 10);
+            
+            g2d.setColor(new Color(100, 255, 100));
+            g2d.drawString(restartText, x, y + 88);
+        }
     }
     
     /**

@@ -1,6 +1,8 @@
 package com.atropellalo.game.enemy;
 
 import com.atropellalo.game.config.GameConfig;
+import com.atropellalo.game.sprite.AnimationState;
+import com.atropellalo.game.sprite.BossSpriteGenerator;
 
 import java.awt.*;
 
@@ -67,6 +69,10 @@ public class BruiserBoss extends Enemy {
               GameConfig.BRUISER_BOSS_SIZE,
               GameConfig.BRUISER_BOSS_CONTACT_DAMAGE);
         this.xpMultiplier = (float) GameConfig.XP_BRUISER_BOSS / GameConfig.XP_SLOW_ZOMBIE;
+        
+        // Cargar animaciones del Bruiser Boss
+        this.animations = BossSpriteGenerator.generateBruiserAnimations();
+        this.currentAnimState = AnimationState.IDLE;
     }
     
     /**
@@ -93,6 +99,14 @@ public class BruiserBoss extends Enemy {
         float dy = playerY - y;
         float distanceToPlayer = (float) Math.sqrt(dx * dx + dy * dy);
         
+        // Actualizar rotación hacia el jugador
+        if (dx != 0 || dy != 0) {
+            rotation = (float) Math.atan2(dx, -dy);
+        }
+        
+        // Actualizar animación según estado
+        updateBossAnimationState(deltaTime);
+        
         switch (currentState) {
             case WALKING:
                 handleWalkingState(deltaTime, playerX, playerY, dx, dy, distanceToPlayer);
@@ -106,6 +120,40 @@ public class BruiserBoss extends Enemy {
             case COOLDOWN:
                 handleCooldownState(deltaTime);
                 break;
+        }
+    }
+    
+    /**
+     * Actualiza el estado de animación del jefe.
+     */
+    private void updateBossAnimationState(float deltaTime) {
+        AnimationState newState;
+        
+        switch (currentState) {
+            case CHARGING:
+            case EARTHQUAKE:
+                newState = AnimationState.ATTACK;
+                break;
+            case WALKING:
+                newState = AnimationState.MOVING;
+                break;
+            default:
+                newState = AnimationState.IDLE;
+        }
+        
+        if (!alive) {
+            newState = AnimationState.DEATH;
+        }
+        
+        if (newState != currentAnimState) {
+            currentAnimState = newState;
+            if (animations != null && animations.containsKey(currentAnimState)) {
+                animations.get(currentAnimState).reset();
+            }
+        }
+        
+        if (animations != null && animations.containsKey(currentAnimState)) {
+            animations.get(currentAnimState).update(deltaTime);
         }
     }
     
@@ -251,6 +299,34 @@ public class BruiserBoss extends Enemy {
             renderEarthquakeEffect(g2d);
         }
         
+        // Calcular escala para el sprite
+        float scale = (float) size / BossSpriteGenerator.BRUISER_WIDTH;
+        
+        // Intentar renderizar con animación
+        if (animations != null && !animations.isEmpty()) {
+            renderWithAnimation(g2d, scale);
+        } else {
+            // Fallback al render original
+            renderFallback(g2d, renderX, renderY);
+        }
+        
+        // Efecto de carga (rastro)
+        if (currentState == BossState.CHARGING) {
+            g2d.setColor(new Color(255, 100, 50, 100));
+            g2d.fillOval(renderX - 10, renderY - 5, size + 20, size + 10);
+        }
+        
+        // Barra de vida del jefe (más grande y visible)
+        renderBossHealthBar(g2d, renderX, renderY);
+        
+        // Indicador de jefe
+        renderBossIndicator(g2d, renderX, renderY);
+    }
+    
+    /**
+     * Renderizado de respaldo cuando no hay animaciones.
+     */
+    private void renderFallback(Graphics2D g2d, int renderX, int renderY) {
         // Sombra del jefe
         g2d.setColor(new Color(0, 0, 0, 80));
         g2d.fillOval(renderX + 4, renderY + size - 8, size, 12);
@@ -280,18 +356,6 @@ public class BruiserBoss extends Enemy {
         int eyeSize = size / 8;
         g2d.fillOval(renderX + size / 3 - eyeSize / 2, renderY + size / 4, eyeSize, eyeSize);
         g2d.fillOval(renderX + size / 2, renderY + size / 4, eyeSize, eyeSize);
-        
-        // Efecto de carga (rastro)
-        if (currentState == BossState.CHARGING) {
-            g2d.setColor(new Color(255, 100, 50, 100));
-            g2d.fillOval(renderX - 10, renderY - 5, size + 20, size + 10);
-        }
-        
-        // Barra de vida del jefe (más grande y visible)
-        renderBossHealthBar(g2d, renderX, renderY);
-        
-        // Indicador de jefe
-        renderBossIndicator(g2d, renderX, renderY);
     }
     
     /**

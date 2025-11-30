@@ -1,6 +1,7 @@
 package com.atropellalo.game.enemy;
 
 import com.atropellalo.game.config.GameConfig;
+import com.atropellalo.game.sprite.ZombieSpriteGenerator;
 
 import java.awt.Color;
 import java.awt.Graphics2D;
@@ -39,10 +40,34 @@ public class SlowZombie extends Enemy {
               GameConfig.SLOW_ZOMBIE_SIZE, 
               GameConfig.SLOW_ZOMBIE_DAMAGE,
               healthScale, speedScale, damageScale);
+        
+        // Cargar animaciones del zombie lento
+        this.animations = ZombieSpriteGenerator.generateSlowZombieAnimations();
     }
     
     @Override
     public void render(Graphics2D g2d) {
+        // Calcular escala para ajustar el sprite al tamaño del enemigo
+        float scale = (float) size / ZombieSpriteGenerator.SLOW_WIDTH;
+        
+        // Intentar renderizar con animación
+        if (animations != null && !animations.isEmpty()) {
+            renderWithAnimation(g2d, scale);
+            
+            // Barra de vida (solo si tiene daño)
+            if (health < maxHealth) {
+                renderHealthBar(g2d);
+            }
+        } else {
+            // Fallback al render original
+            renderFallback(g2d);
+        }
+    }
+    
+    /**
+     * Renderizado de respaldo cuando no hay animaciones.
+     */
+    private void renderFallback(Graphics2D g2d) {
         if (!alive) {
             return;
         }
@@ -74,26 +99,8 @@ public class SlowZombie extends Enemy {
         
         // Barra de vida (solo si tiene daño)
         if (health < maxHealth) {
-            renderHealthBar(g2d, px, py);
+            renderHealthBar(g2d);
         }
-    }
-    
-    /**
-     * Dibuja la barra de vida sobre el enemigo.
-     */
-    private void renderHealthBar(Graphics2D g2d, int px, int py) {
-        int barWidth = size;
-        int barHeight = 5;
-        int barY = py - 10;
-        
-        // Fondo
-        g2d.setColor(Color.DARK_GRAY);
-        g2d.fillRect(px, barY, barWidth, barHeight);
-        
-        // Vida actual
-        float healthPercent = health / maxHealth;
-        g2d.setColor(healthPercent > 0.5f ? Color.GREEN : (healthPercent > 0.25f ? Color.YELLOW : Color.RED));
-        g2d.fillRect(px, barY, (int)(barWidth * healthPercent), barHeight);
     }
     
     @Override

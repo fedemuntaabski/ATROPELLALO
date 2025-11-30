@@ -1,6 +1,7 @@
 package com.atropellalo.game.enemy;
 
 import com.atropellalo.game.config.GameConfig;
+import com.atropellalo.game.sprite.ZombieSpriteGenerator;
 
 import java.awt.Color;
 import java.awt.Graphics2D;
@@ -60,6 +61,9 @@ public class ExplosiveZombie extends Enemy {
               healthScale, speedScale, damageScale);
         this.exploded = false;
         this.explosionTimer = 0;
+        
+        // Cargar animaciones del zombie explosivo
+        this.animations = ZombieSpriteGenerator.generateExplosiveZombieAnimations();
     }
     
     /**
@@ -141,12 +145,33 @@ public class ExplosiveZombie extends Enemy {
         int px = (int) x;
         int py = (int) y;
         
-        // Si explotó, dibujar explosión
+        // Si explotó, mostrar efecto de explosión
         if (exploded) {
-            renderExplosion(g2d, px, py);
+            renderExplosionEffect(g2d, px, py);
             return;
         }
         
+        // Calcular escala para ajustar el sprite al tamaño del enemigo
+        float scale = (float) size / ZombieSpriteGenerator.EXPLOSIVE_WIDTH;
+        
+        // Intentar renderizar con animación
+        if (animations != null && !animations.isEmpty()) {
+            renderWithAnimation(g2d, scale);
+            
+            // Barra de vida
+            if (health < maxHealth) {
+                renderHealthBar(g2d);
+            }
+        } else {
+            // Fallback al render original
+            renderFallback(g2d, px, py);
+        }
+    }
+    
+    /**
+     * Renderizado de respaldo cuando no hay animaciones.
+     */
+    private void renderFallback(Graphics2D g2d, int px, int py) {
         if (!alive) {
             return;
         }
@@ -175,57 +200,82 @@ public class ExplosiveZombie extends Enemy {
         
         // Barra de vida
         if (health < maxHealth) {
-            renderHealthBar(g2d, px, py);
+            renderHealthBar(g2d);
         }
     }
     
     /**
-     * Dibuja la animación de explosión.
+     * Dibuja el efecto visual de explosión mejorado.
      */
-    private void renderExplosion(Graphics2D g2d, int px, int py) {
+    private void renderExplosionEffect(Graphics2D g2d, int px, int py) {
         float progress = explosionTimer / EXPLOSION_DURATION;
         int maxRadius = (int) GameConfig.EXPLOSIVE_ZOMBIE_RADIUS;
-        int currentRadius = (int) (maxRadius * progress);
         
-        // Círculos concéntricos de explosión
+        // El radio crece rápidamente al principio y luego se estabiliza
+        float easedProgress = 1f - (1f - progress) * (1f - progress);
+        int currentRadius = (int) (maxRadius * easedProgress);
+        
         int centerX = px + size / 2;
         int centerY = py + size / 2;
         
-        // Círculo exterior (naranja)
-        int alpha = (int) ((1 - progress) * 200);
-        g2d.setColor(new Color(255, 165, 0, Math.max(0, alpha)));
+        // Alpha disminuye con el tiempo
+        int baseAlpha = (int) ((1 - progress) * 255);
+        
+        // Ondas de choque (anillos que se expanden)
+        for (int ring = 0; ring < 3; ring++) {
+            float ringOffset = ring * 0.15f;
+            float ringProgress = Math.min(1f, easedProgress + ringOffset);
+            int ringRadius = (int) (maxRadius * ringProgress * 0.8f);
+            int ringAlpha = Math.max(0, (int)(baseAlpha * (1f - ringOffset * 2)));
+            
+            g2d.setColor(new Color(255, 200, 100, ringAlpha / 3));
+            g2d.setStroke(new java.awt.BasicStroke(3 - ring));
+            g2d.drawOval(centerX - ringRadius, centerY - ringRadius, 
+                        ringRadius * 2, ringRadius * 2);
+        }
+        
+        // Círculo exterior de fuego (naranja)
+        int outerAlpha = Math.max(0, baseAlpha - 50);
+        g2d.setColor(new Color(255, 120, 0, outerAlpha));
         g2d.fillOval(centerX - currentRadius, centerY - currentRadius, 
                      currentRadius * 2, currentRadius * 2);
         
-        // Círculo medio (rojo)
-        int innerRadius = currentRadius * 2 / 3;
-        g2d.setColor(new Color(255, 0, 0, Math.max(0, alpha)));
-        g2d.fillOval(centerX - innerRadius, centerY - innerRadius, 
-                     innerRadius * 2, innerRadius * 2);
+        // Círculo medio (rojo-naranja)
+        int middleRadius = (int)(currentRadius * 0.7f);
+        int middleAlpha = Math.max(0, baseAlpha);
+        g2d.setColor(new Color(255, 60, 0, middleAlpha));
+        g2d.fillOval(centerX - middleRadius, centerY - middleRadius, 
+                     middleRadius * 2, middleRadius * 2);
         
-        // Círculo central (amarillo)
-        int coreRadius = currentRadius / 3;
-        g2d.setColor(new Color(255, 255, 0, Math.max(0, alpha)));
+        // Núcleo brillante (amarillo-blanco)
+        int coreRadius = (int)(currentRadius * 0.35f);
+        int coreAlpha = Math.max(0, (int)(baseAlpha * 1.2f));
+        coreAlpha = Math.min(255, coreAlpha);
+        g2d.setColor(new Color(255, 255, 150, coreAlpha));
         g2d.fillOval(centerX - coreRadius, centerY - coreRadius, 
                      coreRadius * 2, coreRadius * 2);
-    }
-    
-    /**
-     * Dibuja la barra de vida sobre el enemigo.
-     */
-    private void renderHealthBar(Graphics2D g2d, int px, int py) {
-        int barWidth = size;
-        int barHeight = 4;
-        int barY = py - 8;
         
-        // Fondo
-        g2d.setColor(Color.DARK_GRAY);
-        g2d.fillRect(px, barY, barWidth, barHeight);
+        // Centro blanco muy brillante
+        int hotCoreRadius = (int)(currentRadius * 0.15f);
+        g2d.setColor(new Color(255, 255, 255, coreAlpha));
+        g2d.fillOval(centerX - hotCoreRadius, centerY - hotCoreRadius, 
+                     hotCoreRadius * 2, hotCoreRadius * 2);
         
-        // Vida actual
-        float healthPercent = health / maxHealth;
-        g2d.setColor(healthPercent > 0.5f ? Color.ORANGE : Color.RED);
-        g2d.fillRect(px, barY, (int)(barWidth * healthPercent), barHeight);
+        // Partículas de escombros (pequeños círculos que salen)
+        java.util.Random rand = new java.util.Random((long)(x * 1000 + y));
+        int particleCount = 8;
+        for (int i = 0; i < particleCount; i++) {
+            float angle = (float)(i * Math.PI * 2 / particleCount) + rand.nextFloat() * 0.5f;
+            float particleDist = currentRadius * (0.8f + rand.nextFloat() * 0.4f);
+            int particleX = centerX + (int)(Math.cos(angle) * particleDist);
+            int particleY = centerY + (int)(Math.sin(angle) * particleDist);
+            int particleSize = 3 + rand.nextInt(4);
+            
+            int particleAlpha = Math.max(0, baseAlpha - 30);
+            g2d.setColor(new Color(255, 150, 50, particleAlpha));
+            g2d.fillOval(particleX - particleSize/2, particleY - particleSize/2, 
+                        particleSize, particleSize);
+        }
     }
     
     @Override

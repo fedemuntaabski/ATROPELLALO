@@ -1,6 +1,7 @@
 package com.atropellalo.game.loot;
 
 import com.atropellalo.game.config.GameConfig;
+import com.atropellalo.game.map.CityMap;
 
 import java.awt.Graphics2D;
 import java.util.ArrayList;
@@ -29,6 +30,9 @@ public class LootManager {
     private int currentFuelCount;
     private int currentScrapCount;
     
+    // Referencia al mapa para spawn válido
+    private CityMap cityMap;
+    
     /**
      * Crea un nuevo gestor de loot.
      */
@@ -43,6 +47,14 @@ public class LootManager {
         
         calculateNextSpawnTimes();
         spawnInitialLoot();
+    }
+    
+    /**
+     * Establece la referencia al mapa de la ciudad para spawn válido.
+     * @param cityMap Mapa de la ciudad
+     */
+    public void setCityMap(CityMap cityMap) {
+        this.cityMap = cityMap;
     }
     
     /**
@@ -119,6 +131,7 @@ public class LootManager {
     
     /**
      * Genera un orbe de XP en una posición específica.
+     * Verifica que no colisione con edificios si hay mapa configurado.
      * @param x Posición X
      * @param y Posición Y
      * @param xpValue Cantidad de XP
@@ -128,30 +141,80 @@ public class LootManager {
         float offsetX = (random.nextFloat() - 0.5f) * 20;
         float offsetY = (random.nextFloat() - 0.5f) * 20;
         
-        xpOrbs.add(new XPOrb(x + offsetX, y + offsetY, xpValue));
+        float finalX = x + offsetX;
+        float finalY = y + offsetY;
+        
+        // Verificar colisión con obstáculos y ajustar si es necesario
+        if (cityMap != null && cityMap.checkCollision(finalX, finalY, GameConfig.XP_ORB_SIZE, GameConfig.XP_ORB_SIZE)) {
+            // Intentar sin offset si colisiona
+            finalX = x;
+            finalY = y;
+            
+            // Si aún colisiona, buscar posición cercana válida
+            if (cityMap.checkCollision(finalX, finalY, GameConfig.XP_ORB_SIZE, GameConfig.XP_ORB_SIZE)) {
+                for (int i = 0; i < 8; i++) {
+                    float angle = (float) (i * Math.PI / 4);
+                    float testX = x + (float) Math.cos(angle) * 30;
+                    float testY = y + (float) Math.sin(angle) * 30;
+                    if (!cityMap.checkCollision(testX, testY, GameConfig.XP_ORB_SIZE, GameConfig.XP_ORB_SIZE)) {
+                        finalX = testX;
+                        finalY = testY;
+                        break;
+                    }
+                }
+            }
+        }
+        
+        xpOrbs.add(new XPOrb(finalX, finalY, xpValue));
     }
     
     /**
-     * Genera un nuevo item de combustible en posición aleatoria.
+     * Genera un nuevo item de combustible en posición aleatoria válida.
+     * Verifica que no colisione con obstáculos si hay mapa configurado.
      */
     private void spawnFuel() {
-        float x = GameConfig.LOOT_SPAWN_MARGIN + 
-            random.nextFloat() * (GameConfig.WORLD_WIDTH - 2 * GameConfig.LOOT_SPAWN_MARGIN - GameConfig.FUEL_SIZE);
-        float y = GameConfig.LOOT_SPAWN_MARGIN + 
-            random.nextFloat() * (GameConfig.WORLD_HEIGHT - 2 * GameConfig.LOOT_SPAWN_MARGIN - GameConfig.FUEL_SIZE);
+        float x, y;
+        int attempts = 0;
+        int maxAttempts = 30;
+        
+        do {
+            x = GameConfig.LOOT_SPAWN_MARGIN + 
+                random.nextFloat() * (GameConfig.WORLD_WIDTH - 2 * GameConfig.LOOT_SPAWN_MARGIN - GameConfig.FUEL_SIZE);
+            y = GameConfig.LOOT_SPAWN_MARGIN + 
+                random.nextFloat() * (GameConfig.WORLD_HEIGHT - 2 * GameConfig.LOOT_SPAWN_MARGIN - GameConfig.FUEL_SIZE);
+            attempts++;
+            
+            // Si no hay mapa o no hay colisión, posición válida
+            if (cityMap == null || !cityMap.checkCollision(x, y, GameConfig.FUEL_SIZE, GameConfig.FUEL_SIZE)) {
+                break;
+            }
+        } while (attempts < maxAttempts);
         
         lootItems.add(new Fuel(x, y));
         currentFuelCount++;
     }
     
     /**
-     * Genera un nuevo item de chatarra en posición aleatoria.
+     * Genera un nuevo item de chatarra en posición aleatoria válida.
+     * Verifica que no colisione con obstáculos si hay mapa configurado.
      */
     private void spawnScrap() {
-        float x = GameConfig.LOOT_SPAWN_MARGIN + 
-            random.nextFloat() * (GameConfig.WORLD_WIDTH - 2 * GameConfig.LOOT_SPAWN_MARGIN - GameConfig.SCRAP_SIZE);
-        float y = GameConfig.LOOT_SPAWN_MARGIN + 
-            random.nextFloat() * (GameConfig.WORLD_HEIGHT - 2 * GameConfig.LOOT_SPAWN_MARGIN - GameConfig.SCRAP_SIZE);
+        float x, y;
+        int attempts = 0;
+        int maxAttempts = 30;
+        
+        do {
+            x = GameConfig.LOOT_SPAWN_MARGIN + 
+                random.nextFloat() * (GameConfig.WORLD_WIDTH - 2 * GameConfig.LOOT_SPAWN_MARGIN - GameConfig.SCRAP_SIZE);
+            y = GameConfig.LOOT_SPAWN_MARGIN + 
+                random.nextFloat() * (GameConfig.WORLD_HEIGHT - 2 * GameConfig.LOOT_SPAWN_MARGIN - GameConfig.SCRAP_SIZE);
+            attempts++;
+            
+            // Si no hay mapa o no hay colisión, posición válida
+            if (cityMap == null || !cityMap.checkCollision(x, y, GameConfig.SCRAP_SIZE, GameConfig.SCRAP_SIZE)) {
+                break;
+            }
+        } while (attempts < maxAttempts);
         
         lootItems.add(new Scrap(x, y));
         currentScrapCount++;

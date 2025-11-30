@@ -2,6 +2,7 @@ package com.atropellalo.game.ui;
 
 import com.atropellalo.game.camera.Camera;
 import com.atropellalo.game.config.GameConfig;
+import com.atropellalo.game.enemy.Enemy;
 import com.atropellalo.game.enemy.EnemyManager;
 import com.atropellalo.game.entity.Player;
 import com.atropellalo.game.input.InputHandler;
@@ -9,19 +10,18 @@ import com.atropellalo.game.loot.Loot;
 import com.atropellalo.game.loot.LootManager;
 import com.atropellalo.game.loot.LootType;
 import com.atropellalo.game.loot.XPOrb;
+import com.atropellalo.game.map.CityMap;
+import com.atropellalo.game.pathfinding.AStarPathfinder;
 import com.atropellalo.game.upgrade.UpgradeManager;
 import com.atropellalo.game.upgrade.UpgradeOption;
 import com.atropellalo.game.weapon.WeaponManager;
 
 import javax.swing.JPanel;
-import javax.imageio.ImageIO;
 import java.awt.Graphics;
 import java.awt.Graphics2D;
 import java.awt.RenderingHints;
 import java.awt.event.KeyEvent;
 import java.awt.event.KeyListener;
-import java.awt.image.BufferedImage;
-import java.io.IOException;
 import java.util.List;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -34,14 +34,18 @@ import java.util.logging.Logger;
 public class GamePanel extends JPanel implements Runnable, KeyListener {
     
     private static final Logger LOGGER = Logger.getLogger(GamePanel.class.getName());
-    private static final String MAP_IMAGE_PATH = "/images/map.jpg";
     private static final int TARGET_FPS = 60;
     private static final long OPTIMAL_TIME = 1000000000 / TARGET_FPS;
     
-    private BufferedImage mapImage;
     private Thread gameThread;
     private boolean running;
     private boolean paused;
+    
+    // Mapa de la ciudad
+    private CityMap cityMap;
+    
+    // Pathfinder A*
+    private AStarPathfinder pathfinder;
     
     private Player player;
     private Camera camera;
@@ -56,7 +60,6 @@ public class GamePanel extends JPanel implements Runnable, KeyListener {
     private UpgradeMenu upgradeMenu;
     
     public GamePanel() {
-        loadMapImage();
         setFocusable(true);
         initializeGame();
     }
@@ -65,33 +68,62 @@ public class GamePanel extends JPanel implements Runnable, KeyListener {
      * Inicializa los componentes del juego.
      */
     private void initializeGame() {
-        // Crear jugador en el centro del mundo
+        // Crear mapa de la ciudad (con semilla fija para consistencia durante desarrollo)
+        cityMap = new CityMap(12345L);
+        
+        // Crear pathfinder A* y configurarlo para los enemigos
+        pathfinder = new AStarPathfinder(cityMap);
+        Enemy.setPathfinder(pathfinder);
+        
+        // Crear jugador en el centro del mundo (zona de spawn segura)
         player = new Player(GameConfig.WORLD_WIDTH / 2f, GameConfig.WORLD_HEIGHT / 2f);
         
         // Configurar callback de subida de nivel
         player.setLevelUpCallback(this::onPlayerLevelUp);
         
+        // Configurar callback de colisión con el mapa de la ciudad
+        player.setCollisionCallback(new Player.CollisionCallback() {
+            @Override
+            public boolean checkCollision(float x, float y, float width, float height) {
+                return cityMap.checkCollision(x, y, width, height);
+            }
+            
+            @Override
+            public float[] resolveCollision(float oldX, float oldY, float newX, float newY, 
+                                             float width, float height) {
+                return cityMap.resolveCollision(oldX, oldY, newX, newY, width, height);
+            }
+        });
+        
         // Crear cámara
         camera = new Camera(1280, 720, GameConfig.WORLD_WIDTH, GameConfig.WORLD_HEIGHT);
         
-        // Crear y configurar input handler
+        // Remover listeners anteriores antes de agregar nuevos
+        for (java.awt.event.KeyListener listener : getKeyListeners()) {
+            removeKeyListener(listener);
+        }
+        
+        // Crear y configurar input handler (nuevo cada vez)
         inputHandler = new InputHandler();
         addKeyListener(inputHandler);
-        addKeyListener(this); // Para el menú de mejoras
+        addKeyListener(this); // Para el menú de mejoras y reinicio
         
-        // Crear sistema de loot
+        // Crear sistema de loot con referencia al mapa para spawn válido
         lootManager = new LootManager();
+        lootManager.setCityMap(cityMap);
         
-        // Crear sistema de enemigos
+        // Crear sistema de enemigos con referencia al mapa
         enemyManager = new EnemyManager();
         enemyManager.setPlayer(player);
         enemyManager.setLootManager(lootManager);
+        enemyManager.setCityMap(cityMap);
         
         // Crear sistema de armas
         weaponManager = new WeaponManager();
         
-        // Crear HUD
+        // Crear HUD con callback de reinicio
         gameHUD = new GameHUD(1280, 720);
+        gameHUD.setRestartCallback(this::restartGame);
         
         // Crear sistema de mejoras
         upgradeManager = new UpgradeManager();
@@ -101,6 +133,15 @@ public class GamePanel extends JPanel implements Runnable, KeyListener {
         paused = false;
         
         LOGGER.info("Juego inicializado - Mundo: " + GameConfig.WORLD_WIDTH + "x" + GameConfig.WORLD_HEIGHT);
+        LOGGER.info("Mapa de ciudad generado con semilla: " + cityMap.getSeed());
+    }
+    
+    /**
+     * Reinicia el juego creando una nueva partida.
+     */
+    private void restartGame() {
+        LOGGER.info("Reiniciando juego...");
+        initializeGame();
     }
     
     /**
@@ -233,18 +274,6 @@ public class GamePanel extends JPanel implements Runnable, KeyListener {
         }
     }
     
-    /**
-     * Carga la imagen del mapa desde los recursos.
-     */
-    private void loadMapImage() {
-        try {
-            mapImage = ImageIO.read(getClass().getResourceAsStream(MAP_IMAGE_PATH));
-            LOGGER.info("Mapa cargado exitosamente: " + MAP_IMAGE_PATH);
-        } catch (IOException e) {
-            LOGGER.log(Level.SEVERE, "Error al cargar la imagen del mapa: " + MAP_IMAGE_PATH, e);
-        }
-    }
-    
     @Override
     protected void paintComponent(Graphics g) {
         super.paintComponent(g);
@@ -278,12 +307,10 @@ public class GamePanel extends JPanel implements Runnable, KeyListener {
     }
     
     /**
-     * Dibuja el mapa de fondo al tamaño del mundo.
+     * Dibuja el mapa de la ciudad.
      */
     private void drawMap(Graphics2D g2d) {
-        if (mapImage != null) {
-            g2d.drawImage(mapImage, 0, 0, GameConfig.WORLD_WIDTH, GameConfig.WORLD_HEIGHT, null);
-        }
+        cityMap.render(g2d);
     }
     
     /**
@@ -314,12 +341,15 @@ public class GamePanel extends JPanel implements Runnable, KeyListener {
         player.render(g2d);
     }
     
-    // KeyListener para el menú de mejoras
+    // KeyListener para el menú de mejoras y reinicio
     
     @Override
     public void keyPressed(KeyEvent e) {
         if (upgradeMenu.isVisible()) {
             upgradeMenu.handleKeyPress(e.getKeyCode());
+        } else if (!player.isAlive()) {
+            // Cuando está muerto, delegar al HUD para reiniciar
+            gameHUD.handleKeyPress(e.getKeyCode());
         }
     }
     

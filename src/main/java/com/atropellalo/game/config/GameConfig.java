@@ -168,6 +168,96 @@ public final class GameConfig {
     /** Daño de la explosión */
     public static float EXPLOSIVE_ZOMBIE_EXPLOSION_DAMAGE = 25.0f;
     
+    // ==================== ENEMIGOS - ZOMBIE ESCUPIDOR (SPITTER) ====================
+    
+    /** Velocidad del zombie escupidor (píxeles/segundo) */
+    public static float SPITTER_ZOMBIE_SPEED = 60.0f;
+    
+    /** Salud del zombie escupidor */
+    public static float SPITTER_ZOMBIE_HEALTH = 50.0f;
+    
+    /** Tamaño del zombie escupidor */
+    public static int SPITTER_ZOMBIE_SIZE = 28;
+    
+    /** Daño del zombie escupidor por contacto */
+    public static float SPITTER_ZOMBIE_DAMAGE = 6.0f;
+    
+    /** Daño del proyectil de ácido */
+    public static float SPITTER_PROJECTILE_DAMAGE = 12.0f;
+    
+    /** Velocidad del proyectil de ácido */
+    public static float SPITTER_PROJECTILE_SPEED = 180.0f;
+    
+    /** Rango de disparo del escupidor */
+    public static float SPITTER_ATTACK_RANGE = 280.0f;
+    
+    /** Intervalo entre disparos (segundos) */
+    public static float SPITTER_FIRE_RATE = 2.5f;
+    
+    /** Radio del charco corrosivo */
+    public static float SPITTER_PUDDLE_RADIUS = 35.0f;
+    
+    /** Duración del charco corrosivo (segundos) */
+    public static float SPITTER_PUDDLE_DURATION = 4.0f;
+    
+    /** Daño por segundo del charco corrosivo */
+    public static float SPITTER_PUDDLE_DAMAGE = 8.0f;
+    
+    // ==================== ENEMIGOS - ZOMBIE BUFFER (WAR CRIER) ====================
+    
+    /** Velocidad del zombie buffer (píxeles/segundo) */
+    public static float BUFFER_ZOMBIE_SPEED = 45.0f;
+    
+    /** Salud del zombie buffer */
+    public static float BUFFER_ZOMBIE_HEALTH = 70.0f;
+    
+    /** Tamaño del zombie buffer */
+    public static int BUFFER_ZOMBIE_SIZE = 32;
+    
+    /** Daño del zombie buffer por contacto (muy bajo) */
+    public static float BUFFER_ZOMBIE_DAMAGE = 4.0f;
+    
+    /** Radio del aura de buff */
+    public static float BUFFER_AURA_RADIUS = 150.0f;
+    
+    /** Bonus de velocidad para aliados (porcentaje) */
+    public static float BUFFER_SPEED_BONUS = 0.20f;
+    
+    /** Bonus de daño para aliados (porcentaje) */
+    public static float BUFFER_DAMAGE_BONUS = 0.15f;
+    
+    /** Duración del buff después de salir del aura (segundos) */
+    public static float BUFFER_BUFF_DURATION = 3.0f;
+    
+    /** Intervalo de pulso del aura (segundos) */
+    public static float BUFFER_AURA_PULSE_RATE = 0.5f;
+    
+    // ==================== ENEMIGOS - ZOMBIE PORTADOR (BROOD CARRIER) ====================
+    
+    /** Velocidad del zombie portador (píxeles/segundo) */
+    public static float BROOD_CARRIER_SPEED = 35.0f;
+    
+    /** Salud del zombie portador (alta) */
+    public static float BROOD_CARRIER_HEALTH = 120.0f;
+    
+    /** Tamaño del zombie portador */
+    public static int BROOD_CARRIER_SIZE = 40;
+    
+    /** Daño del zombie portador por contacto (bajo) */
+    public static float BROOD_CARRIER_DAMAGE = 8.0f;
+    
+    /** Cantidad de zombies rápidos generados al morir */
+    public static int BROOD_CARRIER_SPAWN_COUNT = 6;
+    
+    /** Radio de spawn de los zombies pequeños */
+    public static float BROOD_CARRIER_SPAWN_RADIUS = 50.0f;
+    
+    /** Factor de salud de los zombies generados (respecto al zombie rápido base) */
+    public static float BROOD_CARRIER_SPAWN_HEALTH_SCALE = 0.5f;
+    
+    /** Factor de daño de los zombies generados */
+    public static float BROOD_CARRIER_SPAWN_DAMAGE_SCALE = 0.6f;
+    
     // ==================== SISTEMA DE OLEADAS ====================
     
     /** Tiempo entre oleadas (segundos) */
@@ -192,7 +282,25 @@ public final class GameConfig {
     public static int SLOW_ZOMBIE_SPAWN_CHANCE = 30;
     
     /** Probabilidad de zombie explosivo (0-100) */
-    public static int EXPLOSIVE_ZOMBIE_SPAWN_CHANCE = 20;
+    public static int EXPLOSIVE_ZOMBIE_SPAWN_CHANCE = 15;
+    
+    /** Probabilidad de zombie escupidor (0-100) */
+    public static int SPITTER_ZOMBIE_SPAWN_CHANCE = 12;
+    
+    /** Probabilidad de zombie buffer (0-100) */
+    public static int BUFFER_ZOMBIE_SPAWN_CHANCE = 8;
+    
+    /** Probabilidad de zombie portador (0-100) */
+    public static int BROOD_CARRIER_SPAWN_CHANCE = 5;
+    
+    /** Oleada mínima para spawn de escupidores */
+    public static int SPITTER_MIN_WAVE = 3;
+    
+    /** Oleada mínima para spawn de buffers */
+    public static int BUFFER_MIN_WAVE = 4;
+    
+    /** Oleada mínima para spawn de portadores */
+    public static int BROOD_CARRIER_MIN_WAVE = 6;
     
     // ==================== ARMAS - PISTOLA ====================
     
@@ -305,6 +413,32 @@ public final class GameConfig {
     /** Tick rate del daño del lanzallamas (segundos) */
     public static float FLAMETHROWER_TICK_RATE = 0.1f;
     
+    // ==================== ARMAS - RIFLE DE FRANCOTIRADOR (SNIPER RAILGUN) ====================
+    
+    /** Daño del rifle de francotirador (muy alto - one-shot mayoría de enemigos) */
+    public static float SNIPER_DAMAGE = 120.0f;
+    
+    /** Rango del rifle de francotirador (muy largo) */
+    public static float SNIPER_RANGE = 500.0f;
+    
+    /** Delay entre disparos (muy alto - cadencia baja) */
+    public static float SNIPER_FIRE_DELAY = 2.5f;
+    
+    /** Cantidad de enemigos que atraviesa el proyectil */
+    public static int SNIPER_PENETRATION = 3;
+    
+    /** Velocidad del proyectil del francotirador */
+    public static float SNIPER_PROJECTILE_SPEED = 800.0f;
+    
+    /** Tamaño del proyectil del francotirador */
+    public static int SNIPER_PROJECTILE_SIZE = 12;
+    
+    /** Ancho del rayo del francotirador para colisiones */
+    public static float SNIPER_RAY_WIDTH = 3.0f;
+    
+    /** Duración visual del rastro del francotirador (segundos) */
+    public static float SNIPER_TRAIL_DURATION = 0.08f;
+    
     // ==================== SISTEMA DE XP Y NIVELES ====================
     
     /** Tamaño del orbe de XP */
@@ -327,6 +461,15 @@ public final class GameConfig {
     
     /** XP base otorgado por zombie explosivo */
     public static int XP_EXPLOSIVE_ZOMBIE = 20;
+    
+    /** XP base otorgado por zombie escupidor */
+    public static int XP_SPITTER_ZOMBIE = 25;
+    
+    /** XP base otorgado por zombie buffer */
+    public static int XP_BUFFER_ZOMBIE = 30;
+    
+    /** XP base otorgado por zombie portador */
+    public static int XP_BROOD_CARRIER = 35;
     
     /** XP requerido para nivel 1 -> 2 */
     public static int XP_BASE_TO_LEVEL_UP = 100;
@@ -355,7 +498,7 @@ public final class GameConfig {
     public static int UPGRADE_WEAPON_PROJECTILE_COUNT = 1;
     
     /** Máximo de armas que puede tener el jugador */
-    public static int MAX_WEAPONS = 3;
+    public static int MAX_WEAPONS = 4;
     
     // ==================== ESCALADO DE OLEADAS ====================
     
@@ -379,7 +522,7 @@ public final class GameConfig {
     // ==================== JEFE - EL APLASTADOR (BRUISER) - OLEADA 10 ====================
     
     /** Salud del Aplastador (muy alta) */
-    public static float BRUISER_BOSS_HEALTH = 700.0f;
+    public static float BRUISER_BOSS_HEALTH = 800.0f;
     
     /** Velocidad del Aplastador (baja-media) */
     public static float BRUISER_BOSS_SPEED = 60.0f;
@@ -423,7 +566,7 @@ public final class GameConfig {
     // ==================== JEFE - EL INFECTADOR (INFECTOR) - OLEADA 20 ====================
     
     /** Salud del Infectador (media-alta) */
-    public static float INFECTOR_BOSS_HEALTH = 550.0f;
+    public static float INFECTOR_BOSS_HEALTH = 650.0f;
     
     /** Velocidad del Infectador (media) */
     public static float INFECTOR_BOSS_SPEED = 80.0f;
