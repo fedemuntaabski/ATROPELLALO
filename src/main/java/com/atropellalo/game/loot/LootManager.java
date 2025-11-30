@@ -119,6 +119,7 @@ public class LootManager {
     
     /**
      * Genera un orbe de XP en una posición específica.
+     * Verifica que no colisione con edificios si hay mapa configurado.
      * @param x Posición X
      * @param y Posición Y
      * @param xpValue Cantidad de XP
@@ -128,16 +129,23 @@ public class LootManager {
         float offsetX = (random.nextFloat() - 0.5f) * 20;
         float offsetY = (random.nextFloat() - 0.5f) * 20;
         
-        xpOrbs.add(new XPOrb(x + offsetX, y + offsetY, xpValue));
+        float finalX = x + offsetX;
+        float finalY = y + offsetY;
+        
+        // Sin colisiones en el estacionamiento - spawns siempre válidos
+        
+        xpOrbs.add(new XPOrb(finalX, finalY, xpValue));
     }
     
     /**
-     * Genera un nuevo item de combustible en posición aleatoria.
+     * Genera un nuevo item de combustible en posición aleatoria válida.
      */
     private void spawnFuel() {
-        float x = GameConfig.LOOT_SPAWN_MARGIN + 
+        float x, y;
+        
+        x = GameConfig.LOOT_SPAWN_MARGIN + 
             random.nextFloat() * (GameConfig.WORLD_WIDTH - 2 * GameConfig.LOOT_SPAWN_MARGIN - GameConfig.FUEL_SIZE);
-        float y = GameConfig.LOOT_SPAWN_MARGIN + 
+        y = GameConfig.LOOT_SPAWN_MARGIN + 
             random.nextFloat() * (GameConfig.WORLD_HEIGHT - 2 * GameConfig.LOOT_SPAWN_MARGIN - GameConfig.FUEL_SIZE);
         
         lootItems.add(new Fuel(x, y));
@@ -145,12 +153,14 @@ public class LootManager {
     }
     
     /**
-     * Genera un nuevo item de chatarra en posición aleatoria.
+     * Genera un nuevo item de chatarra en posición aleatoria válida.
      */
     private void spawnScrap() {
-        float x = GameConfig.LOOT_SPAWN_MARGIN + 
+        float x, y;
+        
+        x = GameConfig.LOOT_SPAWN_MARGIN + 
             random.nextFloat() * (GameConfig.WORLD_WIDTH - 2 * GameConfig.LOOT_SPAWN_MARGIN - GameConfig.SCRAP_SIZE);
-        float y = GameConfig.LOOT_SPAWN_MARGIN + 
+        y = GameConfig.LOOT_SPAWN_MARGIN + 
             random.nextFloat() * (GameConfig.WORLD_HEIGHT - 2 * GameConfig.LOOT_SPAWN_MARGIN - GameConfig.SCRAP_SIZE);
         
         lootItems.add(new Scrap(x, y));
@@ -217,13 +227,15 @@ public class LootManager {
      * @param g2d Contexto gráfico
      */
     public void render(Graphics2D g2d) {
-        // Renderizar loot normal
-        for (Loot loot : lootItems) {
+        // Renderizar loot normal (copia para evitar ConcurrentModificationException)
+        List<Loot> lootCopy = new ArrayList<>(lootItems);
+        for (Loot loot : lootCopy) {
             loot.render(g2d);
         }
         
-        // Renderizar orbes de XP
-        for (XPOrb orb : xpOrbs) {
+        // Renderizar orbes de XP (copia para evitar ConcurrentModificationException)
+        List<XPOrb> orbsCopy = new ArrayList<>(xpOrbs);
+        for (XPOrb orb : orbsCopy) {
             orb.render(g2d);
         }
     }

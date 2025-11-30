@@ -19,7 +19,9 @@ import java.util.logging.Logger;
  */
 public class EnemyManager implements ExplosiveZombie.ExplosionCallback, 
                                      BruiserBoss.BossDamageCallback, 
-                                     InfectorBoss.BossDamageCallback {
+                                     InfectorBoss.BossDamageCallback,
+                                     SpitterZombie.SpitterCallback,
+                                     BroodCarrier.BroodCallback {
     
     private static final Logger LOGGER = Logger.getLogger(EnemyManager.class.getName());
     
@@ -98,6 +100,9 @@ public class EnemyManager implements ExplosiveZombie.ExplosionCallback,
             }
         }
         
+        // Actualizar proyectiles y charcos de los Spitters
+        SpitterZombie.updateProjectilesAndPuddles(deltaTime, playerX, playerY, this);
+        
         // Verificar colisiones con jugador
         checkPlayerCollisions(playerX, playerY);
         
@@ -160,7 +165,7 @@ public class EnemyManager implements ExplosiveZombie.ExplosionCallback,
     }
     
     /**
-     * Genera un enemigo aleatorio en una posición válida.
+     * Genera un enemigo aleatorio en una posición válida (en las calles).
      * En oleadas de jefe, genera el jefe primero.
      */
     private void spawnRandomEnemy(float playerX, float playerY) {
@@ -180,17 +185,25 @@ public class EnemyManager implements ExplosiveZombie.ExplosionCallback,
         // Determinar tipo de enemigo normal
         EnemyType type = getRandomEnemyType();
         
-        // Encontrar posición válida (lejos del jugador)
+        // Encontrar posición válida (lejos del jugador y en las calles)
         float x, y;
         int attempts = 0;
+        int maxAttempts = 50;
+        
         do {
             x = GameConfig.ENEMY_SPAWN_MARGIN + 
                 random.nextFloat() * (GameConfig.WORLD_WIDTH - 2 * GameConfig.ENEMY_SPAWN_MARGIN);
             y = GameConfig.ENEMY_SPAWN_MARGIN + 
                 random.nextFloat() * (GameConfig.WORLD_HEIGHT - 2 * GameConfig.ENEMY_SPAWN_MARGIN);
             attempts++;
-        } while (distanceToPoint(x, y, playerX, playerY) < GameConfig.ENEMY_MIN_SPAWN_DISTANCE 
-                 && attempts < 50);
+            
+            // Verificar distancia del jugador
+            if (distanceToPoint(x, y, playerX, playerY) < GameConfig.ENEMY_MIN_SPAWN_DISTANCE) {
+                continue;
+            }
+            
+            break;
+        } while (attempts < maxAttempts);
         
         // Crear enemigo
         Enemy enemy = createEnemy(type, x, y);
@@ -198,20 +211,28 @@ public class EnemyManager implements ExplosiveZombie.ExplosionCallback,
     }
     
     /**
-     * Genera un jefe en una posición válida.
+     * Genera un jefe en una posición válida (en las calles).
      */
     private void spawnBoss(EnemyType bossType, float playerX, float playerY) {
-        // Encontrar posición válida para el jefe (lejos del jugador)
+        // Encontrar posición válida para el jefe (lejos del jugador y en las calles)
         float x, y;
         int attempts = 0;
+        int maxAttempts = 50;
+        
         do {
             x = GameConfig.ENEMY_SPAWN_MARGIN + 
                 random.nextFloat() * (GameConfig.WORLD_WIDTH - 2 * GameConfig.ENEMY_SPAWN_MARGIN);
             y = GameConfig.ENEMY_SPAWN_MARGIN + 
                 random.nextFloat() * (GameConfig.WORLD_HEIGHT - 2 * GameConfig.ENEMY_SPAWN_MARGIN);
             attempts++;
-        } while (distanceToPoint(x, y, playerX, playerY) < GameConfig.ENEMY_MIN_SPAWN_DISTANCE * 1.5f 
-                 && attempts < 50);
+            
+            // Verificar distancia del jugador
+            if (distanceToPoint(x, y, playerX, playerY) < GameConfig.ENEMY_MIN_SPAWN_DISTANCE * 1.5f) {
+                continue;
+            }
+            
+            break;
+        } while (attempts < maxAttempts);
         
         Enemy boss;
         if (bossType == EnemyType.BOSS_BRUISER) {
@@ -232,21 +253,61 @@ public class EnemyManager implements ExplosiveZombie.ExplosionCallback,
     
     /**
      * Obtiene un tipo de enemigo aleatorio según las probabilidades configuradas.
+     * Los tipos especiales solo aparecen después de ciertas oleadas.
      */
     private EnemyType getRandomEnemyType() {
         int roll = random.nextInt(100);
+        int cumulative = 0;
         
-        if (roll < GameConfig.FAST_ZOMBIE_SPAWN_CHANCE) {
+        // Zombie rápido
+        cumulative += GameConfig.FAST_ZOMBIE_SPAWN_CHANCE;
+        if (roll < cumulative) {
             return EnemyType.FAST;
-        } else if (roll < GameConfig.FAST_ZOMBIE_SPAWN_CHANCE + GameConfig.SLOW_ZOMBIE_SPAWN_CHANCE) {
+        }
+        
+        // Zombie lento
+        cumulative += GameConfig.SLOW_ZOMBIE_SPAWN_CHANCE;
+        if (roll < cumulative) {
             return EnemyType.SLOW;
-        } else {
+        }
+        
+        // Zombie explosivo
+        cumulative += GameConfig.EXPLOSIVE_ZOMBIE_SPAWN_CHANCE;
+        if (roll < cumulative) {
             return EnemyType.EXPLOSIVE;
         }
+        
+        // Zombie escupidor (desde oleada 3)
+        if (currentWave >= GameConfig.SPITTER_MIN_WAVE) {
+            cumulative += GameConfig.SPITTER_ZOMBIE_SPAWN_CHANCE;
+            if (roll < cumulative) {
+                return EnemyType.SPITTER;
+            }
+        }
+        
+        // Zombie buffer (desde oleada 4)
+        if (currentWave >= GameConfig.BUFFER_MIN_WAVE) {
+            cumulative += GameConfig.BUFFER_ZOMBIE_SPAWN_CHANCE;
+            if (roll < cumulative) {
+                return EnemyType.BUFFER;
+            }
+        }
+        
+        // Zombie portador (desde oleada 6)
+        if (currentWave >= GameConfig.BROOD_CARRIER_MIN_WAVE) {
+            cumulative += GameConfig.BROOD_CARRIER_SPAWN_CHANCE;
+            if (roll < cumulative) {
+                return EnemyType.BROOD_CARRIER;
+            }
+        }
+        
+        // Default: zombie rápido
+        return EnemyType.FAST;
     }
     
     /**
      * Crea un enemigo del tipo especificado con escalado por oleada.
+     * Configura el verificador de colisiones si hay mapa disponible.
      */
     private Enemy createEnemy(EnemyType type, float x, float y) {
         // Calcular factores de escalado según la oleada actual
@@ -266,6 +327,21 @@ public class EnemyManager implements ExplosiveZombie.ExplosionCallback,
                 ExplosiveZombie explosive = new ExplosiveZombie(x, y, healthScale, speedScale, damageScale);
                 explosive.setExplosionContext(enemies, this);
                 enemy = explosive;
+                break;
+            case SPITTER:
+                SpitterZombie spitter = new SpitterZombie(x, y, healthScale, speedScale, damageScale);
+                spitter.setCallback(this);
+                enemy = spitter;
+                break;
+            case BUFFER:
+                BufferZombie buffer = new BufferZombie(x, y, healthScale, speedScale, damageScale);
+                buffer.setEnemyList(enemies);
+                enemy = buffer;
+                break;
+            case BROOD_CARRIER:
+                BroodCarrier carrier = new BroodCarrier(x, y, healthScale, speedScale, damageScale);
+                carrier.setCallback(this);
+                enemy = carrier;
                 break;
             default:
                 enemy = new FastZombie(x, y, healthScale, speedScale, damageScale);
@@ -323,8 +399,50 @@ public class EnemyManager implements ExplosiveZombie.ExplosionCallback,
     }
     
     /**
+     * Callback cuando el jugador recibe daño de ácido (SpitterZombie).
+     */
+    @Override
+    public void onAcidDamage(float damage) {
+        if (player != null && player.isAlive()) {
+            player.damage(damage);
+            LOGGER.fine("Jugador dañado por ácido: " + damage);
+        }
+    }
+    
+    /**
+     * Callback cuando un BroodCarrier muere y genera zombies.
+     */
+    @Override
+    public List<Enemy> onBroodBurst(float spawnX, float spawnY, int count, 
+                                     float healthScale, float damageScale) {
+        List<Enemy> spawnedEnemies = new ArrayList<>();
+        
+        LOGGER.info("BroodCarrier explotó! Generando " + count + " zombies.");
+        
+        for (int i = 0; i < count; i++) {
+            // Calcular posición en círculo alrededor del punto de spawn
+            float angle = (float)(i * Math.PI * 2 / count);
+            float radius = GameConfig.BROOD_CARRIER_SPAWN_RADIUS;
+            float x = spawnX + (float)Math.cos(angle) * radius;
+            float y = spawnY + (float)Math.sin(angle) * radius;
+            
+            // Asegurar que está dentro del mundo
+            x = Math.max(20, Math.min(x, GameConfig.WORLD_WIDTH - 20));
+            y = Math.max(20, Math.min(y, GameConfig.WORLD_HEIGHT - 20));
+            
+            // Crear zombie rápido con stats reducidos
+            FastZombie spawn = new FastZombie(x, y, healthScale, 1.0f, damageScale);
+            
+            spawnedEnemies.add(spawn);
+            enemies.add(spawn);
+        }
+        
+        return spawnedEnemies;
+    }
+    
+    /**
      * Elimina enemigos muertos de la lista y genera XP orbs.
-     * Maneja la secuencia de muerte especial de los jefes.
+     * Maneja la secuencia de muerte especial de los jefes y portadores.
      */
     private void cleanupDeadEnemies() {
         Iterator<Enemy> iterator = enemies.iterator();
@@ -336,6 +454,14 @@ public class EnemyManager implements ExplosiveZombie.ExplosionCallback,
                     ExplosiveZombie explosive = (ExplosiveZombie) enemy;
                     if (!explosive.hasExploded()) {
                         continue; // Esperar a que explote
+                    }
+                }
+                
+                // Verificar si es portador y ya hizo burst
+                if (enemy instanceof BroodCarrier) {
+                    BroodCarrier carrier = (BroodCarrier) enemy;
+                    if (!carrier.hasBurst()) {
+                        continue; // Esperar a que haga burst
                     }
                 }
                 
@@ -390,6 +516,15 @@ public class EnemyManager implements ExplosiveZombie.ExplosionCallback,
             case EXPLOSIVE:
                 baseXP = GameConfig.XP_EXPLOSIVE_ZOMBIE;
                 break;
+            case SPITTER:
+                baseXP = GameConfig.XP_SPITTER_ZOMBIE;
+                break;
+            case BUFFER:
+                baseXP = GameConfig.XP_BUFFER_ZOMBIE;
+                break;
+            case BROOD_CARRIER:
+                baseXP = GameConfig.XP_BROOD_CARRIER;
+                break;
             case BOSS_BRUISER:
                 baseXP = GameConfig.XP_BRUISER_BOSS;
                 // Los jefes no escalan XP - ya dan mucho
@@ -416,7 +551,12 @@ public class EnemyManager implements ExplosiveZombie.ExplosionCallback,
      * @param g2d Contexto gráfico
      */
     public void render(Graphics2D g2d) {
-        for (Enemy enemy : enemies) {
+        // Renderizar proyectiles y charcos de los Spitters (debajo de los enemigos)
+        SpitterZombie.renderProjectilesAndPuddles(g2d);
+        
+        // Renderizar enemigos (copia para evitar ConcurrentModificationException)
+        List<Enemy> enemiesCopy = new ArrayList<>(enemies);
+        for (Enemy enemy : enemiesCopy) {
             enemy.render(g2d);
         }
     }

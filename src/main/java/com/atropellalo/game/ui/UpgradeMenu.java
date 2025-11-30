@@ -1,5 +1,6 @@
 package com.atropellalo.game.ui;
 
+import com.atropellalo.game.sprite.UpgradeIconGenerator;
 import com.atropellalo.game.upgrade.UpgradeOption;
 
 import java.awt.Color;
@@ -8,6 +9,7 @@ import java.awt.FontMetrics;
 import java.awt.Graphics2D;
 import java.awt.RenderingHints;
 import java.awt.event.KeyEvent;
+import java.awt.image.BufferedImage;
 import java.util.List;
 
 /**
@@ -209,7 +211,7 @@ public class UpgradeMenu {
     }
     
     /**
-     * Renderiza una tarjeta de opción.
+     * Renderiza una tarjeta de opción con icono.
      */
     private void renderCard(Graphics2D g2d, UpgradeOption option, int x, int y, 
                            int number, boolean selected) {
@@ -231,6 +233,14 @@ public class UpgradeMenu {
         g2d.setColor(selected ? TITLE_COLOR : DESC_COLOR);
         g2d.drawString("[" + number + "]", x + 10, y + 25);
         
+        // Icono de la mejora
+        BufferedImage icon = UpgradeIconGenerator.getIcon(option.getType(), option.getWeaponType());
+        if (icon != null) {
+            int iconX = x + CARD_WIDTH - UpgradeIconGenerator.ICON_SIZE - 10;
+            int iconY = y + 8;
+            g2d.drawImage(icon, iconX, iconY, null);
+        }
+        
         // Título de la opción
         g2d.setFont(OPTION_TITLE_FONT);
         g2d.setColor(TEXT_COLOR);
@@ -246,7 +256,7 @@ public class UpgradeMenu {
             title += "...";
         }
         int titleWidth = fm.stringWidth(title);
-        g2d.drawString(title, x + (CARD_WIDTH - titleWidth) / 2, y + 65);
+        g2d.drawString(title, x + (CARD_WIDTH - titleWidth) / 2, y + 75);
         
         // Descripción
         g2d.setFont(OPTION_DESC_FONT);

@@ -6,42 +6,69 @@
 - **Lenguaje**: Java 11
 - **Framework UI**: Swing
 - **Build Tool**: Maven
-- **Estado**: Fase 7 Completada - Escopeta, Sierras, Escalado de Enemigos
+- **Estado**: Fase 12 Completada - Mejoras Visuales y Limpieza de Código
 
-## Pautas de Desarrollo Aplicadas
+---
+
+## Tabla de Contenidos
+1. [Pautas de Desarrollo](#pautas-de-desarrollo)
+2. [Estructura del Proyecto](#estructura-del-proyecto)
+3. [Arquitectura del Sistema](#arquitectura-del-sistema)
+4. [Clases Principales](#clases-principales)
+5. [Sistema de Juego](#sistema-de-juego)
+6. [Sistema de Enemigos y Jefes](#sistema-de-enemigos-y-jefes)
+7. [Sistema de Armas](#sistema-de-armas)
+8. [Sistema de Mejoras](#sistema-de-mejoras)
+9. [Mapa Urbano](#mapa-urbano)
+10. [Configuración](#configuración)
+11. [Cómo Ejecutar](#cómo-ejecutar)
+
+---
+
+## Pautas de Desarrollo
 
 ### 1. Mejores Prácticas de Programación
-- Uso de convenciones de nombres Java estándar
-- Encapsulamiento adecuado de propiedades
-- Manejo de excepciones con logging
-- Uso de constantes para valores configurables
+- Uso de convenciones de nombres Java estándar (camelCase para métodos/variables, PascalCase para clases)
+- Encapsulamiento adecuado de propiedades (campos privados con getters/setters)
+- Manejo de excepciones con logging estructurado
+- Uso de constantes para valores configurables (centralizados en GameConfig)
+- Documentación JavaDoc en todas las clases públicas
 
 ### 2. Bajo Acoplamiento y Alta Cohesión
-- **Game**: Clase principal con única responsabilidad de iniciar la aplicación
+- **Game**: Punto de entrada con única responsabilidad de iniciar la aplicación
 - **GameWindow**: Responsable solo de la configuración de la ventana
-- **GamePanel**: Responsable solo del renderizado
+- **GamePanel**: Responsable del game loop y coordinación de sistemas
+- **Managers**: Cada manager gestiona un dominio específico (armas, enemigos, loot, upgrades)
 - Cada clase tiene una responsabilidad específica y bien definida
+- Comunicación entre sistemas mediante interfaces y callbacks
 
 ### 3. KISS (Keep It Simple, Stupid)
 - Implementación directa sin complejidad innecesaria
 - Uso de Swing estándar sin frameworks adicionales
-- Carga simple de recursos
+- Carga simple de recursos desde classpath
+- Pathfinding basado en detección de bloqueo y evasión simple
 
 ### 4. DRY (Don't Repeat Yourself)
-- Constantes definidas para valores reutilizables
+- Constantes definidas para valores reutilizables en GameConfig
 - Métodos separados para cada funcionalidad específica
-- Logging centralizado
+- Logging centralizado mediante java.util.logging
+- Clase base Enemy abstracta para todos los tipos de enemigos
+- Clase base Weapon abstracta para todas las armas
+- Clase base Loot abstracta para todos los items
 
 ### 5. Definition of Done (DoD)
-- Solo se implementó lo solicitado: ventana ejecutable con mapa de fondo
-- No se agregaron características adicionales
-- Código listo para ejecutar
+- Solo se implementa lo solicitado en cada fase
+- No se agregan características adicionales no requeridas
+- Código listo para ejecutar y probar
+- Documentación actualizada después de cada fase
 
 ### 6. Nivel Profesional
 - Código documentado con JavaDoc
-- Manejo de errores
-- Logging apropiado
+- Manejo de errores con logging apropiado
 - Estructura de proyecto Maven estándar
+- Patrones de diseño aplicados (Template Method, Observer, Manager, Callback)
+
+---
 
 ## Estructura del Proyecto
 
@@ -49,6 +76,7 @@
 atropellalo/
 ├── pom.xml                                    # Configuración Maven
 ├── DOCUMENTATION.md                           # Este archivo
+├── README.md                                  # Descripción del proyecto
 └── src/
     └── main/
         ├── java/
@@ -59,1684 +87,771 @@ atropellalo/
         │               ├── camera/
         │               │   └── Camera.java            # Sistema de cámara
         │               ├── config/
-        │               │   └── GameConfig.java        # Configuración del juego
+        │               │   └── GameConfig.java        # Configuración centralizada
         │               ├── enemy/
-        │               │   ├── Enemy.java             # Clase base de enemigos
-        │               │   ├── EnemyType.java         # Tipos de enemigos (enum)
+        │               │   ├── Enemy.java             # Clase base abstracta
+        │               │   ├── EnemyType.java         # Enum de tipos
         │               │   ├── FastZombie.java        # Zombie rápido
         │               │   ├── SlowZombie.java        # Zombie lento
         │               │   ├── ExplosiveZombie.java   # Zombie explosivo
-        │               │   └── EnemyManager.java      # Gestor de enemigos y oleadas
+        │               │   ├── BruiserBoss.java       # Jefe Oleada 5
+        │               │   ├── InfectorBoss.java      # Jefe Oleada 10
+        │               │   └── EnemyManager.java      # Gestor de oleadas
         │               ├── entity/
-        │               │   └── Player.java            # Jugador con stats
+        │               │   └── Player.java            # Jugador
         │               ├── input/
         │               │   └── InputHandler.java      # Manejo de teclado
         │               ├── loot/
-        │               │   ├── Loot.java              # Clase base de loot
-        │               │   ├── LootType.java          # Tipos de loot (enum)
-        │               │   ├── Fuel.java              # Item de combustible
-        │               │   ├── Scrap.java             # Item de chatarra
+        │               │   ├── Loot.java              # Clase base abstracta
+        │               │   ├── LootType.java          # Enum de tipos
+        │               │   ├── Fuel.java              # Combustible
+        │               │   ├── Scrap.java             # Chatarra (curación)
+        │               │   ├── XPOrb.java             # Orbe de experiencia
         │               │   └── LootManager.java       # Gestor de loot
+        │               ├── map/
+        │               │   ├── Building.java          # Edificio con colisión
+        │               │   ├── CityBlock.java         # Manzana urbana
+        │               │   └── CityMap.java           # Mapa procedural
+        │               ├── sprite/                    # (Reservado para sprites)
         │               ├── ui/
-        │               │   ├── GameWindow.java        # Ventana del juego
+        │               │   ├── GameWindow.java        # Ventana principal
         │               │   ├── GamePanel.java         # Panel con game loop
-        │               │   └── GameHUD.java           # HUD del jugador
+        │               │   ├── GameHUD.java           # HUD del jugador
+        │               │   └── UpgradeMenu.java       # Menú de mejoras
+        │               ├── upgrade/
+        │               │   ├── UpgradeType.java       # Enum de mejoras
+        │               │   ├── UpgradeOption.java     # Opción de mejora
+        │               │   └── UpgradeManager.java    # Gestor de mejoras
         │               ├── util/
-        │               │   └── MapGenerator.java      # Generador de mapa
+        │               │   └── MapGenerator.java      # Generador de mapas
         │               └── weapon/
-        │                   ├── Weapon.java            # Clase base de armas
-        │                   ├── Pistol.java            # Pistola automática
-        │                   ├── Projectile.java        # Proyectil
+        │                   ├── Weapon.java            # Clase base abstracta
+        │                   ├── WeaponType.java        # Enum de armas
+        │                   ├── Pistol.java            # Pistola (inicial)
+        │                   ├── LightMachineGun.java   # Ametralladora
+        │                   ├── Shotgun.java           # Escopeta
+        │                   ├── GrenadeLauncher.java   # Lanzagranadas
+        │                   ├── CircularSaw.java       # Sierras giratorias
+        │                   ├── Flamethrower.java      # Lanzallamas
+        │                   ├── SniperRailgun.java     # Rifle de francotirador
+        │                   ├── Projectile.java        # Proyectil base
+        │                   ├── PenetratingProjectile.java # Proyectil penetrante
+        │                   ├── GrenadeProjectile.java # Granada con explosión
         │                   └── WeaponManager.java     # Gestor de armas
         └── resources/
             └── images/
-                └── map.jpg                    # Imagen del mapa (2560x1440)
+                └── (recursos gráficos)
 ```
 
-## Clases Implementadas
+---
 
-### 1. Game (Clase Principal)
+## Arquitectura del Sistema
+
+### Diagrama de Componentes
+
+```
+┌─────────────────────────────────────────────────────────────────┐
+│                          Game (Main)                             │
+│                              │                                   │
+│                        GameWindow                                │
+│                              │                                   │
+│  ┌───────────────────────────┴───────────────────────────────┐  │
+│  │                       GamePanel                            │  │
+│  │  ┌─────────────────────────────────────────────────────┐  │  │
+│  │  │                    Game Loop                         │  │  │
+│  │  │  update(deltaTime) → repaint()                       │  │  │
+│  │  └─────────────────────────────────────────────────────┘  │  │
+│  │                           │                                │  │
+│  │  ┌────────────┬────────────┼────────────┬────────────┐    │  │
+│  │  │            │            │            │            │    │  │
+│  │  ▼            ▼            ▼            ▼            ▼    │  │
+│  │ Player    Camera     InputHandler   CityMap      GameHUD  │  │
+│  │  │                                     │                  │  │
+│  │  └──────────┬──────────────────────────┘                  │  │
+│  │             │                                              │  │
+│  │  ┌──────────┴──────────┐                                  │  │
+│  │  ▼                     ▼                                  │  │
+│  │ EnemyManager      LootManager                             │  │
+│  │  │                     │                                  │  │
+│  │  │                     ├── Fuel                           │  │
+│  │  │                     ├── Scrap                          │  │
+│  │  │                     └── XPOrb                          │  │
+│  │  │                                                        │  │
+│  │  ├── FastZombie                                           │  │
+│  │  ├── SlowZombie                                           │  │
+│  │  ├── ExplosiveZombie                                      │  │
+│  │  ├── BruiserBoss                                          │  │
+│  │  └── InfectorBoss                                         │  │
+│  │                                                            │  │
+│  │  WeaponManager ─────────────────────────────────────────  │  │
+│  │  │                                                        │  │
+│  │  ├── Pistol          ├── Shotgun        ├── CircularSaw   │  │
+│  │  ├── LightMachineGun ├── GrenadeLauncher└── Flamethrower  │  │
+│  │  └── Projectiles                                          │  │
+│  │                                                            │  │
+│  │  UpgradeManager + UpgradeMenu                             │  │
+│  └────────────────────────────────────────────────────────────┘  │
+└─────────────────────────────────────────────────────────────────┘
+```
+
+### Patrones de Diseño Utilizados
+
+| Patrón | Uso |
+|--------|-----|
+| **Template Method** | `Enemy`, `Weapon`, `Loot` - clases abstractas con comportamiento común |
+| **Observer/Callback** | `LevelUpCallback`, `RestartCallback`, `BossDamageCallback`, `ExplosionCallback` |
+| **Manager** | `EnemyManager`, `WeaponManager`, `LootManager`, `UpgradeManager` |
+| **Factory** | `WeaponManager.createWeapon()`, `EnemyManager.createEnemy()` |
+| **Game Loop** | `GamePanel.run()` con delta time |
+| **Strategy** | Diferentes comportamientos de armas y enemigos |
+
+---
+
+## Clases Principales
+
+### Game.java
 **Ubicación**: `com.atropellalo.Game`
 
-**Responsabilidad**: Punto de entrada de la aplicación.
+Punto de entrada de la aplicación. Usa `SwingUtilities.invokeLater()` para thread-safety de Swing.
 
-**Características**:
-- Método `main()` que inicia la aplicación
-- Usa `SwingUtilities.invokeLater()` para thread-safety de Swing
-- Crea e inicializa la ventana del juego
-
-### 2. GameWindow
+### GameWindow.java
 **Ubicación**: `com.atropellalo.game.ui.GameWindow`
 
-**Responsabilidad**: Configuración y gestión de la ventana principal del juego.
+Ventana principal del juego.
 
-**Características**:
-- Extiende `JFrame`
-- Dimensiones: 1280x720 píxeles
-- Ventana centrada en pantalla
-- No redimensionable
-- Cierra la aplicación al cerrar ventana
-- Contiene el GamePanel
-- Inicia y detiene el game loop
+| Propiedad | Valor |
+|-----------|-------|
+| Dimensiones | 1280x720 píxeles |
+| Redimensionable | No |
+| Close Operation | EXIT_ON_CLOSE |
 
-**Constantes**:
-- `WINDOW_WIDTH`: 1280
-- `WINDOW_HEIGHT`: 720
-- `GAME_TITLE`: "Atropellalo - Survivor Game"
-
-### 3. GamePanel
+### GamePanel.java
 **Ubicación**: `com.atropellalo.game.ui.GamePanel`
 
-**Responsabilidad**: Renderizado del mapa, elementos visuales y game loop principal.
+Panel principal con el game loop.
 
-**Características**:
-- Extiende `JPanel` e implementa `Runnable`
-- Carga imagen del mapa desde recursos
-- Game loop a 60 FPS
-- Actualiza lógica del juego (jugador, cámara)
-- Renderiza el mapa y jugador con transformación de cámara
-- Usa renderizado de calidad (antialiasing)
-- Manejo de errores con logging
+**Responsabilidades**:
+- Game loop a 60 FPS con delta time
+- Coordinación de todos los sistemas
+- Renderizado con transformación de cámara
+- Manejo de input para menús y reinicio
 
-**Constantes**:
-- `TARGET_FPS`: 60
-- `WORLD_WIDTH`: 2560 (2x ventana)
-- `WORLD_HEIGHT`: 1440 (2x ventana)
+**Flujo del Game Loop**:
+```
+1. Calcular deltaTime
+2. Si jugador vivo y no pausado:
+   a. Actualizar input → Player.setMovement()
+   b. Player.update()
+   c. LootManager.update()
+   d. Verificar colisiones con loot
+   e. EnemyManager.update()
+   f. WeaponManager.update()
+   g. Camera.centerOn(player)
+3. repaint() → paintComponent()
+4. Sleep para mantener FPS
+```
 
-**Métodos Principales**:
-- `startGameLoop()`: Inicia el loop del juego
-- `stopGameLoop()`: Detiene el loop del juego
-- `run()`: Loop principal con control de FPS
-- `update(float)`: Actualiza lógica del juego
-- `loadMapImage()`: Carga la imagen desde `/images/map.jpg`
-- `paintComponent()`: Método de renderizado con transformación de cámara
-- `drawMap()`: Dibuja el mapa de fondo
-- `drawPlayer()`: Dibuja el jugador
-
-### 4. Player
+### Player.java
 **Ubicación**: `com.atropellalo.game.entity.Player`
 
-**Responsabilidad**: Representa al jugador y maneja su estado, movimiento, salud y combustible.
+Representa al jugador con sistemas de salud, combustible y experiencia.
 
-**Características**:
-- Posición en el mundo (x, y)
-- Velocidad de movimiento
-- Sistema de salud (health/maxHealth)
-- Sistema de combustible (fuel/maxFuel)
-- Renderizado con indicadores visuales de estado
-- Normalización de velocidad diagonal
-- Restricción de movimiento sin combustible
-- Límites del mundo aplicados
+**Stats Principales**:
 
-**Stats del Jugador** (configurables en GameConfig):
-- `PLAYER_MAX_HEALTH`: 100 puntos
-- `PLAYER_INITIAL_HEALTH`: 100 puntos
-- `PLAYER_MAX_FUEL`: 100 unidades
-- `PLAYER_INITIAL_FUEL`: 100 unidades
-- `FUEL_CONSUMPTION_RATE`: 5 unidades/segundo
-- `PLAYER_SPEED`: 200 píxeles/segundo
-- `PLAYER_SIZE`: 32 píxeles
+| Stat | Valor Default | Descripción |
+|------|---------------|-------------|
+| Salud Máxima | 100 | Vida del jugador |
+| Combustible Máximo | 100 | Recurso para moverse |
+| Velocidad | 200 px/s | Velocidad de movimiento |
+| Tamaño | 32 px | Tamaño del sprite |
+| Consumo Combustible | 3/s | Gasto al moverse |
 
-**Métodos Principales**:
-- `update(float)`: Actualiza posición, consume combustible
-- `render(Graphics2D)`: Dibuja jugador con indicadores de estado
-- `setMovement(int, int)`: Establece dirección (verifica combustible)
-- `addFuel(float)`: Añade combustible al recolectar
-- `heal(float)`: Restaura salud al recolectar chatarra
-- `damage(float)`: Recibe daño
-- `isAlive()`: Verifica si el jugador está vivo
-- `hasFuel()`: Verifica si tiene combustible
+**Sistema de Niveles**:
+- XP base para nivel 2: 100
+- Escalado: `XP_requerido = 100 * 1.2^(nivel-1)`
+- Al subir de nivel: +10 combustible bonus + menú de mejoras
 
-### 5. InputHandler
-**Ubicación**: `com.atropellalo.game.input.InputHandler`
+**Callbacks**:
+- `LevelUpCallback`: Notifica cuando sube de nivel
+- `CollisionCallback`: Verifica colisiones con edificios
 
-**Responsabilidad**: Captura y procesa entrada del teclado.
-
-**Características**:
-- Implementa `KeyListener`
-- Captura teclas WASD
-- Estado de teclas presionadas
-- Métodos para obtener dirección de movimiento
-
-**Métodos Principales**:
-- `keyPressed(KeyEvent)`: Registra tecla presionada
-- `keyReleased(KeyEvent)`: Registra tecla liberada
-- `getHorizontalDirection()`: Retorna -1, 0, o 1
-- `getVerticalDirection()`: Retorna -1, 0, o 1
-
-### 6. Camera
+### Camera.java
 **Ubicación**: `com.atropellalo.game.camera.Camera`
 
-**Responsabilidad**: Controla qué parte del mundo se muestra en pantalla.
+Sistema de cámara que sigue al jugador.
 
 **Características**:
-- Posición de la cámara (x, y)
-- Dimensiones del viewport (ventana visible)
-- Dimensiones del mundo
-- Centra en el jugador
-- Limita movimiento a bordes del mundo
+- Viewport: 1280x720
+- Centrada en el jugador
+- Limitada a bordes del mundo
+- Offset calculado para renderizado
 
-**Métodos Principales**:
-- `centerOn(float, float)`: Centra cámara en objetivo
-- `getOffsetX()`, `getOffsetY()`: Obtiene offset para renderizado
+### InputHandler.java
+**Ubicación**: `com.atropellalo.game.input.InputHandler`
 
-### 7. MapGenerator
-**Ubicación**: `com.atropellalo.game.util.MapGenerator`
+Manejo de teclado WASD.
 
-**Responsabilidad**: Genera imagen de mapa proceduralmente (utilidad).
+**Controles**:
 
-**Características**:
-- Genera imagen de 2560x1440 píxeles
-- Tonos de verde variados
-- Textura procedural simple
-- Guarda como JPG en resources/images/
+| Tecla | Acción | Contexto |
+|-------|--------|----------|
+| W | Mover arriba | Juego |
+| A | Mover izquierda | Juego |
+| S | Mover abajo | Juego |
+| D | Mover derecha | Juego |
+| 1/2/3 | Seleccionar mejora | Menú de nivel |
+| Enter/Espacio | Confirmar mejora | Menú de nivel |
+| R | Reiniciar partida | Game Over |
 
-**Nota**: Esta es una clase utilitaria para generar el mapa inicial. No se usa durante el juego.
+---
 
-### 8. GameConfig (NUEVO)
-**Ubicación**: `com.atropellalo.game.config.GameConfig`
+## Sistema de Enemigos y Jefes
 
-**Responsabilidad**: Centraliza toda la configuración del juego en un solo lugar.
-
-**Características**:
-- Clase final no instanciable
-- Constantes estáticas organizadas por categoría
-- Fácil de modificar para ajustar balance del juego
-- Documentación clara de cada parámetro
-
-**Categorías de Configuración**:
-- **Jugador**: Salud, combustible, velocidad, tamaño
-- **Loot - Combustible**: Restauración, tamaño, intervalos de spawn, cantidad máxima
-- **Loot - Chatarra**: Curación, tamaño, intervalos de spawn, cantidad máxima
-- **Colisiones**: Distancia de pickup
-- **HUD**: Dimensiones de barras, márgenes
-- **Mundo**: Dimensiones, márgenes de spawn
-- **Enemigos - General**: Daño, colisiones, spawn
-- **Enemigos - Zombie Rápido**: Velocidad, salud, tamaño, daño
-- **Enemigos - Zombie Lento**: Velocidad, salud, tamaño, daño
-- **Enemigos - Zombie Explosivo**: Velocidad, salud, radio de explosión, daño de explosión
-- **Sistema de Oleadas**: Intervalo, enemigos base, incremento, máximo de enemigos
-- **Armas - Pistola**: Daño, rango, delay entre disparos, velocidad y tamaño de proyectil
-
-### 15. EnemyType (NUEVO - Fase 4)
-**Ubicación**: `com.atropellalo.game.enemy.EnemyType`
-
-**Responsabilidad**: Enum que define los tipos de enemigos.
-
-**Valores**:
-- `FAST`: Zombie rápido
-- `SLOW`: Zombie lento
-- `EXPLOSIVE`: Zombie explosivo
-
-### 16. Enemy (NUEVO - Fase 4)
-**Ubicación**: `com.atropellalo.game.enemy.Enemy`
-
-**Responsabilidad**: Clase abstracta base para todos los enemigos.
-
-**Características**:
-- Posición, salud, velocidad, tamaño, daño
-- Comportamiento de persecución hacia el jugador
-- Sistema de cooldown de daño
-- Cálculo de distancias
-- Métodos abstractos para renderizado y tipo
-
-**Métodos Principales**:
-- `update(float, float, float)`: Actualiza posición persiguiendo al jugador
-- `moveTowards(float, float, float)`: Movimiento hacia objetivo
-- `takeDamage(float)`: Recibe daño
-- `onDeath()`: Comportamiento al morir (override en subclases)
-- `distanceToPlayer(float, float)`: Calcula distancia al jugador
-
-### 17. FastZombie (NUEVO - Fase 4)
-**Ubicación**: `com.atropellalo.game.enemy.FastZombie`
-
-**Responsabilidad**: Enemigo rápido con poca vida.
-
-**Características**:
-- Alta velocidad (150 px/s)
-- Baja salud (30 HP)
-- Tamaño pequeño (24 px)
-- Color verde claro
-- Ojos rojos
-- Barra de vida cuando recibe daño
-
-### 18. SlowZombie (NUEVO - Fase 4)
-**Ubicación**: `com.atropellalo.game.enemy.SlowZombie`
-
-**Responsabilidad**: Enemigo lento con mucha vida.
-
-**Características**:
-- Baja velocidad (50 px/s)
-- Alta salud (100 HP)
-- Tamaño grande (36 px)
-- Color púrpura/índigo
-- Ojos amarillos con pupilas
-- Apariencia más pesada
-
-### 19. ExplosiveZombie (NUEVO - Fase 4)
-**Ubicación**: `com.atropellalo.game.enemy.ExplosiveZombie`
-
-**Responsabilidad**: Enemigo que explota al morir.
-
-**Características**:
-- Velocidad media (80 px/s)
-- Salud media (40 HP)
-- Tamaño medio (28 px)
-- Color naranja/rojo con símbolo "!"
-- Al morir:
-  - Explosión con radio de 80 px
-  - Daña al jugador si está en rango (25 HP máx)
-  - Daña a otros enemigos cercanos
-  - Animación de explosión con círculos concéntricos
-
-### 20. EnemyManager (NUEVO - Fase 4)
+### EnemyManager.java
 **Ubicación**: `com.atropellalo.game.enemy.EnemyManager`
 
-**Responsabilidad**: Gestiona enemigos y sistema de oleadas.
-
-**Características**:
-- Lista de enemigos activos
-- Sistema de oleadas progresivas
-- Spawn aleatorio lejos del jugador
-- Colisiones jugador-enemigo
-- Contador de kills
-- Implementa callback para explosiones
+Gestiona oleadas y spawn de enemigos.
 
 **Sistema de Oleadas**:
-- Primera oleada después de 3 segundos
-- Cada oleada tiene más enemigos
-- Intervalo configurable entre oleadas
-- Spawn gradual durante la oleada
 
-**Métodos Principales**:
-- `update(float, float, float)`: Actualiza oleadas y enemigos
-- `checkPlayerCollisions()`: Detecta colisiones (enemigos dañan al jugador)
-- `render(Graphics2D)`: Dibuja todos los enemigos
-- `renderWaveInfo(Graphics2D, int)`: Dibuja info de oleada en HUD
-- `getEnemies()`: Expone lista de enemigos para sistema de armas
-- `addKill()`: Incrementa contador de kills
+| Parámetro | Valor |
+|-----------|-------|
+| Primera oleada | 3 segundos |
+| Intervalo entre oleadas | 5 segundos |
+| Enemigos base | 10 por oleada |
+| Incremento | +5 por oleada |
+| Máximo simultáneo | 100 enemigos |
+| Spawn interval | 0.3 segundos |
 
-### 9. Loot (NUEVO)
-**Ubicación**: `com.atropellalo.game.loot.Loot`
+**Escalado por Oleada**:
 
-**Responsabilidad**: Clase abstracta base para todos los items de loot.
+| Factor | Valor | Efecto |
+|--------|-------|--------|
+| Salud | 1.05x | +5% por oleada |
+| Velocidad | 1.02x | +2% por oleada |
+| Daño | 1.03x | +3% por oleada |
+| XP | 1.05x | +5% por oleada |
 
-**Características**:
-- Posición y tamaño
-- Estado de recolección
-- Cálculo de distancia
-- Métodos abstractos para renderizado y valores
+### Tipos de Enemigos
 
-### 10. LootType (NUEVO)
-**Ubicación**: `com.atropellalo.game.loot.LootType`
+#### FastZombie (Zombie Rápido)
 
-**Responsabilidad**: Enum que define los tipos de loot disponibles.
+| Stat | Valor |
+|------|-------|
+| Velocidad | 150 px/s |
+| Salud | 30 HP |
+| Daño | 8 HP |
+| Tamaño | 24 px |
+| Spawn Chance | 50% |
+| XP | 10 |
 
-**Valores**:
-- `FUEL`: Combustible
-- `SCRAP`: Chatarra
+**Visual**: Círculo verde claro con ojos rojos.
 
-### 11. Fuel (NUEVO)
-**Ubicación**: `com.atropellalo.game.loot.Fuel`
+#### SlowZombie (Zombie Lento)
 
-**Responsabilidad**: Item de loot que restaura combustible.
+| Stat | Valor |
+|------|-------|
+| Velocidad | 50 px/s |
+| Salud | 100 HP |
+| Daño | 15 HP |
+| Tamaño | 36 px |
+| Spawn Chance | 30% |
+| XP | 25 |
 
-**Características**:
-- Hereda de Loot
-- Renderizado como bidón naranja
-- Valor configurable en GameConfig
+**Visual**: Cuadrado redondeado púrpura con ojos amarillos.
 
-### 12. Scrap (NUEVO)
-**Ubicación**: `com.atropellalo.game.loot.Scrap`
+#### ExplosiveZombie (Zombie Explosivo)
 
-**Responsabilidad**: Item de loot que restaura salud.
+| Stat | Valor |
+|------|-------|
+| Velocidad | 80 px/s |
+| Salud | 40 HP |
+| Daño contacto | 10 HP |
+| Daño explosión | 25 HP |
+| Radio explosión | 80 px |
+| Tamaño | 28 px |
+| Spawn Chance | 20% |
+| XP | 20 |
 
-**Características**:
-- Hereda de Loot
-- Renderizado como pieza metálica gris con cruz verde
-- Valor configurable en GameConfig
+**Visual**: Triángulo naranja con símbolo "!".
+**Especial**: Al morir explota, dañando al jugador y otros enemigos (reacciones en cadena).
 
-### 13. LootManager (NUEVO)
-**Ubicación**: `com.atropellalo.game.loot.LootManager`
+### Jefes
 
-**Responsabilidad**: Gestiona el spawn, actualización y colección de loot.
+#### BruiserBoss (El Aplastador) - Oleada 5
 
-**Características**:
-- Spawn inicial de loot al comenzar
-- Spawn periódico con intervalos aleatorios
-- Límites máximos por tipo de loot
-- Detección de colisiones con jugador
-- Limpieza de loot recolectado
+| Stat | Valor |
+|------|-------|
+| Salud | 800 HP |
+| Velocidad | 60 px/s |
+| Daño contacto | 35 HP |
+| Tamaño | 74 px |
+| XP | 550 |
 
-**Métodos Principales**:
-- `update(float)`: Actualiza timers y spawn
-- `checkCollisions(float, float)`: Verifica colisiones con jugador
-- `render(Graphics2D)`: Dibuja todos los items
+**Habilidades**:
 
-### 14. GameHUD (NUEVO)
-**Ubicación**: `com.atropellalo.game.ui.GameHUD`
+| Habilidad | Descripción | Cooldown |
+|-----------|-------------|----------|
+| Terremoto | Onda de choque circular (150 px, 30 daño) | 4 segundos |
+| Carga | Embiste al jugador (400 px/s, 40 daño, 2s duración) | 6 segundos |
 
-**Responsabilidad**: Muestra información vital del jugador en pantalla.
+**Visual**: Zombie gigante con torso acorazado y brazo hipertrofiado.
 
-**Características**:
-- Barra de salud con colores según nivel (verde/naranja/rojo)
-- Barra de combustible con colores según nivel
-- Valores numéricos en las barras
-- Advertencia de combustible bajo
-- Pantalla de Game Over
+#### InfectorBoss (El Infectador) - Oleada 10
 
-**Elementos Visuales**:
-- Barras con esquinas redondeadas
-- Texto con sombra para mejor legibilidad
-- Animación de parpadeo en advertencias
-- Overlay semi-transparente en Game Over
+| Stat | Valor |
+|------|-------|
+| Salud | 650 HP |
+| Velocidad | 80 px/s |
+| Daño contacto | 25 HP |
+| Tamaño | 66 px |
+| XP | 750 |
 
-### 21. Weapon (NUEVO - Fase 5)
-**Ubicación**: `com.atropellalo.game.weapon.Weapon`
+**Habilidades**:
 
-**Responsabilidad**: Clase abstracta base para todas las armas.
+| Habilidad | Descripción | Cooldown |
+|-----------|-------------|----------|
+| Nube Tóxica | Aura de veneno (100 px, 10 daño/s) | Pasiva |
+| Bomba Química | Crea poza tóxica (70 px, 8 daño/s, 6s duración) | 3 segundos |
+| Explosión Final | Al morir explota (100 px, 50 daño) | Al morir |
 
-**Características**:
-- Daño, rango y delay configurables
-- Sistema de cooldown entre disparos
-- Búsqueda de enemigo más cercano en rango
-- Métodos abstractos para disparo
+**Visual**: Zombie hinchado verdoso con ampollas químicas.
 
-**Métodos Principales**:
-- `update(float)`: Actualiza cooldown del arma
-- `canFire()`: Verifica si puede disparar
-- `tryFire(float, float, List<Enemy>)`: Intenta disparar (abstracto)
-- `findClosestEnemy()`: Encuentra enemigo más cercano en rango
+### Sistema de Pathfinding (Enemy.java)
 
-### 22. Pistol (NUEVO - Fase 5)
-**Ubicación**: `com.atropellalo.game.weapon.Pistol`
+Sistema avanzado de evasión de obstáculos:
 
-**Responsabilidad**: Pistola automática del jugador.
+**Campos de Pathfinding**:
+```java
+protected float stuckTimer;                    // Tiempo bloqueado
+protected float avoidanceAngle;                // Ángulo de evasión
+protected boolean isAvoiding;                  // Modo evasión activo
+protected float avoidanceTimer;                // Timer de evasión
+protected int avoidanceAttempts;               // Intentos de evasión
+protected float lastValidAngle;                // Último ángulo exitoso
+protected float totalStuckTime;                // Para teleport emergencia
+```
 
-**Características**:
-- Dispara automáticamente al enemigo más cercano
-- Rango configurable (250 px por defecto)
-- Delay entre disparos (0.5 segundos)
-- Daño por disparo (15 HP)
+**Constantes**:
 
-**Comportamiento**:
-1. Busca enemigo más cercano dentro del rango
-2. Si hay enemigo y el cooldown terminó, dispara
-3. Crea proyectil hacia el centro del enemigo
-4. Reinicia cooldown
+| Constante | Valor | Descripción |
+|-----------|-------|-------------|
+| STUCK_THRESHOLD | 0.15s | Tiempo para detectar bloqueo |
+| AVOIDANCE_DURATION | 0.4s | Duración de evasión |
+| MAX_AVOIDANCE_ATTEMPTS | 8 | Intentos antes de cambiar estrategia |
 
-### 23. Projectile (NUEVO - Fase 5)
-**Ubicación**: `com.atropellalo.game.weapon.Projectile`
+**Algoritmo**:
+1. Detectar si está bloqueado (movimiento < 10% velocidad * deltaTime)
+2. Si bloqueado > STUCK_THRESHOLD → activar evasión
+3. Probar 16 ángulos para encontrar camino libre
+4. Si ninguno funciona → usar perpendicular al objetivo
+5. Si totalStuckTime > 3 segundos → teleport de emergencia
 
-**Responsabilidad**: Proyectil disparado por armas.
+---
 
-**Características**:
-- Movimiento en línea recta hacia objetivo
-- Velocidad configurable (400 px/s)
-- Rango máximo (se desactiva al excederlo)
-- Colisión con enemigos
-- Renderizado como círculo amarillo/naranja
+## Sistema de Armas
 
-**Métodos Principales**:
-- `update(float)`: Actualiza posición, verifica límites
-- `checkCollisions(List<Enemy>)`: Detecta impactos con enemigos
-- `render(Graphics2D)`: Dibuja el proyectil
-
-### 24. WeaponManager (NUEVO - Fase 5)
+### WeaponManager.java
 **Ubicación**: `com.atropellalo.game.weapon.WeaponManager`
 
-**Responsabilidad**: Gestiona armas y proyectiles del jugador.
+Gestiona armas y proyectiles del jugador.
 
 **Características**:
-- Maneja arma actual (pistola por defecto)
-- Lista de proyectiles activos
-- Estadísticas de disparos y precisión
-- Disparo automático integrado
+- Máximo 3 armas simultáneas
+- Disparo automático al enemigo más cercano
+- Estadísticas de precisión
 
-**Métodos Principales**:
-- `update(float, float, float, List<Enemy>)`: Actualiza arma y proyectiles
-- `render(Graphics2D)`: Dibuja todos los proyectiles
-- `getAccuracy()`: Calcula porcentaje de precisión
+### Tipos de Armas
 
-## Configuración Maven (pom.xml)
+#### Pistol (Arma Inicial)
 
-### Propiedades
-- Java Version: 11
-- Encoding: UTF-8
-- Packaging: JAR
+| Stat | Valor |
+|------|-------|
+| Daño | 15 HP |
+| Rango | 250 px |
+| Cadencia | 0.5s |
+| Proyectiles | 1 |
 
-### Plugins Configurados
-1. **maven-jar-plugin**: Genera JAR ejecutable con manifest
-   - Main-Class: `com.atropellalo.Game`
+**Comportamiento**: Disparo preciso al enemigo más cercano.
 
-2. **maven-compiler-plugin**: Compila código Java 11
+#### LightMachineGun (Ametralladora Ligera)
 
-### Build
-Los recursos en `src/main/resources` se incluyen automáticamente en el JAR.
+| Stat | Valor |
+|------|-------|
+| Daño | 3 HP |
+| Rango | 200 px |
+| Cadencia | 0.15s |
+| Proyectiles | 1 |
 
-## Características del Mapa
+**Comportamiento**: Alta cadencia, bajo daño individual.
 
-### Requisitos Cumplidos
-✅ Tamaño fijo mayor que la ventana (2560x1440)  
-✅ Imagen fija (no procedural en runtime)  
-✅ Sin cuadrículas  
-✅ Estilo similar a Vampire Survivors  
-✅ Imagen estática (`map.jpg`)
+#### Shotgun (Escopeta)
 
-### Implementación
-- La imagen se carga desde `/images/map.jpg`
-- Tamaño: 2560x1440 (2x el tamaño de la ventana)
-- Se renderiza completa, pero solo se ve la porción visible según la cámara
-- Renderizado con alta calidad (antialiasing activado)
-- Generada proceduralmente en tonos verdes (temporal)
+| Stat | Valor |
+|------|-------|
+| Daño | 25 HP |
+| Rango | 150 px |
+| Cadencia | 1.0s |
+| Proyectiles | 5 |
+| Dispersión | 54° |
 
-## Sistema de Jugador
+**Comportamiento**: Alto daño, rango corto, múltiples proyectiles.
 
-### Características
-✅ Representado como cuadrado (color según salud)  
-✅ Tamaño: 32x32 píxeles  
-✅ Velocidad: 200 píxeles/segundo  
-✅ Movimiento con WASD  
-✅ Normalización de velocidad diagonal  
-✅ Sistema de salud con indicadores visuales  
-✅ Sistema de combustible con consumo al moverse  
-✅ Sin combustible = Sin movimiento  
+#### GrenadeLauncher (Lanzagranadas)
 
-### Controles
-- **W**: Mover arriba
-- **A**: Mover izquierda
-- **S**: Mover abajo
-- **D**: Mover derecha
-- Se pueden combinar teclas para movimiento diagonal
+| Stat | Valor |
+|------|-------|
+| Daño | 50 HP |
+| Rango | 200 px |
+| Cadencia | 2.0s |
+| Radio explosión | 60 px |
 
-### Mecánicas de Supervivencia
-- **Combustible**: Se consume a 5 unidades/segundo mientras se mueve
-- **Movimiento**: Bloqueado si el combustible llega a 0
-- **Salud**: Si llega a 0, el juego termina (Game Over)
+**Comportamiento**: Daño en área, disparo hacia dirección aleatoria en rango.
 
-## Sistema de Enemigos 
+#### CircularSaw (Sierras Circulares)
 
-### Tipos de Zombies
+| Stat | Valor |
+|------|-------|
+| Daño | 12 HP |
+| Radio sierra | 25 px |
+| Distancia | 45 px del jugador |
+| Cooldown | 0.25s |
 
-#### Zombie Rápido (FastZombie)
-- **Apariencia**: Círculo verde claro con ojos rojos
-- **Velocidad**: 150 px/s (rápido)
-- **Salud**: 30 HP (baja)
-- **Daño**: 8 HP por contacto
-- **Tamaño**: 24 px (pequeño)
-- **Probabilidad de spawn**: 50%
+**Comportamiento**: Sierras giratorias que rotan alrededor del jugador.
 
-#### Zombie Lento (SlowZombie)
-- **Apariencia**: Cuadrado redondeado púrpura con ojos amarillos
-- **Velocidad**: 50 px/s (lento)
-- **Salud**: 100 HP (alta)
-- **Daño**: 15 HP por contacto
-- **Tamaño**: 36 px (grande)
-- **Probabilidad de spawn**: 30%
+#### Flamethrower (Lanzallamas)
 
-#### Zombie Explosivo (ExplosiveZombie)
-- **Apariencia**: Triángulo naranja con símbolo "!"
-- **Velocidad**: 80 px/s (media)
-- **Salud**: 40 HP (media)
-- **Daño contacto**: 10 HP
-- **Daño explosión**: 25 HP máximo (disminuye con distancia)
-- **Radio de explosión**: 80 px
-- **Tamaño**: 28 px (medio)
-- **Probabilidad de spawn**: 20%
-- **Especial**: Al morir explota, dañando al jugador y otros enemigos
+| Stat | Valor |
+|------|-------|
+| Daño | 15 HP/s |
+| Rango | 100 px |
+| Ángulo cono | 45° |
+| Tick rate | 0.1s |
 
-### Sistema de Oleadas
+**Comportamiento**: Daño continuo en cono hacia el enemigo más cercano.
 
-- **Primera oleada**: 3 segundos después de iniciar
-- **Enemigos base**: 5 por oleada
-- **Incremento**: +2 enemigos por oleada
-- **Intervalo entre oleadas**: 15 segundos
-- **Máximo enemigos**: 50 simultáneos
-- **Spawn gradual**: 0.5 segundos entre cada enemigo
-- **Distancia mínima spawn**: 300 px del jugador
+#### SniperRailgun (Rifle de Francotirador)
 
-### Mecánicas de Combate
+| Stat | Valor |
+|------|-------|
+| Daño | 120 HP |
+| Rango | 500 px |
+| Cadencia | 2.5s |
+| Penetración | 3 enemigos |
+| Velocidad proyectil | 800 px/s |
 
-#### Disparo Automático (NUEVO - Fase 5)
-- El jugador dispara automáticamente al enemigo más cercano
-- No requiere input del jugador
-- El arma apunta y dispara sola
-- Daño por proyectil: 15 HP
-- Rango de disparo: 250 píxeles
-- Delay entre disparos: 0.5 segundos
-- Velocidad del proyectil: 400 px/s
+**Comportamiento**: Disparo de alta precisión con penetración. El proyectil atraviesa hasta 3 enemigos en línea recta. Prioriza objetivos peligrosos (Spitters, Buffers, Explosivos, Jefes).
 
-#### Contacto (Enemigo → Jugador)
-- Si el jugador colisiona con un enemigo, recibe daño
-- Cooldown de 0.5 segundos entre daños
-- Cada tipo de zombie tiene daño diferente
+**Visual**: Proyectil dorado brillante con estela corta (25px). Disparo rápido y realista.
 
-**Nota**: La mecánica de "atropellar" enemigos ha sido removida. El jugador ahora solo puede dañar enemigos con disparos.
+**Clase del proyectil**: `PenetratingProjectile` - Registra enemigos dañados para evitar daño múltiple al mismo objetivo.
 
-#### Explosiones
-- Solo el ExplosiveZombie explota al morir
-- Radio de 80 px
-- Daño decrece con la distancia
-- Afecta al jugador Y a otros enemigos
-- Puede causar reacciones en cadena
+---
 
-## Sistema de Loot (NUEVO)
+## Sistema de Mejoras
 
-### Combustible (Fuel)
-- **Apariencia**: Bidón naranja con gota blanca
-- **Efecto**: Restaura 25 unidades de combustible
-- **Spawn inicial**: 5 items en el mapa
-- **Spawn máximo**: 10 items simultáneos
-- **Intervalo de spawn**: 3-6 segundos
+### UpgradeManager.java
+**Ubicación**: `com.atropellalo.game.upgrade.UpgradeManager`
 
-### Chatarra (Scrap)
-- **Apariencia**: Pieza metálica gris con cruz verde
-- **Efecto**: Restaura 15 puntos de salud
-- **Spawn inicial**: 3 items en el mapa
-- **Spawn máximo**: 8 items simultáneos
-- **Intervalo de spawn**: 5-10 segundos
+Genera y aplica mejoras al subir de nivel.
 
-### Mecánicas de Recolección
-- Distancia de pickup: 30 píxeles desde el centro del jugador
-- Los items desaparecen al ser recolectados
-- Nuevos items aparecen periódicamente en posiciones aleatorias
+### Tipos de Mejoras
 
-## Sistema de HUD (NUEVO)
+#### Mejoras de Vehículo
 
-### Barra de Salud
-- **Posición**: Esquina superior izquierda
-- **Colores**:
-  - Verde: > 50% salud
-  - Naranja: 25-50% salud
-  - Rojo: < 25% salud
-- Muestra valores numéricos (ej: "75/100")
+| Tipo | Efecto |
+|------|--------|
+| Salud Máxima | +20 HP |
+| Velocidad | +20 px/s |
 
-### Barra de Combustible
-- **Posición**: Debajo de la barra de salud
-- **Colores**:
-  - Naranja: > 50% combustible
-  - Naranja oscuro: 20-50% combustible
-  - Rojo: < 20% combustible
-- Icono de advertencia cuando el combustible es bajo
-- Muestra valores numéricos
+#### Mejoras de Armas
 
-### Pantalla de Game Over
-- Aparece cuando la salud llega a 0
+| Tipo | Efecto | Aplicable a |
+|------|--------|-------------|
+| Daño | +20% | Todas |
+| Cadencia | +15% | Excepto CircularSaw |
+| Área de Impacto | +30% | GrenadeLauncher, CircularSaw, Flamethrower |
+| Multi-disparo | +1 proyectil | Pistol, LMG, GrenadeLauncher, Shotgun |
+
+#### Nueva Arma
+- Disponible si tiene menos de 3 armas
+- Muestra armas no obtenidas
+
+### UpgradeMenu.java
+**Ubicación**: `com.atropellalo.game.ui.UpgradeMenu`
+
+Menú visual de selección de mejoras.
+
+### UpgradeIconGenerator.java
+**Ubicación**: `com.atropellalo.game.sprite.UpgradeIconGenerator`
+
+Genera iconos estándar 48x48 píxeles para cada tipo de mejora.
+
+**Iconos disponibles**:
+
+| Tipo | Icono | Descripción |
+|------|-------|-------------|
+| VEHICLE_HEALTH | Cruz médica roja | Mejora de salud del vehículo |
+| VEHICLE_SPEED | Rayo amarillo | Mejora de velocidad |
+| NEW_WEAPON | Estrella dorada | Nueva arma disponible |
+| WEAPON_DAMAGE | Espada con impacto | Mejora de daño |
+| WEAPON_FIRE_RATE | Balas en secuencia | Mejora de cadencia |
+| WEAPON_IMPACT_AREA | Círculos concéntricos | Mejora de área |
+| WEAPON_PROJECTILE_COUNT | Balas en abanico | Más proyectiles |
+
+**Características**:
+- 3 tarjetas de opciones
+- Navegación con A/D o ←/→
+- Selección con Enter, Espacio o 1/2/3
+- Animación de selección
+- Juego pausado mientras está abierto
+
+---
+
+## Mapa Urbano
+
+### Diseño Actual: Estacionamiento
+El mapa consiste en un gran estacionamiento rodeado por cuatro avenidas principales, sin obstáculos colisionables.
+
+**Características**:
+- **Área central**: Gran estacionamiento de asfalto (2320x1200 px)
+- **Avenidas**: 4 calles perimetrales de 120px de ancho cada una
+- **Sin colisiones**: Todo el espacio es transitable
+- **Dimensiones totales**: 2560x1440 píxeles
+
+**Elementos visuales**:
+- Líneas amarillas de estacionamiento (80x120 px por espacio)
+- Líneas blancas punteadas en las avenidas
+- Veredas grises en los bordes
+- Textura de asfalto con manchas de desgaste
+
+**Paleta de colores**:
+- Asfalto estacionamiento: RGB(45, 45, 45)
+- Asfalto avenidas: RGB(35, 35, 35)
+- Líneas viales: RGB(255, 255, 255)
+- Líneas estacionamiento: RGB(200, 200, 50)
+- Veredas: RGB(160, 160, 160)
+
+### MapGenerator.java
+**Ubicación**: `com.atropellalo.game.util.MapGenerator`
+
+Genera la imagen del mapa proceduralmente.
+
+**Métodos principales**:
+- `drawParkingLot()`: Dibuja área central de estacionamiento
+- `drawAvenues()`: Dibuja 4 avenidas perimetrales con líneas
+- `drawParkingLines()`: Dibuja líneas de demarcación de espacios
+- `addAsphaltTexture()`: Agrega manchas para textura realista
+
+### CityMap.java (Deshabilitado)
+**Ubicación**: `com.atropellalo.game.map.CityMap`
+
+Mapa de ciudad generado proceduralmente.
+
+**Configuración**:
+
+| Parámetro | Valor | Descripción |
+|-----------|-------|-------------|
+| STREET_WIDTH | 120 px | Ancho calles principales |
+| ALLEY_WIDTH | 80 px | Ancho callejones |
+| MIN_BLOCK_SIZE | 250 px | Tamaño mínimo manzana |
+| MAX_BLOCK_SIZE | 500 px | Tamaño máximo manzana |
+| BLOCK_SKIP_CHANCE | 55% | Probabilidad de omitir bloque |
+| Spawn Zone | 350x350 px | Área segura en centro |
+
+**Semilla**: 12345L (fija para desarrollo)
+
+### Building.java
+**Ubicación**: `com.atropellalo.game.map.Building`
+
+Edificios individuales con colisión.
+
+**Tipos de Edificios**:
+
+| Tipo | Color | Descripción |
+|------|-------|-------------|
+| RESIDENTIAL | Marrón | Edificio bajo con techo a dos aguas |
+| COMMERCIAL | Azul acero | Edificio medio con AC |
+| OFFICE | Gris plata | Edificio alto con múltiples AC |
+| WAREHOUSE | Siena | Almacén ancho con puertas de carga |
+| SKYSCRAPER | Azul | Muy alto con antena y helipuerto |
+
+### CityBlock.java
+**Ubicación**: `com.atropellalo.game.map.CityBlock`
+
+Manzana que contiene múltiples edificios.
+
+**Layouts**:
+- Grid: 2-3 columnas x 2-3 filas
+- L-Shape: Edificio principal + extensión
+- Mixed: Edificio grande + pequeños alrededor
+- Single: Un edificio grande
+
+### Colisiones
+
+**Resolución de Colisiones** (sliding):
+1. Intentar movimiento completo (X + Y)
+2. Si colisiona, intentar solo X
+3. Si colisiona, intentar solo Y
+4. Si todo falla, mantener posición anterior
+
+---
+
+## Sistema de Loot
+
+### LootManager.java
+**Ubicación**: `com.atropellalo.game.loot.LootManager`
+
+Gestiona spawn y recolección de items.
+
+### Tipos de Loot
+
+#### Fuel (Combustible)
+
+| Propiedad | Valor |
+|-----------|-------|
+| Restaura | 25 combustible |
+| Tamaño | 24 px |
+| Spawn inicial | 2 |
+| Máximo | 6 |
+| Intervalo spawn | 4-8 segundos |
+
+**Visual**: Bidón naranja con gota blanca.
+
+#### Scrap (Chatarra)
+
+| Propiedad | Valor |
+|-----------|-------|
+| Restaura | 15 HP |
+| Tamaño | 22 px |
+| Spawn inicial | 1 |
+| Máximo | 4 |
+| Intervalo spawn | 5-10 segundos |
+
+**Visual**: Pieza metálica gris con cruz verde.
+
+#### XPOrb (Orbe de Experiencia)
+
+| Propiedad | Valor |
+|-----------|-------|
+| Tamaño | 12 px |
+| Distancia atracción | 100 px |
+| Velocidad atracción | 220 px/s |
+| Pickup distance | 20 px |
+
+**Visual**: Esfera con gradiente verde/amarillo.
+**Comportamiento**: Atracción magnética hacia el jugador.
+
+---
+
+## HUD y UI
+
+### GameHUD.java
+**Ubicación**: `com.atropellalo.game.ui.GameHUD`
+
+HUD del jugador.
+
+**Elementos**:
+
+| Elemento | Posición | Colores |
+|----------|----------|---------|
+| Barra Salud | Superior izquierda | Verde/Naranja/Rojo según % |
+| Barra Combustible | Bajo salud | Naranja/Rojo según % |
+| Barra XP | Bajo combustible | Azul con indicador de nivel |
+| Oleada/Kills | Superior derecha | Blanco |
+| Game Over | Centro | Rojo con botón reinicio |
+
+**Pantalla Game Over**:
 - Overlay oscuro semi-transparente
 - Texto "GAME OVER" en rojo
-- Mensaje explicativo
+- Botón parpadeante "Presiona R para reiniciar"
 
-## Sistema de Cámara
+---
 
-### Características
-✅ Centrada en el jugador  
-✅ Viewport de 1280x720 (tamaño de ventana)  
-✅ Limitada a los bordes del mundo  
-✅ Movimiento suave siguiendo al jugador  
+## Configuración (GameConfig.java)
 
-### Implementación
-- La cámara siempre mantiene al jugador centrado
-- Cuando el jugador está cerca de los bordes, la cámara se detiene
-- Usa transformación de Graphics2D para renderizado eficiente
+### Jugador
+```java
+PLAYER_MAX_HEALTH = 100.0f
+PLAYER_MAX_FUEL = 100.0f
+FUEL_CONSUMPTION_RATE = 3.0f
+PLAYER_SPEED = 200.0f
+PLAYER_SIZE = 32
+```
 
-## Game Loop
+### Oleadas
+```java
+WAVE_INTERVAL = 5.0f
+WAVE_BASE_ENEMIES = 10
+WAVE_ENEMY_INCREMENT = 5
+MAX_ENEMIES_ON_MAP = 100
+ENEMY_SPAWN_INTERVAL = 0.3f
+```
 
-### Características
-✅ 60 FPS objetivo  
-✅ Delta time para movimiento independiente del framerate  
-✅ Actualización de lógica separada del renderizado  
-✅ Control de timing preciso  
+### Jefes
+```java
+BRUISER_BOSS_WAVE = 5
+INFECTOR_BOSS_WAVE = 10
+```
 
-### Flujo
-1. Calcular delta time
-2. Verificar si el juego terminó
-3. Actualizar input del jugador
-4. Actualizar posición del jugador (consumir combustible)
-6. Actualizar sistema de loot (spawn, timers)
-7. Verificar colisiones con loot
-8. Aplicar efectos de loot recolectado
-9. Actualizar sistema de enemigos (oleadas, movimiento, colisiones)
-10. Actualizar sistema de armas (disparo automático al enemigo más cercano)
-11. Actualizar posición de la cámara
-12. Renderizar escena (mapa, loot, enemigos, proyectiles, jugador)
-13. Renderizar HUD e info de oleadas
-14. Sleep para mantener FPS objetivo
+### XP y Niveles
+```java
+XP_BASE_TO_LEVEL_UP = 100
+XP_LEVEL_SCALING = 1.2f
+LEVEL_UP_FUEL_BONUS = 10.0f
+```
+
+### Mejoras
+```java
+UPGRADE_HEALTH_AMOUNT = 20.0f
+UPGRADE_SPEED_AMOUNT = 20.0f
+UPGRADE_WEAPON_DAMAGE_FACTOR = 1.2f
+UPGRADE_WEAPON_FIRE_RATE_FACTOR = 0.85f
+MAX_WEAPONS = 3
+```
+
+---
 
 ## Cómo Ejecutar
 
-### Compilar el Proyecto
+### Compilar
 ```powershell
 mvn clean compile
 ```
 
-### Empaquetar como JAR
-```powershell
-mvn clean package
-```
-
-### Ejecutar desde Maven
+### Ejecutar
 ```powershell
 mvn exec:java "-Dexec.mainClass=com.atropellalo.Game"
 ```
 
-### Ejecutar JAR Generado
+### Empaquetar JAR
 ```powershell
+mvn clean package
 java -jar target/atropellalo-game-1.0-SNAPSHOT.jar
 ```
 
-**Nota**: El juego se ejecutará y mostrará una ventana de 1280x720 píxeles con el mapa de fondo cargado desde `src/main/resources/images/map.jpg`.
-
-## Tecnologías Utilizadas
-
-- **Java 11**: Lenguaje de programación
-- **Swing**: Framework para interfaz gráfica
-- **ImageIO**: Carga de imágenes
-- **Maven**: Gestión de dependencias y build
-- **Java Logging**: Sistema de logs
-- **Threading**: Game loop en hilo separado
-- **AWT Graphics2D**: Renderizado con transformaciones
-
-## Arquitectura y Patrones
-
-### Separación de Responsabilidades
-- **UI**: GameWindow, GamePanel, GameHUD
-- **Entidades**: Player
-- **Enemigos**: Enemy (abstract), FastZombie, SlowZombie, ExplosiveZombie
-- **Sistemas**: Camera, InputHandler, LootManager, EnemyManager, WeaponManager
-- **Configuración**: GameConfig
-- **Loot**: Loot (abstract), Fuel, Scrap, LootType
-- **Armas**: Weapon (abstract), Pistol, Projectile, WeaponManager
-- **Utilidades**: MapGenerator
-
-### Game Loop Pattern
-El GamePanel implementa el patrón de game loop:
-1. **Update**: Actualiza lógica del juego
-2. **Render**: Dibuja los elementos
-3. **Timing**: Controla FPS
-
-### Observer Pattern (Input)
-InputHandler actúa como observer del teclado, manteniendo estado de teclas.
-
-### Camera Pattern
-Sistema de cámara desacoplado que puede seguir cualquier objetivo.
-
-### Template Method Pattern (Loot/Enemy)
-Loot y Enemy definen el esqueleto para items/enemigos, las subclases implementan detalles.
-
-### Manager Pattern (LootManager/EnemyManager)
-Centraliza la gestión de entidades relacionadas.
-
-### Callback Pattern (Explosiones)
-ExplosiveZombie usa callback para notificar daño al jugador.
-
-## Próximos Pasos Sugeridos (No Implementados)
-
-Para continuar el desarrollo del juego estilo Survivor, se sugiere:
-
-1. ~~**Enemigos**: Sistema de spawn y comportamiento de enemigos~~ ✅ COMPLETADO
-2. ~~**Colisiones**: Detección de colisiones entre jugador y enemigos~~ ✅ COMPLETADO
-3. ~~**Armas/Ataques**: Sistema de combate automático~~ ✅ COMPLETADO
-4. **Más Armas**: Agregar variedad de armas (escopeta, rifle, etc.)
-5. **Experiencia/Nivel**: Sistema de progresión
-6. **Power-ups adicionales**: Mejoras temporales y habilidades
-7. **Partículas**: Efectos visuales al recolectar loot y disparar
-8. **Audio**: Música y efectos de sonido
-9. **Sprite del jugador**: Reemplazar cuadrado con sprite animado
-10. **Mapa mejorado**: Diseño de nivel más detallado
-11. **Reinicio de partida**: Opción para reiniciar después del Game Over
-12. **Mejoras de armas**: Sistema de upgrades para las armas
-
-## Notas Técnicas
-
-### Rendimiento
-- Game loop optimizado a 60 FPS
-- Delta time asegura movimiento consistente
-- Transformación de cámara eficiente con Graphics2D
-
-### Escalabilidad
-- Arquitectura preparada para múltiples entidades
-- Sistema de cámara reutilizable
-- Input handler extensible para más controles
-
-### Mejores Prácticas Aplicadas
-- El proyecto usa Swing por simplicidad (KISS)
-- La separación UI/lógica/sistemas permite futura expansión
-- El uso de constantes facilita ajustes de configuración
-- El logging permite debugging efectivo
-- La estructura permite agregar nuevas clases sin modificar existentes (Open/Closed)
-- Game loop en hilo separado mantiene UI responsiva
-- Delta time hace el juego independiente del framerate
-- Configuración centralizada en GameConfig (fácil de modificar)
-- Herencia para loot reduce duplicación de código (DRY)
-- Bajo acoplamiento entre sistemas (loot, HUD, jugador)
-
-### Decisiones de Diseño
-1. **Cuadrado para jugador**: Prototipo simple, color indica salud
-2. **Mapa generado**: Solución temporal, puede reemplazarse con imagen artística
-3. **Tamaño mundo 2x ventana**: Balance entre exploración y simplicidad
-4. **60 FPS**: Estándar para juegos 2D, buen balance rendimiento/fluidez
-5. **Velocidad 200px/s**: Valor ajustable en GameConfig
-6. **GameConfig separado**: Facilita ajustes de balance sin tocar lógica
-7. **Loot abstracto**: Permite agregar nuevos tipos fácilmente
-8. **HUD separado**: Mantiene GamePanel enfocado en el mundo del juego
-
-## Guía de Configuración (GameConfig)
-
-Para ajustar el balance del juego, modifica los valores en `GameConfig.java`:
-
-### Jugador
-```java
-PLAYER_MAX_HEALTH = 100.0f;      // Salud máxima
-PLAYER_INITIAL_HEALTH = 100.0f;  // Salud inicial
-PLAYER_MAX_FUEL = 100.0f;        // Combustible máximo
-PLAYER_INITIAL_FUEL = 100.0f;    // Combustible inicial
-FUEL_CONSUMPTION_RATE = 5.0f;    // Consumo por segundo
-PLAYER_SPEED = 200.0f;           // Velocidad en píxeles/s
-```
-
-### Combustible
-```java
-FUEL_RESTORE_AMOUNT = 25.0f;     // Cantidad restaurada
-FUEL_SPAWN_INTERVAL_MIN = 3.0f;  // Intervalo mínimo de spawn
-FUEL_SPAWN_INTERVAL_MAX = 6.0f;  // Intervalo máximo de spawn
-FUEL_MAX_ON_MAP = 10;            // Máximo simultáneo en mapa
-FUEL_INITIAL_SPAWN = 5;          // Cantidad inicial
-```
-
-### Chatarra
-```java
-SCRAP_HEAL_AMOUNT = 15.0f;       // Cantidad de curación
-SCRAP_SPAWN_INTERVAL_MIN = 5.0f; // Intervalo mínimo de spawn
-SCRAP_SPAWN_INTERVAL_MAX = 10.0f;// Intervalo máximo de spawn
-SCRAP_MAX_ON_MAP = 8;            // Máximo simultáneo en mapa
-SCRAP_INITIAL_SPAWN = 3;         // Cantidad inicial
-```
-
-### Enemigos (NUEVO - Fase 4)
-```java
-// General
-PLAYER_DAMAGE_TO_ENEMY = 50.0f;      // Daño al atropellar
-ENEMY_DAMAGE_TO_PLAYER = 10.0f;      // Daño base de contacto
-ENEMY_DAMAGE_COOLDOWN = 0.5f;        // Cooldown de daño (segundos)
-ENEMY_COLLISION_DISTANCE = 25.0f;    // Distancia de colisión
-ENEMY_MIN_SPAWN_DISTANCE = 300.0f;   // Distancia mínima de spawn
-
-// Zombie Rápido
-FAST_ZOMBIE_SPEED = 150.0f;          // Velocidad (px/s)
-FAST_ZOMBIE_HEALTH = 30.0f;          // Salud
-FAST_ZOMBIE_SIZE = 24;               // Tamaño
-FAST_ZOMBIE_DAMAGE = 8.0f;           // Daño al jugador
-
-// Zombie Lento
-SLOW_ZOMBIE_SPEED = 50.0f;           // Velocidad (px/s)
-SLOW_ZOMBIE_HEALTH = 100.0f;         // Salud
-SLOW_ZOMBIE_SIZE = 36;               // Tamaño
-SLOW_ZOMBIE_DAMAGE = 15.0f;          // Daño al jugador
-
-// Zombie Explosivo
-EXPLOSIVE_ZOMBIE_SPEED = 80.0f;      // Velocidad (px/s)
-EXPLOSIVE_ZOMBIE_HEALTH = 40.0f;     // Salud
-EXPLOSIVE_ZOMBIE_SIZE = 28;          // Tamaño
-EXPLOSIVE_ZOMBIE_DAMAGE = 10.0f;     // Daño contacto
-EXPLOSIVE_ZOMBIE_RADIUS = 80.0f;     // Radio de explosión
-EXPLOSIVE_ZOMBIE_EXPLOSION_DAMAGE = 25.0f; // Daño explosión
-
-// Sistema de Oleadas
-WAVE_INTERVAL = 15.0f;               // Segundos entre oleadas
-WAVE_BASE_ENEMIES = 5;               // Enemigos base por oleada
-WAVE_ENEMY_INCREMENT = 2;            // Incremento por oleada
-MAX_ENEMIES_ON_MAP = 50;             // Máximo simultáneo
-ENEMY_SPAWN_INTERVAL = 0.5f;         // Segundos entre spawns
-
-// Probabilidades de spawn (deben sumar 100)
-FAST_ZOMBIE_SPAWN_CHANCE = 50;       // 50% rápidos
-SLOW_ZOMBIE_SPAWN_CHANCE = 30;       // 30% lentos
-EXPLOSIVE_ZOMBIE_SPAWN_CHANCE = 20;  // 20% explosivos
-```
-
-### Armas - Pistola (NUEVO - Fase 5)
-```java
-PISTOL_DAMAGE = 15.0f;          // Daño por disparo
-PISTOL_RANGE = 250.0f;          // Rango de alcance (px)
-PISTOL_FIRE_DELAY = 0.5f;       // Segundos entre disparos
-PROJECTILE_SPEED = 400.0f;      // Velocidad del proyectil (px/s)
-PROJECTILE_SIZE = 8;            // Tamaño del proyectil (px)
-```
-
-**Nota**: Las configuraciones de enemigos usan `static` (no `static final`) para permitir modificación en tiempo real durante pruebas.
-
-## Fase 6: Sistema de XP, Niveles y Mejoras (NUEVO)
-
-### Resumen
-Implementación completa del sistema estilo Vampire Survivors con orbes de XP, subida de nivel con menú de mejoras y nuevas armas.
-
-### Sistema de XP y Niveles
-
-#### XPOrb (NUEVO)
-**Ubicación**: `com.atropellalo.game.loot.XPOrb`
-
-**Responsabilidad**: Orbes de experiencia que caen de enemigos.
-
-**Características**:
-- Hereda de `Loot`
-- Atracción magnética hacia el jugador
-- Distancia de atracción: 100 px
-- Velocidad de atracción: 300 px/s
-- Renderizado con gradiente radial (verde/amarillo)
-- Cada tipo de enemigo da diferente XP
-
-#### Sistema de Niveles (Player)
-**Nuevos campos en Player**:
-- `currentXP`: Experiencia actual
-- `level`: Nivel del jugador (comienza en 1)
-- `xpToNextLevel`: XP necesario para subir (100 base, +50 por nivel)
-- `speed`: Velocidad del jugador (mejora con upgrades)
-
-**Callback de nivel**:
-```java
-public interface LevelUpCallback {
-    void onLevelUp(int newLevel);
-}
-```
-
-**Fórmula de XP**:
-- Nivel 1 → 2: 100 XP
-- Nivel 2 → 3: 150 XP
-- Nivel 3 → 4: 200 XP
-- Fórmula: `100 + (level - 1) * 50`
-
-#### XP por Enemigo (GameConfig)
-```java
-XP_FAST_ZOMBIE = 10;      // Zombie rápido
-XP_SLOW_ZOMBIE = 25;      // Zombie lento
-XP_EXPLOSIVE_ZOMBIE = 15; // Zombie explosivo
-```
-
-### Sistema de Mejoras (Upgrades)
-
-#### UpgradeType (NUEVO)
-**Ubicación**: `com.atropellalo.game.upgrade.UpgradeType`
-
-**Valores**:
-- `VEHICLE_HEALTH`: Mejora salud máxima (+20 HP)
-- `VEHICLE_SPEED`: Mejora velocidad (+15%)
-- `NEW_WEAPON`: Añade nueva arma (máx 3)
-- `WEAPON_DAMAGE`: Mejora daño del arma (+20%)
-- `WEAPON_FIRE_RATE`: Mejora cadencia (+15%)
-- `WEAPON_IMPACT_AREA`: Mejora área de impacto (+25%)
-- `WEAPON_PROJECTILE_COUNT`: Añade proyectil (+1)
-
-#### UpgradeOption (NUEVO)
-**Ubicación**: `com.atropellalo.game.upgrade.UpgradeOption`
-
-**Responsabilidad**: Representa una opción de mejora.
-
-**Campos**:
-- `type`: Tipo de mejora
-- `title`: Título para mostrar
-- `description`: Descripción detallada
-- `weaponType`: Tipo de arma (opcional, para NEW_WEAPON o upgrades de arma)
-
-#### UpgradeManager (NUEVO)
-**Ubicación**: `com.atropellalo.game.upgrade.UpgradeManager`
-
-**Responsabilidad**: Genera y aplica mejoras.
-
-**Métodos Principales**:
-- `generateOptions(Player, WeaponManager)`: Genera 3 opciones aleatorias
-- `applyUpgrade(UpgradeOption, Player, WeaponManager)`: Aplica mejora seleccionada
-
-**Lógica de Generación**:
-1. Siempre incluye mejoras de vehículo (salud, velocidad)
-2. Si hay espacio para armas (< 3), incluye nuevas armas
-3. Incluye mejoras para armas equipadas
-4. Selecciona 3 aleatorias sin repetir
-
-#### UpgradeMenu (NUEVO)
-**Ubicación**: `com.atropellalo.game.ui.UpgradeMenu`
-
-**Responsabilidad**: Menú visual de selección de mejoras.
-
-**Características**:
-- Overlay semi-transparente
-- 3 tarjetas de opción
-- Navegación con teclado (A/D o ←/→)
-- Selección con Enter, Espacio o 1/2/3
-- Tarjeta seleccionada resaltada en verde
-- Pausa el juego mientras está visible
-
-**Callback**:
-```java
-public interface UpgradeSelectedCallback {
-    void onUpgradeSelected(UpgradeOption option);
-}
-```
-
-### Nuevas Armas
-
-#### WeaponType (NUEVO)
-**Ubicación**: `com.atropellalo.game.weapon.WeaponType`
-
-**Valores**:
-- `PISTOL`: Pistola base
-- `LIGHT_MACHINE_GUN`: Ametralladora ligera
-- `GRENADE_LAUNCHER`: Lanzagranadas
-- `SPIKES`: Púas alrededor del vehículo
-- `FLAMETHROWER`: Lanzallamas
-
-#### LightMachineGun (NUEVO)
-**Ubicación**: `com.atropellalo.game.weapon.LightMachineGun`
-
-**Características**:
-- Alta cadencia de fuego (5 disparos/s)
-- Daño bajo por proyectil (8 HP)
-- 2 proyectiles por disparo
-- Proyectiles naranjas/rojos
-- Rango: 300 px
-
-**Configuración** (GameConfig):
-```java
-LMG_DAMAGE = 8.0f;
-LMG_RANGE = 300.0f;
-LMG_FIRE_DELAY = 0.2f;
-LMG_PROJECTILE_COUNT = 2;
-LMG_PROJECTILE_SPEED = 500.0f;
-```
-
-#### GrenadeLauncher (NUEVO)
-**Ubicación**: `com.atropellalo.game.weapon.GrenadeLauncher`
-
-**Características**:
-- Bajo ratio de fuego (0.5 disparos/s)
-- Alto daño (30 HP directo)
-- Daño en área (50 px de radio)
-- Proyectiles grandes y lentos
-- Color gris/verde oscuro
-
-**Configuración** (GameConfig):
-```java
-GRENADE_DAMAGE = 30.0f;
-GRENADE_RANGE = 350.0f;
-GRENADE_FIRE_DELAY = 2.0f;
-GRENADE_IMPACT_AREA = 50.0f;
-GRENADE_PROJECTILE_SPEED = 250.0f;
-```
-
-#### Spikes (NUEVO)
-**Ubicación**: `com.atropellalo.game.weapon.Spikes`
-
-**Características**:
-- Arma pasiva (no dispara proyectiles)
-- Daño continuo a enemigos cercanos
-- 8 púas alrededor del jugador
-- Radio de daño: 60 px
-- Daño por segundo: 20 HP
-
-**Configuración** (GameConfig):
-```java
-SPIKES_DAMAGE = 20.0f;
-SPIKES_RANGE = 60.0f;
-SPIKES_DAMAGE_INTERVAL = 0.5f;
-```
-
-**Métodos Especiales**:
-- `processContinuousDamage(List<Enemy>, float, float)`: Daña enemigos en rango
-- `render(Graphics2D, float, float)`: Dibuja púas alrededor del jugador
-
-#### Flamethrower (NUEVO)
-**Ubicación**: `com.atropellalo.game.weapon.Flamethrower`
-
-**Características**:
-- Arma de daño continuo en cono
-- No dispara proyectiles tradicionales
-- Daño en área cónica frente al jugador
-- Partículas de fuego animadas
-- Ángulo de cono: 45°
-- Rango: 120 px
-
-**Configuración** (GameConfig):
-```java
-FLAMETHROWER_DAMAGE = 25.0f;
-FLAMETHROWER_RANGE = 120.0f;
-FLAMETHROWER_DAMAGE_INTERVAL = 0.1f;
-FLAMETHROWER_CONE_ANGLE = 45.0f;
-```
-
-**Métodos Especiales**:
-- `processContinuousDamage(List<Enemy>, float, float)`: Daña enemigos en cono
-- `render(Graphics2D, float, float)`: Dibuja llamas con partículas
-
-### Actualizaciones a Clases Existentes
-
-#### Weapon (Actualizado)
-**Nuevos campos**:
-- `weaponType`: Tipo de arma
-- `projectileCount`: Proyectiles por disparo
-- `impactArea`: Radio de daño en área
-
-**Nuevos métodos**:
-- `upgradeDamage()`: Mejora daño 20%
-- `upgradeFireRate()`: Mejora cadencia 15%
-- `upgradeImpactArea()`: Mejora área 25%
-- `upgradeProjectileCount()`: Añade 1 proyectil
-
-**Cambio en tryFire()**:
-- Ahora retorna `List<Projectile>` en lugar de un solo proyectil
-
-#### Projectile (Actualizado)
-**Nuevos campos**:
-- `impactArea`: Radio de explosión
-- `speed`: Velocidad personalizable
-- `color`: Color del proyectil
-- `size`: Tamaño del proyectil
-
-**Nuevo método**:
-- `applyAreaDamage(List<Enemy>)`: Aplica daño en área al impactar
-
-**Nuevos constructores**:
-- Constructor completo con todos los parámetros
-- Constructor simplificado compatible con versión anterior
-
-#### WeaponManager (Actualizado)
-**Cambios**:
-- De `Weapon weapon` a `List<Weapon> weapons`
-- Máximo 3 armas simultáneas
-
-**Nuevos métodos**:
-- `addWeapon(Weapon)`: Añade arma si hay espacio
-- `hasWeapon(WeaponType)`: Verifica si tiene un tipo de arma
-- `getWeapon(WeaponType)`: Obtiene arma por tipo
-- `canAddWeapon()`: Verifica si puede añadir más armas
-- `getAvailableWeaponTypes()`: Lista armas no equipadas
-
-**Actualización de render()**:
-- Nueva firma: `render(Graphics2D, float, float)` para armas que dibujan en posición del jugador
-
-#### Player (Actualizado)
-**Nuevos campos**:
-- `currentXP`: Experiencia actual
-- `level`: Nivel (comienza en 1)
-- `xpToNextLevel`: XP para siguiente nivel
-- `speed`: Velocidad (mejora con upgrades)
-- `levelUpCallback`: Callback al subir de nivel
-
-**Nuevos métodos**:
-- `addXP(int)`: Añade XP, retorna true si sube de nivel
-- `setLevelUpCallback(LevelUpCallback)`: Configura callback
-- `upgradeMaxHealth()`: Mejora salud máxima
-- `upgradeSpeed()`: Mejora velocidad
-- Getters para XP, nivel, etc.
-
-#### GameHUD (Actualizado)
-**Nuevo elemento**:
-- Barra de XP encima de las barras existentes
-- Muestra nivel actual
-- Barra de progreso hacia siguiente nivel
-- Color púrpura/magenta
-
-#### LootManager (Actualizado)
-**Nuevos campos**:
-- `List<XPOrb> xpOrbs`: Lista separada de orbes de XP
-
-**Nuevos métodos**:
-- `spawnXPOrb(float, float, int)`: Crea orbe de XP en posición
-
-**Actualización de update()**:
-- Nueva firma: `update(float, float, float)` para atracción magnética
-- Actualiza orbes de XP con posición del jugador
-
-#### EnemyManager (Actualizado)
-**Nuevos campos**:
-- `LootManager lootManager`: Referencia para spawn de XP
-
-**Nuevos métodos**:
-- `setLootManager(LootManager)`: Configura el loot manager
-- `spawnXPForEnemy(Enemy)`: Genera XP según tipo de enemigo
-
-**Actualización de cleanupDeadEnemies()**:
-- Llama a `spawnXPForEnemy()` antes de eliminar enemigo muerto
-
-#### LootType (Actualizado)
-**Nuevo valor**:
-- `XP_ORB`: Orbe de experiencia
-
-#### GamePanel (Actualizado)
-**Nuevos campos**:
-- `UpgradeManager upgradeManager`
-- `UpgradeMenu upgradeMenu`
-- `boolean paused`
-
-**Nuevas integraciones**:
-- Conecta `enemyManager.setLootManager(lootManager)`
-- Configura `player.setLevelUpCallback()`
-- Configura `upgradeMenu.setCallback()`
-- Implementa `KeyListener` para menú de mejoras
-
-**Nuevos métodos**:
-- `onPlayerLevelUp(int)`: Pausa juego, muestra menú
-- `onUpgradeSelected(UpgradeOption)`: Aplica mejora, reanuda juego
-
-**Actualización de update()**:
-- No actualiza si `paused` es true
-- Pasa posición del jugador a `lootManager.update()`
-
-**Actualización de paintComponent()**:
-- Renderiza `upgradeMenu` si está visible
-- Pasa posición del jugador a `weaponManager.render()`
-
-**Manejo de XP en applyLootEffect()**:
-- Detecta `LootType.XP_ORB`
-- Extrae valor de XP del orbe
-- Llama a `player.addXP()`
-
-### Flujo del Sistema
-
-```
-Enemigo muere
-    ↓
-EnemyManager.cleanupDeadEnemies()
-    ↓
-spawnXPForEnemy() → LootManager.spawnXPOrb()
-    ↓
-XPOrb aparece en el mapa
-    ↓
-LootManager.update() → XPOrb atracción magnética
-    ↓
-LootManager.checkCollisions() → Jugador recoge orbe
-    ↓
-GamePanel.applyLootEffect() → player.addXP()
-    ↓
-[Si alcanza XP necesario]
-    ↓
-Player.addXP() retorna true + callback
-    ↓
-GamePanel.onPlayerLevelUp()
-    ↓
-paused = true
-    ↓
-UpgradeManager.generateOptions()
-    ↓
-UpgradeMenu.show()
-    ↓
-[Jugador selecciona opción]
-    ↓
-UpgradeMenu callback → GamePanel.onUpgradeSelected()
-    ↓
-UpgradeManager.applyUpgrade()
-    ↓
-paused = false
-    ↓
-Juego continúa
-```
-
-### Configuración de Mejoras (GameConfig)
-```java
-// Mejoras de vehículo
-UPGRADE_HEALTH_AMOUNT = 20.0f;      // +20 HP máximo
-UPGRADE_SPEED_AMOUNT = 0.15f;       // +15% velocidad
-
-// Mejoras de armas (multiplicadores)
-UPGRADE_WEAPON_DAMAGE_FACTOR = 0.2f;         // +20% daño
-UPGRADE_WEAPON_FIRE_RATE_FACTOR = 0.15f;     // +15% cadencia
-UPGRADE_WEAPON_IMPACT_AREA_FACTOR = 0.25f;   // +25% área
-UPGRADE_WEAPON_PROJECTILE_COUNT = 1;         // +1 proyectil
-
-// Límites
-MAX_WEAPONS = 3;                    // Máximo de armas
-```
-
-### Controles del Menú de Mejoras
-- **A / ←**: Mover selección a la izquierda
-- **D / →**: Mover selección a la derecha
-- **Enter / Espacio**: Confirmar selección
-- **1 / 2 / 3**: Selección directa de opción
-
 ---
-### Nueva Arma: Escopeta (Shotgun)
 
-**Ubicación**: `com.atropellalo.game.weapon.Shotgun`
+## Historial de Fases
 
-**Características**:
-- Alto daño por proyectil (25 HP)
-- Rango corto (150 px)
-- 5 proyectiles por disparo
-- Dispersión en área del 15% (~54°)
-- Cadencia media (1 disparo/segundo)
-
-**Configuración** (GameConfig):
-```java
-SHOTGUN_DAMAGE = 25.0f;           // Daño alto
-SHOTGUN_RANGE = 150.0f;           // Rango corto
-SHOTGUN_FIRE_DELAY = 1.0f;        // Cadencia media
-SHOTGUN_PROJECTILE_COUNT = 5;     // 5 perdigones
-SHOTGUN_SPREAD_ANGLE = 54.0f;     // 15% de 360°
-SHOTGUN_PROJECTILE_SPEED = 350.0f;
-```
-
-### Sierras Circulares 
-**Ubicación**: `com.atropellalo.game.weapon.CircularSaw`
-
-**Cambio**: Las púas (Spikes) fueron reemplazadas por sierras circulares.
-
-**Características**:
-- Dos sierras, una a cada lado del jugador
-- Rotación constante visual
-- Daño por contacto continuo
-- Dientes triangulares animados
-
-**Configuración** (GameConfig):
-```java
-SAW_DAMAGE = 12.0f;              // Daño por contacto
-SAW_RADIUS = 25.0f;              // Radio de cada sierra
-SAW_DISTANCE = 45.0f;            // Distancia desde el jugador
-SAW_DAMAGE_COOLDOWN = 0.25f;     // Cooldown de daño
-SAW_ROTATION_SPEED = 10.0f;      // Velocidad de rotación (rad/s)
-```
-
-**Renderizado**:
-- Disco base metálico
-- 12 dientes triangulares
-- Centro oscuro con agujero
-- Rotación continua animada
-
-### Lanzagranadas Aleatorio
-
-**Cambios en GrenadeLauncher**:
-- Ya NO apunta automáticamente a enemigos
-- Dispara en direcciones ALEATORIAS
-- Solo dispara si hay enemigos en el mapa
-
-**Nueva clase GrenadeProjectile**:
-**Ubicación**: `com.atropellalo.game.weapon.GrenadeProjectile`
-
-**Efecto de explosión visual**:
-- Fase de expansión (0-50% duración)
-  - Círculos concéntricos de colores
-  - Amarillo → Naranja → Rojo → Humo
-  - Destello blanco central
-- Fase de disipación (50-100% duración)
-  - Humo que se expande
-  - Fuego residual que se desvanece
-- Duración total: 0.5 segundos
-
-### Escalado de Enemigos por Oleada
-
-**Sistema de escalado progresivo**:
-Los enemigos se vuelven más fuertes con cada oleada. Los 4 atributos escalan simultáneamente:
-
-```java
-WAVE_HEALTH_SCALING = 1.05f;   // +5% vida por oleada
-WAVE_SPEED_SCALING = 1.02f;    // +2% velocidad por oleada
-WAVE_DAMAGE_SCALING = 1.03f;   // +3% daño por oleada
-WAVE_XP_SCALING = 1.05f;       // +5% XP por oleada
-```
-
-**Fórmula de escalado**:
-```
-statFinal = statBase × (factorEscalado ^ (oleada - 1))
-```
-
-**Ejemplo oleada 5**:
-- Vida: base × 1.05^4 = base × 1.216 (+21.6%)
-- Velocidad: base × 1.02^4 = base × 1.082 (+8.2%)
-- Daño: base × 1.03^4 = base × 1.126 (+12.6%)
-- XP: base × 1.05^4 = base × 1.216 (+21.6%)
-
-**Implementación**:
-- `Enemy` tiene nuevo campo `xpMultiplier`
-- Constructor con factores de escalado
-- `EnemyManager.createEnemy()` calcula escalado
-- `spawnXPForEnemy()` aplica escalado de XP
-
-### Proyectiles Múltiples Sin Dispersión
-
-**Cambio importante**: El multi-disparo ya NO dispersa proyectiles.
-
-Armas afectadas:
-- **Pistola**: Todos los proyectiles van al mismo objetivo
-- **Ametralladora Ligera**: Todos en la misma dirección
-- **Escopeta**: Mantiene su dispersión intencional (es su característica)
-
-**Motivo**: Aumentar la cantidad de proyectiles debe aumentar el DPS, no dispersar el daño.
-
-### Bonificación de Combustible al Subir de Nivel
-
-**Configuración**:
-```java
-LEVEL_UP_FUEL_BONUS = 10.0f;   // +10 combustible
-```
-
-**Implementación en Player.levelUp()**:
-```java
-// Bonificación de combustible al subir de nivel
-addFuel(GameConfig.LEVEL_UP_FUEL_BONUS);
-```
-
-### Actualizaciones de Archivos
-
-#### Nuevos Archivos
-- `Shotgun.java` - Nueva arma escopeta
-- `CircularSaw.java` - Reemplazo de Spikes
-- `GrenadeProjectile.java` - Proyectil con explosión visual
-
-#### Archivos Eliminados
-- `Spikes.java` - Reemplazado por CircularSaw
-
-#### Archivos Modificados
-
-**GameConfig.java**:
-- Añadidas configs de escopeta (SHOTGUN_*)
-- Añadidas configs de sierras (SAW_*)
-- Añadidos factores de escalado (WAVE_*_SCALING)
-- Añadido LEVEL_UP_FUEL_BONUS
-
-**WeaponType.java**:
-- Eliminado: `SPIKES`
-- Añadido: `CIRCULAR_SAW`, `SHOTGUN`
-
-**Enemy.java**:
-- Nuevo campo: `xpMultiplier`
-- Nuevo constructor con factores de escalado
-- Nuevo getter: `getXPMultiplier()`
-
-**FastZombie.java, SlowZombie.java, ExplosiveZombie.java**:
-- Nuevo constructor con factores de escalado
-
-**EnemyManager.java**:
-- `createEnemy()` aplica factores de escalado
-- `spawnXPForEnemy()` escala XP por oleada
-
-**Pistol.java, LightMachineGun.java**:
-- Proyectiles múltiples van en la misma dirección
-
-**GrenadeLauncher.java**:
-- Disparo aleatorio (no apunta)
-- Usa GrenadeProjectile
-
-**Player.java**:
-- `levelUp()` otorga combustible bonus
-
-**WeaponManager.java**:
-- Crea CircularSaw y Shotgun
-
-**UpgradeManager.java**:
-- Referencias actualizadas de SPIKES a CIRCULAR_SAW
-
-### Configuración Completa de Escalado
-
-```java
-// ==================== ESCALADO DE OLEADAS ====================
-WAVE_HEALTH_SCALING = 1.05f;    // Factor de escalado de vida
-WAVE_SPEED_SCALING = 1.02f;     // Factor de escalado de velocidad
-WAVE_DAMAGE_SCALING = 1.03f;    // Factor de escalado de daño
-WAVE_XP_SCALING = 1.05f;        // Factor de escalado de XP
-
-// ==================== BONIFICACIONES DE NIVEL ====================
-LEVEL_UP_FUEL_BONUS = 10.0f;    // Combustible al subir de nivel
-```
+| Fase | Descripción | Estado |
+|------|-------------|--------|
+| 1 | Ventana básica y mapa | ✅ |
+| 2 | Jugador y movimiento WASD | ✅ |
+| 3 | Sistema de loot (combustible/chatarra) | ✅ |
+| 4 | Enemigos y oleadas | ✅ |
+| 5 | Sistema de armas (pistola) | ✅ |
+| 6 | XP, niveles y mejoras | ✅ |
+| 7 | Nuevas armas (6 tipos) | ✅ |
+| 8 | Jefes (Aplastador, Infectador) | ✅ |
+| 9 | Mapa urbano con colisiones | ✅ |
+| 10 | Menos obstáculos, pathfinding, reinicio | ✅ |
+| 10.1 | Pathfinding mejorado, fix reinicio | ✅ |
+| 11 | Rifle de Francotirador (Sniper Railgun) | ✅ |
+| 12 | Mejoras visuales: explosión zombie, iconos upgrades, limpieza SlashWhip | ✅ |
 
 ---
 
 **Fecha de Creación**: 29/11/2025  
 **Última Actualización**: 29/11/2025  
-**Versión**: 1.0-SNAPSHOT  
-**Estado**: Fase 8 Completada - Jefes, Lanzagranadas Mejorado
-
----
-
-## Fase 8: Jefes y Mejoras de Armas
-
-### Resumen
-- Lanzagranadas ahora apunta al enemigo más cercano (en vez de aleatorio)
-- Dos nuevos jefes: El Aplastador (oleada 10) y El Infectador (oleada 20)
-- Sistema de callbacks para ataques especiales de jefes
-
-### Corrección del Lanzagranadas
-
-**Cambio**: El lanzagranadas ahora usa `findClosestEnemy()` para apuntar al enemigo más cercano, en lugar de disparar en direcciones aleatorias.
-
-**Comportamiento actualizado**:
-1. Busca enemigo más cercano dentro del rango
-2. Si hay enemigo válido y cooldown terminó, dispara
-3. La granada viaja hacia la posición del enemigo
-4. Al impactar, explota con efecto visual y daño en área
-
-### Nuevos Jefes
-
-#### EnemyType (Actualizado)
-**Nuevos valores**:
-- `BOSS_BRUISER`: El Aplastador (oleada 10)
-- `BOSS_INFECTOR`: El Infectador (oleada 20)
-
-#### BruiserBoss - El Aplastador (NUEVO)
-**Ubicación**: `com.atropellalo.game.enemy.BruiserBoss`
-
-**Descripción**: Tanque gigante con ataques devastadores.
-
-**Visual**:
-- Zombie gigante mutado (64 px)
-- Torso acorazado gris metálico
-- Brazo hipertrofiado con puño masivo
-- Ojos rojos brillantes
-- Barra de vida dorada (indica jefe)
-- Etiqueta "★ APLASTADOR ★"
-
-**Estadísticas**:
-```java
-BRUISER_BOSS_HEALTH = 500.0f;          // Muy alta
-BRUISER_BOSS_SPEED = 60.0f;            // Baja-media
-BRUISER_BOSS_SIZE = 64;                // Grande
-BRUISER_BOSS_CONTACT_DAMAGE = 25.0f;   // Alto
-XP_BRUISER_BOSS = 200;                 // Recompensa alta
-BRUISER_BOSS_WAVE = 10;                // Oleada de aparición
-```
-
-**Habilidades**:
-
-1. **Golpe de Terremoto**:
-   - Radio: 120 px
-   - Daño: 30 HP
-   - Cooldown: 4 segundos
-   - Activa cuando el jugador está cerca
-   - Efecto visual: Onda de choque marrón expandiéndose
-
-2. **Carga Frontal**:
-   - Velocidad de carga: 300 px/s
-   - Daño de impacto: 40 HP
-   - Duración: 1 segundo
-   - Cooldown: 6 segundos
-   - Activa cuando el jugador está lejos (>150 px)
-   - Efecto visual: Rastro naranja/rojo
-
-**Estados del Jefe**:
-- `WALKING`: Persigue al jugador
-- `CHARGING`: Ejecutando carga frontal
-- `EARTHQUAKE`: Ejecutando golpe de terremoto
-- `COOLDOWN`: Recuperándose de ataque
-
-#### InfectorBoss - El Infectador (NUEVO)
-**Ubicación**: `com.atropellalo.game.enemy.InfectorBoss`
-
-**Descripción**: Controlador de zonas con ataques de área tóxica.
-
-**Visual**:
-- Zombie hinchado verdoso (56 px)
-- Ampollas químicas amarillo-verdosas
-- Gotas de químico goteando
-- Nube tóxica permanente alrededor
-- Ojos amarillo-verdosos brillantes
-- Barra de vida verde con borde dorado
-- Etiqueta "☣ INFECTADOR ☣"
-
-**Estadísticas**:
-```java
-INFECTOR_BOSS_HEALTH = 350.0f;         // Media-alta
-INFECTOR_BOSS_SPEED = 80.0f;           // Media
-INFECTOR_BOSS_SIZE = 56;               // Grande
-INFECTOR_BOSS_CONTACT_DAMAGE = 15.0f;  // Medio
-XP_INFECTOR_BOSS = 350;                // Recompensa muy alta
-INFECTOR_BOSS_WAVE = 20;               // Oleada de aparición
-```
-
-**Habilidades**:
-
-1. **Nube Tóxica Pasiva**:
-   - Radio: 80 px (siempre activa)
-   - Daño: 5 HP por tick
-   - Tick rate: 0.5 segundos
-   - Efecto visual: Nube verde difusa con partículas flotantes
-
-2. **Bomba Química**:
-   - Radio de poza: 60 px
-   - Duración de poza: 5 segundos
-   - Daño de poza: 8 HP por tick
-   - Cooldown: 3 segundos
-   - Lanza hacia la posición del jugador
-   - Efecto visual: Pozas verdes con burbujas
-
-3. **Explosión Final (al morir)**:
-   - Radio: 150 px
-   - Daño: 35 HP
-   - Duración de animación: 1 segundo
-   - Efecto visual: Onda tóxica expansiva verde brillante
-
-**Estados del Jefe**:
-- `WALKING`: Persigue al jugador, lanza bombas
-- `THROWING_BOMB`: Animación de lanzamiento
-- `DYING`: Secuencia de explosión final
-
-### Actualizaciones a Clases Existentes
-
-#### EnemyManager (Actualizado)
-
-**Nuevas interfaces implementadas**:
-```java
-public class EnemyManager implements 
-    ExplosiveZombie.ExplosionCallback,
-    BruiserBoss.BossDamageCallback,
-    InfectorBoss.BossDamageCallback
-```
-
-**Nuevos campos**:
-- `bossSpawnedThisWave`: Control de spawn de jefe
-- `currentBoss`: Referencia al jefe activo
-
-**Nuevos métodos**:
-- `spawnBoss(EnemyType, float, float)`: Genera jefe con callback
-- `onBossDamage(float)`: Callback unificado para daño de jefe
-
-**Modificaciones**:
-- `startNextWave()`: Log de alerta de oleada de jefe
-- `spawnRandomEnemy()`: Prioriza spawn de jefe si corresponde
-- `cleanupDeadEnemies()`: Maneja secuencia de muerte del Infectador
-- `spawnXPForEnemy()`: XP fijo alto para jefes (sin escalado)
-- `renderWaveInfo()`: Muestra alerta "★ ¡JEFE ACTIVO! ★" y salud
-
-#### GameConfig (Actualizado)
-
-**Nuevas secciones**:
-```java
-// ==================== JEFE - EL APLASTADOR (BRUISER) - OLEADA 10 ====================
-BRUISER_BOSS_HEALTH = 500.0f;
-BRUISER_BOSS_SPEED = 60.0f;
-BRUISER_BOSS_SIZE = 64;
-BRUISER_BOSS_CONTACT_DAMAGE = 25.0f;
-BRUISER_EARTHQUAKE_RADIUS = 120.0f;
-BRUISER_EARTHQUAKE_DAMAGE = 30.0f;
-BRUISER_EARTHQUAKE_COOLDOWN = 4.0f;
-BRUISER_CHARGE_SPEED = 300.0f;
-BRUISER_CHARGE_DAMAGE = 40.0f;
-BRUISER_CHARGE_DURATION = 1.0f;
-BRUISER_CHARGE_COOLDOWN = 6.0f;
-BRUISER_CHARGE_MIN_DISTANCE = 150.0f;
-XP_BRUISER_BOSS = 200;
-BRUISER_BOSS_WAVE = 10;
-
-// ==================== JEFE - EL INFECTADOR (INFECTOR) - OLEADA 20 ====================
-INFECTOR_BOSS_HEALTH = 350.0f;
-INFECTOR_BOSS_SPEED = 80.0f;
-INFECTOR_BOSS_SIZE = 56;
-INFECTOR_BOSS_CONTACT_DAMAGE = 15.0f;
-INFECTOR_TOXIC_CLOUD_RADIUS = 80.0f;
-INFECTOR_TOXIC_CLOUD_DAMAGE = 5.0f;
-INFECTOR_TOXIC_TICK_RATE = 0.5f;
-INFECTOR_CHEMICAL_BOMB_DAMAGE = 20.0f;
-INFECTOR_CHEMICAL_BOMB_RADIUS = 60.0f;
-INFECTOR_TOXIC_POOL_DURATION = 5.0f;
-INFECTOR_TOXIC_POOL_DAMAGE = 8.0f;
-INFECTOR_BOMB_COOLDOWN = 3.0f;
-INFECTOR_DEATH_EXPLOSION_RADIUS = 150.0f;
-INFECTOR_DEATH_EXPLOSION_DAMAGE = 35.0f;
-XP_INFECTOR_BOSS = 350;
-INFECTOR_BOSS_WAVE = 20;
-```
-
-### Sistema de Callbacks de Jefes
-
-**Interface común**:
-```java
-public interface BossDamageCallback {
-    void onBossDamage(float damage);
-}
-```
-
-**Implementación en EnemyManager**:
-```java
-@Override
-public void onBossDamage(float damage) {
-    if (player != null && player.isAlive()) {
-        player.damage(damage);
-    }
-}
-```
-
-**Flujo de daño de jefe**:
-```
-Jefe ejecuta habilidad
-    ↓
-Verifica si jugador en rango
-    ↓
-Llama damageCallback.onBossDamage(damage)
-    ↓
-EnemyManager aplica daño al Player
-```
-
-### Estructura de Archivos Actualizada
-
-```
-enemy/
-├── Enemy.java                 # Clase base
-├── EnemyType.java            # Enum (ahora con BOSS_BRUISER, BOSS_INFECTOR)
-├── EnemyManager.java         # Gestor (actualizado con spawn de jefes)
-├── FastZombie.java           # Zombie rápido
-├── SlowZombie.java           # Zombie lento
-├── ExplosiveZombie.java      # Zombie explosivo
-├── BruiserBoss.java          # NUEVO - El Aplastador
-└── InfectorBoss.java         # NUEVO - El Infectador
-```
-
-### Indicadores Visuales de Jefe
-
-**En el mundo**:
-- Barra de vida más grande con borde dorado
-- Etiqueta con nombre del jefe
-- Efectos visuales de habilidades
-
-**En el HUD**:
-- Texto dorado "★ ¡JEFE ACTIVO! ★"
-- Porcentaje de salud del jefe
-- Reemplaza contador de enemigos mientras el jefe vive
-
-### Estrategia Sugerida vs Jefes
-
-**El Aplastador (Oleada 10)**:
-- Mantener distancia media (evitar terremoto)
-- Moverse lateralmente cuando carga
-- Alto DPS necesario por su salud masiva
-- Armas de rango recomendadas
-
-**El Infectador (Oleada 20)**:
-- Evitar quedarse cerca por la nube tóxica
-- Salir de las pozas químicas inmediatamente
-- Alejarse rápido cuando muere (explosión final)
-- Armas de área ayudan contra sus pozas
+**Versión**: 1.0-SNAPSHOT

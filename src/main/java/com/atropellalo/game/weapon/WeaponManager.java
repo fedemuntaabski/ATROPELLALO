@@ -190,6 +190,8 @@ public class WeaponManager {
                 return new Flamethrower();
             case SHOTGUN:
                 return new Shotgun();
+            case SNIPER_RAILGUN:
+                return new SniperRailgun();
             default:
                 return null;
         }

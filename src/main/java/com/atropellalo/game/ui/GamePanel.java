@@ -2,6 +2,7 @@ package com.atropellalo.game.ui;
 
 import com.atropellalo.game.camera.Camera;
 import com.atropellalo.game.config.GameConfig;
+import com.atropellalo.game.enemy.Enemy;
 import com.atropellalo.game.enemy.EnemyManager;
 import com.atropellalo.game.entity.Player;
 import com.atropellalo.game.input.InputHandler;
@@ -34,14 +35,16 @@ import java.util.logging.Logger;
 public class GamePanel extends JPanel implements Runnable, KeyListener {
     
     private static final Logger LOGGER = Logger.getLogger(GamePanel.class.getName());
-    private static final String MAP_IMAGE_PATH = "/images/map.jpg";
+    private static final String MAP_IMAGE_PATH = "/images/Map.png";
     private static final int TARGET_FPS = 60;
     private static final long OPTIMAL_TIME = 1000000000 / TARGET_FPS;
     
-    private BufferedImage mapImage;
     private Thread gameThread;
     private boolean running;
     private boolean paused;
+    
+    // Imagen del mapa de estacionamiento
+    private BufferedImage mapImage;
     
     private Player player;
     private Camera camera;
@@ -56,9 +59,21 @@ public class GamePanel extends JPanel implements Runnable, KeyListener {
     private UpgradeMenu upgradeMenu;
     
     public GamePanel() {
-        loadMapImage();
         setFocusable(true);
+        loadMapImage();
         initializeGame();
+    }
+    
+    /**
+     * Carga la imagen del mapa de estacionamiento.
+     */
+    private void loadMapImage() {
+        try {
+            mapImage = ImageIO.read(getClass().getResourceAsStream(MAP_IMAGE_PATH));
+            LOGGER.info("Mapa de estacionamiento cargado exitosamente: " + MAP_IMAGE_PATH);
+        } catch (IOException e) {
+            LOGGER.log(Level.SEVERE, "Error al cargar la imagen del mapa: " + MAP_IMAGE_PATH, e);
+        }
     }
     
     /**
@@ -71,18 +86,26 @@ public class GamePanel extends JPanel implements Runnable, KeyListener {
         // Configurar callback de subida de nivel
         player.setLevelUpCallback(this::onPlayerLevelUp);
         
+        // Sin callback de colisión - el estacionamiento no tiene obstáculos
+        player.setCollisionCallback(null);
+        
         // Crear cámara
         camera = new Camera(1280, 720, GameConfig.WORLD_WIDTH, GameConfig.WORLD_HEIGHT);
         
-        // Crear y configurar input handler
+        // Remover listeners anteriores antes de agregar nuevos
+        for (java.awt.event.KeyListener listener : getKeyListeners()) {
+            removeKeyListener(listener);
+        }
+        
+        // Crear y configurar input handler (nuevo cada vez)
         inputHandler = new InputHandler();
         addKeyListener(inputHandler);
-        addKeyListener(this); // Para el menú de mejoras
+        addKeyListener(this); // Para el menú de mejoras y reinicio
         
-        // Crear sistema de loot
+        // Crear sistema de loot (sin mapa de colisiones)
         lootManager = new LootManager();
         
-        // Crear sistema de enemigos
+        // Crear sistema de enemigos (sin mapa de colisiones)
         enemyManager = new EnemyManager();
         enemyManager.setPlayer(player);
         enemyManager.setLootManager(lootManager);
@@ -90,8 +113,9 @@ public class GamePanel extends JPanel implements Runnable, KeyListener {
         // Crear sistema de armas
         weaponManager = new WeaponManager();
         
-        // Crear HUD
+        // Crear HUD con callback de reinicio
         gameHUD = new GameHUD(1280, 720);
+        gameHUD.setRestartCallback(this::restartGame);
         
         // Crear sistema de mejoras
         upgradeManager = new UpgradeManager();
@@ -101,6 +125,15 @@ public class GamePanel extends JPanel implements Runnable, KeyListener {
         paused = false;
         
         LOGGER.info("Juego inicializado - Mundo: " + GameConfig.WORLD_WIDTH + "x" + GameConfig.WORLD_HEIGHT);
+        LOGGER.info("Mapa de estacionamiento cargado - Sin obstáculos");
+    }
+    
+    /**
+     * Reinicia el juego creando una nueva partida.
+     */
+    private void restartGame() {
+        LOGGER.info("Reiniciando juego...");
+        initializeGame();
     }
     
     /**
@@ -233,18 +266,6 @@ public class GamePanel extends JPanel implements Runnable, KeyListener {
         }
     }
     
-    /**
-     * Carga la imagen del mapa desde los recursos.
-     */
-    private void loadMapImage() {
-        try {
-            mapImage = ImageIO.read(getClass().getResourceAsStream(MAP_IMAGE_PATH));
-            LOGGER.info("Mapa cargado exitosamente: " + MAP_IMAGE_PATH);
-        } catch (IOException e) {
-            LOGGER.log(Level.SEVERE, "Error al cargar la imagen del mapa: " + MAP_IMAGE_PATH, e);
-        }
-    }
-    
     @Override
     protected void paintComponent(Graphics g) {
         super.paintComponent(g);
@@ -253,8 +274,12 @@ public class GamePanel extends JPanel implements Runnable, KeyListener {
         g2d.setRenderingHint(RenderingHints.KEY_RENDERING, RenderingHints.VALUE_RENDER_QUALITY);
         g2d.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
         
+        // Guardar el offset de la cámara para restauración exacta
+        int offsetX = camera.getOffsetX();
+        int offsetY = camera.getOffsetY();
+        
         // Aplicar transformación de cámara
-        g2d.translate(-camera.getOffsetX(), -camera.getOffsetY());
+        g2d.translate(-offsetX, -offsetY);
         
         drawMap(g2d);
         drawLoot(g2d);
@@ -262,8 +287,8 @@ public class GamePanel extends JPanel implements Runnable, KeyListener {
         drawProjectiles(g2d);
         drawPlayer(g2d);
         
-        // Restaurar transformación para HUD (se dibuja en coordenadas de pantalla)
-        g2d.translate(camera.getOffsetX(), camera.getOffsetY());
+        // Restaurar transformación usando los mismos valores para evitar temblor del HUD
+        g2d.translate(offsetX, offsetY);
         
         // Dibujar HUD
         gameHUD.render(g2d, player);
@@ -278,7 +303,7 @@ public class GamePanel extends JPanel implements Runnable, KeyListener {
     }
     
     /**
-     * Dibuja el mapa de fondo al tamaño del mundo.
+     * Dibuja el mapa de estacionamiento.
      */
     private void drawMap(Graphics2D g2d) {
         if (mapImage != null) {
@@ -314,12 +339,15 @@ public class GamePanel extends JPanel implements Runnable, KeyListener {
         player.render(g2d);
     }
     
-    // KeyListener para el menú de mejoras
+    // KeyListener para el menú de mejoras y reinicio
     
     @Override
     public void keyPressed(KeyEvent e) {
         if (upgradeMenu.isVisible()) {
             upgradeMenu.handleKeyPress(e.getKeyCode());
+        } else if (!player.isAlive()) {
+            // Cuando está muerto, delegar al HUD para reiniciar
+            gameHUD.handleKeyPress(e.getKeyCode());
         }
     }
     

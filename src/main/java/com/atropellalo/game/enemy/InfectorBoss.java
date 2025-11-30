@@ -1,6 +1,8 @@
 package com.atropellalo.game.enemy;
 
 import com.atropellalo.game.config.GameConfig;
+import com.atropellalo.game.sprite.AnimationState;
+import com.atropellalo.game.sprite.BossSpriteGenerator;
 
 import java.awt.*;
 import java.util.ArrayList;
@@ -103,6 +105,10 @@ public class InfectorBoss extends Enemy {
               GameConfig.INFECTOR_BOSS_SIZE,
               GameConfig.INFECTOR_BOSS_CONTACT_DAMAGE);
         this.xpMultiplier = (float) GameConfig.XP_INFECTOR_BOSS / GameConfig.XP_SLOW_ZOMBIE;
+        
+        // Cargar animaciones del Infector Boss
+        this.animations = BossSpriteGenerator.generateInfectorAnimations();
+        this.currentAnimState = AnimationState.IDLE;
     }
     
     /**
@@ -135,11 +141,19 @@ public class InfectorBoss extends Enemy {
         float dy = playerY - y;
         float distanceToPlayer = (float) Math.sqrt(dx * dx + dy * dy);
         
+        // Actualizar rotación hacia el jugador
+        if (dx != 0 || dy != 0) {
+            rotation = (float) Math.atan2(dx, -dy);
+        }
+        
         // Aplicar daño de nube tóxica si el jugador está cerca
         if (distanceToPlayer <= GameConfig.INFECTOR_TOXIC_CLOUD_RADIUS && 
             toxicCloudTimer <= deltaTime && damageCallback != null) {
             damageCallback.onBossDamage(GameConfig.INFECTOR_TOXIC_CLOUD_DAMAGE);
         }
+        
+        // Actualizar animación según estado
+        updateBossAnimationState(deltaTime);
         
         switch (currentState) {
             case WALKING:
@@ -153,6 +167,42 @@ public class InfectorBoss extends Enemy {
                 break;
             default:
                 break;
+        }
+    }
+    
+    /**
+     * Actualiza el estado de animación del jefe.
+     */
+    private void updateBossAnimationState(float deltaTime) {
+        AnimationState newState;
+        
+        switch (currentState) {
+            case THROWING_BOMB:
+                newState = AnimationState.ATTACK;
+                break;
+            case DYING:
+                newState = AnimationState.DEATH;
+                break;
+            case WALKING:
+                newState = AnimationState.MOVING;
+                break;
+            default:
+                newState = AnimationState.IDLE;
+        }
+        
+        if (!alive && currentState != BossState.DYING) {
+            newState = AnimationState.DEATH;
+        }
+        
+        if (newState != currentAnimState) {
+            currentAnimState = newState;
+            if (animations != null && animations.containsKey(currentAnimState)) {
+                animations.get(currentAnimState).reset();
+            }
+        }
+        
+        if (animations != null && animations.containsKey(currentAnimState)) {
+            animations.get(currentAnimState).update(deltaTime);
         }
     }
     
@@ -287,6 +337,31 @@ public class InfectorBoss extends Enemy {
         // Nube tóxica alrededor del jefe
         renderToxicCloud(g2d);
         
+        // Calcular escala para el sprite
+        float scale = (float) size / BossSpriteGenerator.INFECTOR_WIDTH;
+        
+        // Intentar renderizar con animación
+        if (animations != null && !animations.isEmpty()) {
+            renderWithAnimation(g2d, scale);
+        } else {
+            // Fallback al render original
+            renderFallback(g2d, renderX, renderY);
+        }
+        
+        // Gotas de químico cayendo
+        renderDrippingChemicals(g2d, renderX, renderY);
+        
+        // Barra de vida del jefe
+        renderBossHealthBar(g2d, renderX, renderY);
+        
+        // Indicador de jefe
+        renderBossIndicator(g2d, renderX, renderY);
+    }
+    
+    /**
+     * Renderizado de respaldo cuando no hay animaciones.
+     */
+    private void renderFallback(Graphics2D g2d, int renderX, int renderY) {
         // Sombra del jefe
         g2d.setColor(new Color(0, 0, 0, 80));
         g2d.fillOval(renderX + 4, renderY + size - 6, size, 10);
@@ -315,15 +390,6 @@ public class InfectorBoss extends Enemy {
         int eyeSize = size / 7;
         g2d.fillOval(renderX + size / 3 - eyeSize / 2, renderY + size / 4, eyeSize, eyeSize);
         g2d.fillOval(renderX + size / 2 + 2, renderY + size / 4, eyeSize, eyeSize);
-        
-        // Gotas de químico cayendo
-        renderDrippingChemicals(g2d, renderX, renderY);
-        
-        // Barra de vida del jefe
-        renderBossHealthBar(g2d, renderX, renderY);
-        
-        // Indicador de jefe
-        renderBossIndicator(g2d, renderX, renderY);
     }
     
     /**
