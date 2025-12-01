@@ -46,12 +46,13 @@ public class SniperRailgun extends Weapon {
     }
     
     /**
-     * Intenta disparar hacia el enemigo más cercano.
-     * Crea un proyectil penetrante que atraviesa múltiples enemigos.
+     * Intenta disparar hacia los enemigos prioritarios.
+     * Crea proyectiles penetrantes que atraviesan múltiples enemigos.
+     * Con multi-target, dispara a múltiples objetivos simultáneamente.
      * @param playerX Posición X del jugador
      * @param playerY Posición Y del jugador
      * @param enemies Lista de enemigos
-     * @return Lista con el proyectil creado o lista vacía
+     * @return Lista con los proyectiles creados o lista vacía
      */
     @Override
     public List<Projectile> tryFire(float playerX, float playerY, List<Enemy> enemies) {
@@ -61,47 +62,51 @@ public class SniperRailgun extends Weapon {
             return projectiles;
         }
         
-        // Buscar el enemigo más peligroso/prioritario en rango
-        Enemy target = findPriorityTarget(playerX, playerY, enemies);
+        // Buscar los N objetivos prioritarios según targetCount
+        List<Enemy> targets = findPriorityTargets(playerX, playerY, enemies, targetCount);
         
-        if (target == null) {
+        if (targets.isEmpty()) {
             return projectiles;
         }
         
-        // Calcular dirección hacia el objetivo
-        float targetX = target.getCenterX();
-        float targetY = target.getCenterY();
+        // Crear un proyectil penetrante por cada objetivo
+        for (Enemy target : targets) {
+            float targetX = target.getCenterX();
+            float targetY = target.getCenterY();
+            
+            PenetratingProjectile railProjectile = new PenetratingProjectile(
+                playerX, playerY,
+                targetX, targetY,
+                damage,
+                range,
+                penetration,
+                GameConfig.SNIPER_PROJECTILE_SPEED,
+                GameConfig.SNIPER_PROJECTILE_SIZE
+            );
+            
+            projectiles.add(railProjectile);
+        }
         
-        // Crear proyectil penetrante
-        PenetratingProjectile railProjectile = new PenetratingProjectile(
-            playerX, playerY,
-            targetX, targetY,
-            damage,
-            range,
-            penetration,
-            GameConfig.SNIPER_PROJECTILE_SPEED,
-            GameConfig.SNIPER_PROJECTILE_SIZE
-        );
+        // Reproducir sonido de disparo
+        playFireSound();
         
-        projectiles.add(railProjectile);
         resetCooldown();
         
         return projectiles;
     }
     
     /**
-     * Busca el objetivo prioritario para el francotirador.
+     * Busca los N objetivos prioritarios para el francotirador.
      * Prioriza enemigos peligrosos (Spitters, Buffers, Explosivos) sobre otros.
      * @param playerX Posición X del jugador
      * @param playerY Posición Y del jugador
      * @param enemies Lista de enemigos
-     * @return Enemigo prioritario o null si no hay ninguno en rango
+     * @param count Cantidad de objetivos a encontrar
+     * @return Lista de enemigos prioritarios
      */
-    private Enemy findPriorityTarget(float playerX, float playerY, List<Enemy> enemies) {
-        Enemy closestPriority = null;
-        Enemy closestNormal = null;
-        float closestPriorityDistance = Float.MAX_VALUE;
-        float closestNormalDistance = Float.MAX_VALUE;
+    private List<Enemy> findPriorityTargets(float playerX, float playerY, List<Enemy> enemies, int count) {
+        List<Enemy> priorityTargets = new ArrayList<>();
+        List<Enemy> normalTargets = new ArrayList<>();
         
         for (Enemy enemy : enemies) {
             if (!enemy.isAlive()) {
@@ -116,20 +121,32 @@ public class SniperRailgun extends Weapon {
                 continue;
             }
             
-            // Determinar si es un objetivo prioritario
-            boolean isPriority = isPriorityTarget(enemy);
-            
-            if (isPriority && distance < closestPriorityDistance) {
-                closestPriorityDistance = distance;
-                closestPriority = enemy;
-            } else if (!isPriority && distance < closestNormalDistance) {
-                closestNormalDistance = distance;
-                closestNormal = enemy;
+            if (isPriorityTarget(enemy)) {
+                priorityTargets.add(enemy);
+            } else {
+                normalTargets.add(enemy);
             }
         }
         
-        // Priorizar objetivos peligrosos, luego el más cercano
-        return closestPriority != null ? closestPriority : closestNormal;
+        // Ordenar por distancia
+        final float px = playerX;
+        final float py = playerY;
+        java.util.Comparator<Enemy> byDistance = (e1, e2) -> {
+            float d1 = (float) Math.sqrt(Math.pow(e1.getCenterX() - px, 2) + Math.pow(e1.getCenterY() - py, 2));
+            float d2 = (float) Math.sqrt(Math.pow(e2.getCenterX() - px, 2) + Math.pow(e2.getCenterY() - py, 2));
+            return Float.compare(d1, d2);
+        };
+        
+        priorityTargets.sort(byDistance);
+        normalTargets.sort(byDistance);
+        
+        // Combinar listas, priorizando objetivos peligrosos
+        List<Enemy> result = new ArrayList<>();
+        result.addAll(priorityTargets);
+        result.addAll(normalTargets);
+        
+        // Devolver solo los N primeros
+        return result.subList(0, Math.min(count, result.size()));
     }
     
     /**

@@ -30,6 +30,9 @@ public final class GameConfig {
     /** Consumo de combustible por segundo mientras se mueve */
     public static final float FUEL_CONSUMPTION_RATE = 3.0f;
     
+    /** Factor de reducción de velocidad cuando no hay combustible (0.6 = 60% más lento) */
+    public static final float NO_FUEL_SPEED_PENALTY = 0.6f;
+    
     /** Velocidad del jugador en píxeles por segundo */
     public static final float PLAYER_SPEED = 200.0f;
     
@@ -109,16 +112,16 @@ public final class GameConfig {
     // ==================== ENEMIGOS - GENERAL ====================
     
     /** Cooldown de daño al jugador por contacto (segundos) */
-    public static float ENEMY_DAMAGE_COOLDOWN = 0.5f;
+    public static float ENEMY_DAMAGE_COOLDOWN = 0.35f;
     
     /** Distancia de colisión entre jugador y enemigo */
     public static float ENEMY_COLLISION_DISTANCE = 25.0f;
     
     /** Margen de spawn de enemigos desde los bordes */
-    public static int ENEMY_SPAWN_MARGIN = 100;
+    public static int ENEMY_SPAWN_MARGIN = 150;
     
     /** Distancia mínima de spawn desde el jugador */
-    public static float ENEMY_MIN_SPAWN_DISTANCE = 200.0f;
+    public static float ENEMY_MIN_SPAWN_DISTANCE = 150.0f;
     
     // ==================== ENEMIGOS - ZOMBIE RÁPIDO ====================
     
@@ -311,7 +314,7 @@ public final class GameConfig {
     public static float PISTOL_RANGE = 250.0f;
     
     /** Delay entre disparos (segundos) */
-    public static float PISTOL_FIRE_DELAY = 0.5f;
+    public static float PISTOL_FIRE_DELAY = 0.75f;
     
     /** Disparos simultáneos de la pistola */
     public static int PISTOL_PROJECTILE_COUNT = 1;
@@ -328,13 +331,13 @@ public final class GameConfig {
     // ==================== ARMAS - AMETRALLADORA LIGERA ====================
     
     /** Daño de la ametralladora por disparo (bajo) */
-    public static float LMG_DAMAGE = 3.0f;
+    public static float LMG_DAMAGE = 2.0f;
     
     /** Rango de la ametralladora (medio) */
     public static float LMG_RANGE = 200.0f;
     
     /** Delay entre disparos (muy bajo - alta cadencia) */
-    public static float LMG_FIRE_DELAY = 0.15f;
+    public static float LMG_FIRE_DELAY = 0.20f;
     
     /** Disparos simultáneos de la ametralladora */
     public static int LMG_PROJECTILE_COUNT = 1;
@@ -362,23 +365,6 @@ public final class GameConfig {
     /** Velocidad del proyectil de granada */
     public static float GRENADE_PROJECTILE_SPEED = 250.0f;
     
-    // ==================== ARMAS - SIERRAS CIRCULARES ====================
-    
-    /** Daño de las sierras por contacto */
-    public static float SAW_DAMAGE = 12.0f;
-    
-    /** Radio de cada sierra */
-    public static float SAW_RADIUS = 25.0f;
-    
-    /** Distancia de las sierras desde el centro del jugador */
-    public static float SAW_DISTANCE = 45.0f;
-    
-    /** Cooldown de daño de las sierras */
-    public static float SAW_DAMAGE_COOLDOWN = 0.25f;
-    
-    /** Velocidad de rotación de las sierras (rad/s) */
-    public static float SAW_ROTATION_SPEED = 10.0f;
-    
     // ==================== ARMAS - ESCOPETA ====================
     
     /** Daño de la escopeta por proyectil (alto) */
@@ -401,16 +387,16 @@ public final class GameConfig {
     
     // ==================== ARMAS - LANZALLAMAS ====================
     
-    /** Daño del lanzallamas por segundo (medio) */
+    /** Daño del lanzallamas por tick */
     public static float FLAMETHROWER_DAMAGE = 15.0f;
     
-    /** Rango del lanzallamas (corto) */
-    public static float FLAMETHROWER_RANGE = 100.0f;
+    /** Rango del lanzallamas (corto-medio) */
+    public static float FLAMETHROWER_RANGE = 120.0f;
     
     /** Ángulo del cono del lanzallamas (grados) */
-    public static float FLAMETHROWER_CONE_ANGLE = 45.0f;
+    public static float FLAMETHROWER_CONE_ANGLE = 60.0f;
     
-    /** Tick rate del daño del lanzallamas (segundos) */
+    /** Tick rate del daño del lanzallamas (segundos) - cada cuanto aplica daño */
     public static float FLAMETHROWER_TICK_RATE = 0.1f;
     
     // ==================== ARMAS - RIFLE DE FRANCOTIRADOR (SNIPER RAILGUN) ====================
@@ -422,7 +408,7 @@ public final class GameConfig {
     public static float SNIPER_RANGE = 500.0f;
     
     /** Delay entre disparos (muy alto - cadencia baja) */
-    public static float SNIPER_FIRE_DELAY = 2.5f;
+    public static float SNIPER_FIRE_DELAY = 4.5f;
     
     /** Cantidad de enemigos que atraviesa el proyectil */
     public static int SNIPER_PENETRATION = 3;
@@ -494,8 +480,17 @@ public final class GameConfig {
     /** Factor de mejora de área de impacto */
     public static float UPGRADE_WEAPON_AREA_FACTOR = 1.3f;
     
-    /** Incremento de disparos simultáneos */
-    public static int UPGRADE_WEAPON_PROJECTILE_COUNT = 1;
+    /** Incremento de objetivos simultáneos (multi-target) */
+    public static int UPGRADE_WEAPON_TARGET_COUNT = 1;
+    
+    /** Máximo de mejoras de multi-target por arma */
+    public static int MAX_MULTI_TARGET_UPGRADES = 2;
+    
+    /** Incremento de ángulo del lanzallamas por mejora (grados) */
+    public static float UPGRADE_FLAMETHROWER_CONE_ANGLE = 15.0f;
+    
+    /** Ángulo máximo del cono del lanzallamas (grados) */
+    public static float FLAMETHROWER_MAX_CONE_ANGLE = 180.0f;
     
     /** Máximo de armas que puede tener el jugador */
     public static int MAX_WEAPONS = 4;
@@ -519,13 +514,13 @@ public final class GameConfig {
     /** Combustible otorgado al subir de nivel */
     public static float LEVEL_UP_FUEL_BONUS = 10.0f;
     
-    // ==================== JEFE - EL APLASTADOR (BRUISER) - OLEADA 10 ====================
+    // ==================== JEFE - EL APLASTADOR (BRUISER) - OLEADA 5 ====================
     
     /** Salud del Aplastador (muy alta) */
-    public static float BRUISER_BOSS_HEALTH = 800.0f;
+    public static float BRUISER_BOSS_HEALTH = 850.0f;
     
     /** Velocidad del Aplastador (baja-media) */
-    public static float BRUISER_BOSS_SPEED = 60.0f;
+    public static float BRUISER_BOSS_SPEED = 65.0f;
     
     /** Tamaño del Aplastador */
     public static int BRUISER_BOSS_SIZE = 74;
@@ -537,13 +532,13 @@ public final class GameConfig {
     public static float BRUISER_EARTHQUAKE_RADIUS = 150.0f;
     
     /** Daño del golpe de terremoto */
-    public static float BRUISER_EARTHQUAKE_DAMAGE = 30.0f;
+    public static float BRUISER_EARTHQUAKE_DAMAGE = 35.0f;
     
     /** Cooldown del golpe de terremoto (segundos) */
-    public static float BRUISER_EARTHQUAKE_COOLDOWN = 4.0f;
+    public static float BRUISER_EARTHQUAKE_COOLDOWN = 3.0f;
     
     /** Velocidad de la carga frontal */
-    public static float BRUISER_CHARGE_SPEED = 400.0f;
+    public static float BRUISER_CHARGE_SPEED = 500.0f;
     
     /** Daño de la carga frontal */
     public static float BRUISER_CHARGE_DAMAGE = 40.0f;
@@ -552,24 +547,24 @@ public final class GameConfig {
     public static float BRUISER_CHARGE_DURATION = 2.0f;
     
     /** Cooldown de la carga (segundos) */
-    public static float BRUISER_CHARGE_COOLDOWN = 6.0f;
+    public static float BRUISER_CHARGE_COOLDOWN = 5.0f;
     
     /** Distancia mínima para activar carga */
     public static float BRUISER_CHARGE_MIN_DISTANCE = 150.0f;
     
     /** XP otorgado por el Aplastador */
-    public static int XP_BRUISER_BOSS = 550;
+    public static int XP_BRUISER_BOSS = 650;
     
     /** Oleada en la que aparece el Aplastador */
     public static int BRUISER_BOSS_WAVE = 5;
     
-    // ==================== JEFE - EL INFECTADOR (INFECTOR) - OLEADA 20 ====================
+    // ==================== JEFE - EL INFECTADOR (INFECTOR) - OLEADA 10 ====================
     
     /** Salud del Infectador (media-alta) */
-    public static float INFECTOR_BOSS_HEALTH = 650.0f;
+    public static float INFECTOR_BOSS_HEALTH = 850.0f;
     
     /** Velocidad del Infectador (media) */
-    public static float INFECTOR_BOSS_SPEED = 80.0f;
+    public static float INFECTOR_BOSS_SPEED = 60.0f;
     
     /** Tamaño del Infectador */
     public static int INFECTOR_BOSS_SIZE = 66;
@@ -609,4 +604,35 @@ public final class GameConfig {
     
     /** Oleada en la que aparece el Infectador */
     public static int INFECTOR_BOSS_WAVE = 10;
+    
+    // ==================== SONIDO ====================
+    
+    /** Habilitar/deshabilitar sonido global */
+    public static boolean SOUND_ENABLED = true;
+    
+    /** Volumen maestro (0.0 - 1.0) */
+    public static float SOUND_MASTER_VOLUME = 0.8f;
+    
+    /** Volumen de efectos de armas (0.0 - 1.0) */
+    public static float SOUND_WEAPON_VOLUME = 0.55f;
+    
+    /** Usar loop para armas continuas (lanzallamas) */
+    public static boolean SOUND_WEAPON_LOOP_ENABLED = true;
+    
+    // ==================== EFECTOS VISUALES (VFX) ====================
+    
+    /** Duración del efecto de explosión (segundos) */
+    public static float VFX_EXPLOSION_DURATION = 0.5f;
+    
+    /** Cantidad de partículas en explosión */
+    public static int VFX_EXPLOSION_PARTICLE_COUNT = 20;
+    
+    /** Cantidad de chispas en explosión */
+    public static int VFX_EXPLOSION_SPARK_COUNT = 15;
+    
+    /** Partículas por segundo del lanzallamas */
+    public static float VFX_FLAME_PARTICLES_PER_SECOND = 60f;
+    
+    /** Probabilidad de generar brasas (por frame a 60fps) */
+    public static float VFX_FLAME_EMBER_CHANCE = 0.3f;
 }

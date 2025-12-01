@@ -6,7 +6,7 @@
 - **Lenguaje**: Java 11
 - **Framework UI**: Swing
 - **Build Tool**: Maven
-- **Estado**: Fase 12 Completada - Mejoras Visuales y Limpieza de Código
+- **Estado**: Fase 16 Completada - Sistema de Efectos Visuales
 
 ---
 
@@ -96,7 +96,7 @@ atropellalo/
         │               │   ├── ExplosiveZombie.java   # Zombie explosivo
         │               │   ├── BruiserBoss.java       # Jefe Oleada 5
         │               │   ├── InfectorBoss.java      # Jefe Oleada 10
-        │               │   └── EnemyManager.java      # Gestor de oleadas
+        │               │   └── EnemyManager.java      # Gestor de oleadas (spawn en bordes)
         │               ├── entity/
         │               │   └── Player.java            # Jugador
         │               ├── input/
@@ -125,14 +125,13 @@ atropellalo/
         │               ├── util/
         │               │   └── MapGenerator.java      # Generador de mapas
         │               └── weapon/
-        │                   ├── Weapon.java            # Clase base abstracta
-        │                   ├── WeaponType.java        # Enum de armas
+        │                   ├── Weapon.java            # Clase base abstracta (multi-target)
+        │                   ├── WeaponType.java        # Enum de armas (6 tipos)
         │                   ├── Pistol.java            # Pistola (inicial)
         │                   ├── LightMachineGun.java   # Ametralladora
         │                   ├── Shotgun.java           # Escopeta
         │                   ├── GrenadeLauncher.java   # Lanzagranadas
-        │                   ├── CircularSaw.java       # Sierras giratorias
-        │                   ├── Flamethrower.java      # Lanzallamas
+        │                   ├── Flamethrower.java      # Lanzallamas (con ángulo mejorable)
         │                   ├── SniperRailgun.java     # Rifle de francotirador
         │                   ├── Projectile.java        # Proyectil base
         │                   ├── PenetratingProjectile.java # Proyectil penetrante
@@ -185,8 +184,8 @@ atropellalo/
 │  │                                                            │  │
 │  │  WeaponManager ─────────────────────────────────────────  │  │
 │  │  │                                                        │  │
-│  │  ├── Pistol          ├── Shotgun        ├── CircularSaw   │  │
-│  │  ├── LightMachineGun ├── GrenadeLauncher└── Flamethrower  │  │
+│  │  ├── Pistol          ├── Shotgun        ├── SniperRailgun  │  │
+│  │  ├── LightMachineGun ├── GrenadeLauncher└── Flamethrower   │  │
 │  │  └── Projectiles                                          │  │
 │  │                                                            │  │
 │  │  UpgradeManager + UpgradeMenu                             │  │
@@ -799,6 +798,7 @@ INFECTOR_BOSS_WAVE = 10
 XP_BASE_TO_LEVEL_UP = 100
 XP_LEVEL_SCALING = 1.2f
 LEVEL_UP_FUEL_BONUS = 10.0f
+NO_FUEL_SPEED_PENALTY = 0.7f  // Penalización de velocidad sin combustible (70%)
 ```
 
 ### Mejoras
@@ -849,9 +849,328 @@ java -jar target/atropellalo-game-1.0-SNAPSHOT.jar
 | 10.1 | Pathfinding mejorado, fix reinicio | ✅ |
 | 11 | Rifle de Francotirador (Sniper Railgun) | ✅ |
 | 12 | Mejoras visuales: explosión zombie, iconos upgrades, limpieza SlashWhip | ✅ |
+| 13 | Mecánica de combustible mejorada, sprites únicos por arma | ✅ |
+| 14 | Oleadas continuas, multi-objetivo, ángulo lanzallamas, eliminación CircularSaw | ✅ |
+
+---
+
+## Fase 13 - Ajustes de Combustible y Sprites de Armas
+
+### Cambios Implementados
+
+#### 1. Nueva Mecánica de Combustible
+- **Antes**: El jugador se detenía completamente al quedarse sin combustible
+- **Ahora**: El jugador puede moverse con velocidad reducida (configurable)
+- **Configuración**: `NO_FUEL_SPEED_PENALTY = 0.7f` en GameConfig (70% de reducción)
+- **Comportamiento**: 
+  - Con combustible: velocidad normal (200 px/s)
+  - Sin combustible: velocidad reducida (60 px/s con penalty de 0.7)
+
+#### 2. Sprites Únicos para Cada Arma
+Se crearon sprites detallados para cada tipo de arma en el menú de mejoras:
+
+| Arma | Características del Sprite |
+|------|---------------------------|
+| **Pistola** | Diseño clásico con empuñadura de madera, gatillo y brillo metálico |
+| **Ametralladora Ligera** | Cañón largo con ventilación, cargador lateral, balas visibles |
+| **Lanzagranadas** | Tubo grande, granada visible, correa táctica |
+| **Sierras Circulares** | Sierra metálica con dientes, efecto de giro |
+| **Lanzallamas** | Tanque de combustible rojo, llamas animadas saliendo |
+| **Escopeta** | Cañones dobles, culata de madera con vetas |
+| **Rifle de Francotirador** | Cañón largo, mira telescópica con lente azul, efecto railgun |
+
+### Archivos Modificados
+- `GameConfig.java`: Nueva constante `NO_FUEL_SPEED_PENALTY`
+- `Player.java`: Lógica de movimiento con penalización por falta de combustible
+- `UpgradeIconGenerator.java`: Sprites detallados para cada tipo de arma
+
+---
+
+## Fase 14 - Oleadas Continuas, Multi-Objetivo y Mejoras de Lanzallamas
+
+### Cambios Implementados
+
+#### 1. Sistema de Oleadas Refactorizado
+- **Antes**: Había un tiempo de espera entre oleadas
+- **Ahora**: Las oleadas son continuas sin pausa entre ellas
+- **Spawn en Bordes**: Los enemigos ahora aparecen desde los bordes del mapa, no cerca del jugador
+- **Método**: `getEdgeSpawnPosition()` calcula posiciones aleatorias en los 4 bordes del mundo
+
+#### 2. Nueva Mejora: Multi-Objetivo
+- **Antes**: "Multi-disparo" disparaba proyectiles en abanico
+- **Ahora**: "Multi-objetivo" permite disparar a múltiples enemigos simultáneamente
+- **Restricciones**:
+  - Máximo 2 upgrades (dispara hasta 3 objetivos)
+  - Solo disponible para: Pistol, LightMachineGun, GrenadeLauncher, SniperRailgun
+  - **Excluidas**: Shotgun (ya dispara múltiples proyectiles) y Flamethrower (cono de área)
+- **Implementación**: `findMultipleClosestEnemies()` en clase base `Weapon`
+
+#### 3. Nueva Mejora: Ángulo de Cono (Lanzallamas)
+- **Descripción**: Aumenta el ángulo del cono de fuego del lanzallamas
+- **Incremento**: +15° por upgrade
+- **Máximo**: 180° (medio círculo)
+- **Configuración**:
+  - `UPGRADE_FLAMETHROWER_CONE_ANGLE = 15.0f`
+  - `FLAMETHROWER_MAX_CONE_ANGLE = 180.0f`
+
+#### 4. Eliminación de Sierras Circulares
+- **Razón**: Arma removida del juego
+- **Archivos eliminados**: `CircularSaw.java`
+- **Constantes removidas**: Todas las `SAW_*` de `GameConfig`
+- **Enums actualizados**: `WeaponType.CIRCULAR_SAW` eliminado
+
+### Nuevas Constantes en GameConfig
+```java
+// Multi-objetivo
+UPGRADE_MULTI_TARGET_MAX = 2           // Máximo 2 upgrades (3 objetivos)
+
+// Ángulo de cono lanzallamas
+UPGRADE_FLAMETHROWER_CONE_ANGLE = 15.0f  // Grados por upgrade
+FLAMETHROWER_MAX_CONE_ANGLE = 180.0f     // Máximo 180°
+```
+
+### Tipos de Mejora Actualizados
+| Tipo Anterior | Tipo Nuevo | Descripción |
+|---------------|------------|-------------|
+| `WEAPON_PROJECTILE_COUNT` | `WEAPON_MULTI_TARGET` | Dispara a más enemigos |
+| N/A | `WEAPON_CONE_ANGLE` | Aumenta ángulo del lanzallamas |
+
+### Armas Actuales (6 tipos)
+| Arma | Multi-Objetivo | Ángulo Cono |
+|------|----------------|-------------|
+| Pistol | ✅ | ❌ |
+| LightMachineGun | ✅ | ❌ |
+| GrenadeLauncher | ✅ | ❌ |
+| SniperRailgun | ✅ | ❌ |
+| Shotgun | ❌ | ❌ |
+| Flamethrower | ❌ | ✅ |
+
+### Archivos Modificados
+- `EnemyManager.java`: Spawn en bordes del mapa, oleadas continuas
+- `Weapon.java`: Sistema multi-objetivo, campos targetCount, coneAngle
+- `Flamethrower.java`: Campo coneAngle con getter
+- `Pistol.java`, `LightMachineGun.java`, `GrenadeLauncher.java`, `SniperRailgun.java`: Multi-target
+- `WeaponType.java`: Eliminado CIRCULAR_SAW
+- `WeaponManager.java`: Eliminado CircularSaw
+- `GameConfig.java`: Nuevas constantes, eliminadas SAW_*
+- `UpgradeType.java`: WEAPON_MULTI_TARGET, WEAPON_CONE_ANGLE
+- `UpgradeManager.java`: Lógica de nuevas mejoras
+- `UpgradeIconGenerator.java`: Iconos para multi-target y cone-angle
+
+---
+
+## Fase 14.1 - Mejora del Daño en Área del Lanzallamas
+
+### Problema Identificado
+El lanzallamas no estaba aplicando daño correctamente porque:
+1. `FLAMETHROWER_TICK_RATE = 0f` causaba que el daño se aplicara incorrectamente
+2. El daño se multiplicaba por `fireDelay` (que era 0), resultando en daño nulo
+3. Los valores eran demasiado bajos para ser efectivos
+
+### Cambios Implementados
+
+#### Ajustes en GameConfig
+| Parámetro | Antes | Después | Efecto |
+|-----------|-------|---------|--------|
+| `FLAMETHROWER_DAMAGE` | 10.0f | 15.0f | +50% daño base |
+| `FLAMETHROWER_RANGE` | 100.0f | 120.0f | +20% alcance |
+| `FLAMETHROWER_CONE_ANGLE` | 45.0f | 60.0f | +33% ángulo |
+| `FLAMETHROWER_TICK_RATE` | 0f | 0.1f | Daño cada 0.1 segundos |
+
+#### Corrección de Lógica de Daño
+- **Antes**: `enemy.takeDamage(damage * damageMultiplier * fireDelay)` - multiplicaba por 0
+- **Ahora**: `enemy.takeDamage(damage * damageMultiplier)` - aplica daño completo
+- Daño por segundo efectivo: 15 × 10 ticks = **150 DPS** a todos los enemigos en el cono
+- Reducción de daño por distancia: solo 20% menos en el borde del cono
+
+### Archivos Modificados
+- `GameConfig.java`: Ajuste de valores del lanzallamas
+- `Flamethrower.java`: Corrección de cálculo de daño
+
+---
+
+## Fase 15 - Sistema de Sonidos para Armas
+
+### Descripción
+Implementación de un sistema de sonidos para todas las armas del juego, con soporte para reproducción en loop y configuración centralizada de volumen.
+
+### Archivos de Sonido
+Los archivos MP3 se encuentran en `src/main/resources/sounds/`:
+
+| Archivo | Arma |
+|---------|------|
+| `pistol.mp3` | Pistola |
+| `machinegun.mp3` | Ametralladora Ligera |
+| `grenade-launcher.mp3` | Lanzagranadas |
+| `fireflammer.mp3` | Lanzallamas |
+| `shotgun.mp3` | Escopeta |
+| `sniperrifle.mp3` | Rifle de Francotirador |
+
+### Nuevas Clases
+
+#### SoundManager.java
+Gestor singleton de sonidos del juego:
+- Carga y reproduce sonidos de armas
+- Soporta reproducción única y en loop
+- Control de volumen maestro y por categoría
+- Conversión automática de MP3 a PCM
+
+### Configuración en GameConfig
+```java
+// Sonido
+SOUND_ENABLED = true              // Habilitar/deshabilitar sonido
+SOUND_MASTER_VOLUME = 0.8f        // Volumen maestro (0.0 - 1.0)
+SOUND_WEAPON_VOLUME = 0.7f        // Volumen de armas (0.0 - 1.0)
+SOUND_WEAPON_LOOP_ENABLED = true  // Usar loop para armas continuas
+```
+
+### Integración con Armas
+- **Armas de disparo único** (Pistol, LMG, Shotgun, GrenadeLauncher, SniperRailgun): Reproducen sonido en cada disparo
+- **Armas continuas** (Flamethrower): Reproducen sonido en loop mientras están activas
+
+### Dependencias Agregadas (pom.xml)
+```xml
+<dependency>
+    <groupId>com.googlecode.soundlibs</groupId>
+    <artifactId>mp3spi</artifactId>
+    <version>1.9.5.4</version>
+</dependency>
+<dependency>
+    <groupId>com.googlecode.soundlibs</groupId>
+    <artifactId>jlayer</artifactId>
+    <version>1.0.1.4</version>
+</dependency>
+<dependency>
+    <groupId>com.googlecode.soundlibs</groupId>
+    <artifactId>tritonus-share</artifactId>
+    <version>0.3.7.4</version>
+</dependency>
+```
+
+### Archivos Modificados
+- `pom.xml`: Dependencias de audio MP3
+- `GameConfig.java`: Configuración de sonido
+- `Weapon.java`: Método `playFireSound()`
+- `Pistol.java`, `LightMachineGun.java`, `Shotgun.java`, `GrenadeLauncher.java`, `SniperRailgun.java`: Integración de sonido al disparar
+- `Flamethrower.java`: Sonido en loop mientras está activo
+
+### Archivos Nuevos
+- `src/main/java/com/atropellalo/game/sound/SoundManager.java`
+- `src/main/resources/sounds/*.mp3` (6 archivos)
+
+---
+
+## Fase 16 - Sistema de Efectos Visuales
+
+### Descripción
+Implementación de un sistema de efectos visuales procedurales para mejorar el feedback visual del juego. Se crearon efectos para las explosiones de zombies explosivos y para el lanzallamas.
+
+### Arquitectura del Sistema VFX
+
+#### Interfaz Base: `VisualEffect`
+```java
+public interface VisualEffect {
+    void update(float deltaTime);
+    void render(Graphics2D g2d);
+    boolean isAlive();
+    float getX();
+    float getY();
+}
+```
+
+#### Gestor Centralizado: `VisualEffectManager`
+- **Patrón**: Singleton
+- **Responsabilidades**:
+  - Crear y gestionar efectos temporales (explosiones)
+  - Gestionar efectos persistentes (lanzallamas)
+  - Actualizar y renderizar todos los efectos
+
+```java
+// Crear explosión
+VisualEffectManager.getInstance().createExplosion(x, y, radius);
+
+// Actualizar lanzallamas
+VisualEffectManager.getInstance().updateFlamethrower(x, y, angle, coneAngle, range, active);
+```
+
+### Efectos Implementados
+
+#### 1. ExplosionEffect (Zombies Explosivos)
+Efecto de explosión animado con múltiples capas:
+- **Ondas de choque**: 3 anillos expansivos con desvanecimiento
+- **Núcleo de fuego**: Círculo central con gradiente radial
+- **Partículas de escombros**: 12 fragmentos con física de gravedad
+- **Duración**: Configurable (0.5s por defecto)
+
+```java
+// Configuración en GameConfig
+VFX_EXPLOSION_DURATION = 0.5f
+VFX_EXPLOSION_SHOCKWAVE_COUNT = 3
+VFX_EXPLOSION_PARTICLE_COUNT = 12
+```
+
+#### 2. FlamethrowerEffect (Lanzallamas)
+Efecto continuo de cono de fuego:
+- **Cono base**: 5 capas con gradiente de colores (blanco → amarillo → naranja → rojo)
+- **Partículas de fuego**: Generación continua con física de calor (sube)
+- **Brasas/chispas**: Partículas pequeñas con parpadeo
+- **Distorsión de calor**: Ondas animadas semi-transparentes
+
+```java
+// Configuración en GameConfig
+VFX_FLAME_PARTICLES_PER_SECOND = 60f
+VFX_FLAME_EMBER_CHANCE = 0.3f
+```
+
+### Paleta de Colores del Fuego
+```java
+FLAME_COLORS = {
+    Color(255, 255, 220, 220),  // Núcleo blanco-amarillo
+    Color(255, 220, 100, 200),  // Amarillo brillante
+    Color(255, 150, 50, 180),   // Naranja
+    Color(255, 80, 20, 150),    // Rojo-naranja
+    Color(200, 50, 10, 100)     // Rojo oscuro exterior
+}
+```
+
+### Integración con el Juego
+
+#### GamePanel
+- `update()`: Llama a `VisualEffectManager.getInstance().update(deltaTime)`
+- `paintComponent()`: Llama a `drawVisualEffects(g2d)` entre proyectiles y jugador
+
+#### ExplosiveZombie
+- `triggerExplosion()`: Crea efecto con `VisualEffectManager.getInstance().createExplosion()`
+
+#### Flamethrower
+- `update()`: Actualiza parámetros del efecto con `VisualEffectManager.getInstance().updateFlamethrower()`
+- Método `render()` vacío - los efectos son renderizados centralizadamente
+
+### Archivos Modificados
+- `GameConfig.java`: Constantes VFX_* para configuración de efectos
+- `GamePanel.java`: Integración de VisualEffectManager (update/render)
+- `ExplosiveZombie.java`: Uso de VisualEffectManager para explosiones
+- `Flamethrower.java`: Delegación de renderizado visual a VisualEffectManager, corrección de gestión de sonido
+
+### Archivos Nuevos
+- `src/main/java/com/atropellalo/game/effect/VisualEffect.java`
+- `src/main/java/com/atropellalo/game/effect/ExplosionEffect.java`
+- `src/main/java/com/atropellalo/game/effect/FlamethrowerEffect.java`
+- `src/main/java/com/atropellalo/game/effect/VisualEffectManager.java`
+
+### Correcciones Fase 16.1
+- **Sonido del lanzallamas**: Movida la gestión del sonido de `update()` a `processContinuousDamage()` para que el estado `active` esté actualizado correctamente antes de verificar cambios
+- **Orden de renderizado VFX**: Ajustado para que las partículas VFX se rendericen primero (debajo) y el cono base después (encima)
+
+### Beneficios del Sistema
+1. **Centralizado**: Un solo punto de gestión para todos los efectos
+2. **Extensible**: Fácil agregar nuevos tipos de efectos
+3. **Configurable**: Parámetros en GameConfig
+4. **Eficiente**: Efectos con ciclo de vida gestionado automáticamente
+5. **Independiente**: No requiere archivos de video externos
 
 ---
 
 **Fecha de Creación**: 29/11/2025  
-**Última Actualización**: 29/11/2025  
+**Última Actualización**: 30/11/2025 - Fase 16  
 **Versión**: 1.0-SNAPSHOT

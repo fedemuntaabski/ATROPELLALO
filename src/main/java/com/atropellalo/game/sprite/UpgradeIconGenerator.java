@@ -12,7 +12,6 @@ import java.awt.geom.Arc2D;
 import java.awt.geom.Ellipse2D;
 import java.awt.geom.GeneralPath;
 import java.awt.geom.Line2D;
-import java.awt.geom.Rectangle2D;
 import java.awt.geom.RoundRectangle2D;
 import java.awt.image.BufferedImage;
 import java.util.HashMap;
@@ -90,8 +89,11 @@ public class UpgradeIconGenerator {
             case WEAPON_IMPACT_AREA:
                 drawAreaIcon(g2d);
                 break;
-            case WEAPON_PROJECTILE_COUNT:
-                drawMultiShotIcon(g2d);
+            case WEAPON_MULTI_TARGET:
+                drawMultiTargetIcon(g2d);
+                break;
+            case WEAPON_CONE_ANGLE:
+                drawConeAngleIcon(g2d);
                 break;
         }
         
@@ -180,9 +182,43 @@ public class UpgradeIconGenerator {
     }
     
     /**
-     * Icono para nueva arma.
+     * Icono para nueva arma - dibuja el sprite específico del arma.
      */
     private static void drawWeaponIcon(Graphics2D g2d, WeaponType weaponType) {
+        if (weaponType == null) {
+            drawGenericWeaponIcon(g2d);
+            return;
+        }
+        
+        switch (weaponType) {
+            case PISTOL:
+                drawPistolSprite(g2d);
+                break;
+            case LIGHT_MACHINE_GUN:
+                drawLMGSprite(g2d);
+                break;
+            case GRENADE_LAUNCHER:
+                drawGrenadeLauncherSprite(g2d);
+                break;
+            case FLAMETHROWER:
+                drawFlamethrowerSprite(g2d);
+                break;
+            case SHOTGUN:
+                drawShotgunSprite(g2d);
+                break;
+            case SNIPER_RAILGUN:
+                drawSniperSprite(g2d);
+                break;
+            default:
+                drawGenericWeaponIcon(g2d);
+                break;
+        }
+    }
+    
+    /**
+     * Icono genérico para armas no reconocidas.
+     */
+    private static void drawGenericWeaponIcon(Graphics2D g2d) {
         int cx = ICON_SIZE / 2;
         int cy = ICON_SIZE / 2;
         
@@ -198,6 +234,246 @@ public class UpgradeIconGenerator {
         g2d.setColor(NEW_WEAPON_COLOR);
         g2d.setFont(g2d.getFont().deriveFont(java.awt.Font.BOLD, 8f));
         g2d.drawString("NEW", cx - 10, cy + 16);
+    }
+    
+    // ==================== SPRITES DE ARMAS ====================
+    
+    /**
+     * Sprite de Pistola - arma clásica de mano.
+     */
+    private static void drawPistolSprite(Graphics2D g2d) {
+        int cx = ICON_SIZE / 2;
+        int cy = ICON_SIZE / 2;
+        
+        // Cañón
+        g2d.setColor(new Color(80, 80, 90));
+        g2d.fillRoundRect(cx - 2, cy - 16, 6, 18, 2, 2);
+        
+        // Cuerpo principal
+        g2d.setColor(new Color(60, 60, 70));
+        g2d.fillRoundRect(cx - 6, cy - 4, 14, 10, 4, 4);
+        
+        // Empuñadura
+        g2d.setColor(new Color(100, 70, 40));
+        g2d.fillRoundRect(cx - 4, cy + 4, 8, 14, 3, 3);
+        
+        // Textura madera
+        g2d.setColor(new Color(80, 55, 30));
+        g2d.drawLine(cx - 2, cy + 6, cx - 2, cy + 15);
+        g2d.drawLine(cx + 2, cy + 8, cx + 2, cy + 16);
+        
+        // Gatillo
+        g2d.setColor(new Color(50, 50, 55));
+        g2d.fillOval(cx, cy + 2, 4, 5);
+        
+        // Brillo metálico
+        g2d.setColor(new Color(120, 120, 130));
+        g2d.drawLine(cx, cy - 14, cx, cy - 6);
+    }
+    
+    /**
+     * Sprite de Ametralladora Ligera (LMG).
+     */
+    private static void drawLMGSprite(Graphics2D g2d) {
+        int cx = ICON_SIZE / 2;
+        int cy = ICON_SIZE / 2;
+        
+        // Cañón largo
+        g2d.setColor(new Color(70, 70, 80));
+        g2d.fillRoundRect(cx - 3, cy - 20, 8, 24, 2, 2);
+        
+        // Orificios de ventilación
+        g2d.setColor(new Color(40, 40, 45));
+        for (int i = 0; i < 4; i++) {
+            g2d.fillOval(cx - 1, cy - 18 + i * 5, 4, 2);
+        }
+        
+        // Cuerpo
+        g2d.setColor(new Color(60, 60, 65));
+        g2d.fillRoundRect(cx - 8, cy - 2, 18, 12, 4, 4);
+        
+        // Cargador
+        g2d.setColor(new Color(50, 50, 55));
+        g2d.fillRoundRect(cx - 12, cy + 2, 8, 16, 2, 2);
+        
+        // Empuñadura
+        g2d.setColor(new Color(90, 60, 35));
+        g2d.fillRoundRect(cx + 2, cy + 8, 8, 12, 2, 2);
+        
+        // Balas visibles
+        g2d.setColor(new Color(200, 180, 80));
+        g2d.fillOval(cx - 10, cy + 4, 4, 3);
+        g2d.fillOval(cx - 10, cy + 8, 4, 3);
+    }
+    
+    /**
+     * Sprite de Lanzagranadas.
+     */
+    private static void drawGrenadeLauncherSprite(Graphics2D g2d) {
+        int cx = ICON_SIZE / 2;
+        int cy = ICON_SIZE / 2;
+        
+        // Tubo lanzador (grande)
+        g2d.setColor(new Color(70, 80, 60));
+        g2d.fillRoundRect(cx - 6, cy - 18, 14, 22, 6, 6);
+        
+        // Boca del tubo
+        g2d.setColor(new Color(40, 45, 35));
+        g2d.fillOval(cx - 4, cy - 20, 10, 6);
+        
+        // Granada visible dentro
+        g2d.setColor(new Color(80, 120, 60));
+        g2d.fillOval(cx - 2, cy - 16, 6, 8);
+        
+        // Empuñadura
+        g2d.setColor(new Color(100, 70, 45));
+        g2d.fillRoundRect(cx - 4, cy + 4, 10, 14, 3, 3);
+        
+        // Gatillo
+        g2d.setColor(new Color(50, 50, 50));
+        g2d.fillOval(cx + 4, cy + 2, 4, 5);
+        
+        // Correa
+        g2d.setColor(new Color(60, 50, 40));
+        g2d.setStroke(new BasicStroke(2f));
+        g2d.drawArc(cx + 6, cy - 10, 10, 20, -90, 180);
+    }
+    
+    /**
+     * Sprite de Lanzallamas.
+     */
+    private static void drawFlamethrowerSprite(Graphics2D g2d) {
+        int cx = ICON_SIZE / 2;
+        int cy = ICON_SIZE / 2;
+        
+        // Tanque de combustible
+        g2d.setColor(new Color(180, 60, 40));
+        g2d.fillRoundRect(cx - 10, cy - 4, 12, 20, 4, 4);
+        
+        // Tubo principal
+        g2d.setColor(new Color(70, 70, 75));
+        g2d.fillRoundRect(cx - 2, cy - 18, 8, 22, 3, 3);
+        
+        // Boquilla
+        g2d.setColor(new Color(50, 50, 55));
+        g2d.fillRoundRect(cx - 1, cy - 22, 6, 6, 2, 2);
+        
+        // Llamas saliendo
+        GeneralPath flame = new GeneralPath();
+        flame.moveTo(cx + 2, cy - 22);
+        flame.curveTo(cx - 4, cy - 30, cx, cy - 36, cx + 2, cy - 32);
+        flame.curveTo(cx + 4, cy - 36, cx + 8, cy - 30, cx + 2, cy - 22);
+        
+        g2d.setColor(new Color(255, 200, 50));
+        g2d.fill(flame);
+        
+        // Núcleo de la llama
+        g2d.setColor(new Color(255, 100, 30));
+        g2d.fillOval(cx, cy - 28, 4, 6);
+        
+        // Empuñadura
+        g2d.setColor(new Color(90, 65, 40));
+        g2d.fillRoundRect(cx + 4, cy + 6, 8, 12, 2, 2);
+        
+        // Manguera
+        g2d.setColor(new Color(50, 50, 50));
+        g2d.setStroke(new BasicStroke(3f));
+        g2d.drawArc(cx - 14, cy + 8, 12, 12, 0, 180);
+    }
+    
+    /**
+     * Sprite de Escopeta.
+     */
+    private static void drawShotgunSprite(Graphics2D g2d) {
+        int cx = ICON_SIZE / 2;
+        int cy = ICON_SIZE / 2;
+        
+        // Cañones dobles
+        g2d.setColor(new Color(70, 70, 75));
+        g2d.fillRoundRect(cx - 5, cy - 20, 5, 24, 2, 2);
+        g2d.fillRoundRect(cx + 1, cy - 20, 5, 24, 2, 2);
+        
+        // Bocas de los cañones
+        g2d.setColor(new Color(40, 40, 45));
+        g2d.fillOval(cx - 4, cy - 22, 4, 3);
+        g2d.fillOval(cx + 2, cy - 22, 4, 3);
+        
+        // Cuerpo/receptor
+        g2d.setColor(new Color(60, 60, 65));
+        g2d.fillRoundRect(cx - 6, cy, 14, 8, 3, 3);
+        
+        // Culata de madera
+        g2d.setColor(new Color(110, 75, 45));
+        GeneralPath stock = new GeneralPath();
+        stock.moveTo(cx - 4, cy + 8);
+        stock.lineTo(cx - 6, cy + 20);
+        stock.lineTo(cx + 8, cy + 20);
+        stock.lineTo(cx + 6, cy + 8);
+        stock.closePath();
+        g2d.fill(stock);
+        
+        // Vetas de madera
+        g2d.setColor(new Color(90, 60, 35));
+        g2d.drawLine(cx - 2, cy + 10, cx - 4, cy + 18);
+        g2d.drawLine(cx + 2, cy + 10, cx + 4, cy + 18);
+        
+        // Gatillo
+        g2d.setColor(new Color(50, 50, 50));
+        g2d.fillOval(cx + 2, cy + 4, 4, 5);
+    }
+    
+    /**
+     * Sprite de Rifle de Francotirador (Sniper Railgun).
+     */
+    private static void drawSniperSprite(Graphics2D g2d) {
+        int cx = ICON_SIZE / 2;
+        int cy = ICON_SIZE / 2;
+        
+        // Cañón largo y fino
+        g2d.setColor(new Color(60, 65, 70));
+        g2d.fillRoundRect(cx - 2, cy - 22, 6, 28, 2, 2);
+        
+        // Supresor/silenciador
+        g2d.setColor(new Color(50, 50, 55));
+        g2d.fillRoundRect(cx - 3, cy - 26, 8, 6, 3, 3);
+        
+        // Mira telescópica
+        g2d.setColor(new Color(40, 45, 50));
+        g2d.fillRoundRect(cx + 4, cy - 14, 10, 6, 2, 2);
+        
+        // Lente de la mira
+        g2d.setColor(new Color(100, 150, 200));
+        g2d.fillOval(cx + 5, cy - 13, 4, 4);
+        g2d.setColor(new Color(150, 200, 255, 150));
+        g2d.fillOval(cx + 6, cy - 12, 2, 2);
+        
+        // Cuerpo
+        g2d.setColor(new Color(55, 60, 65));
+        g2d.fillRoundRect(cx - 6, cy - 2, 14, 10, 3, 3);
+        
+        // Cargador
+        g2d.setColor(new Color(45, 45, 50));
+        g2d.fillRoundRect(cx - 8, cy + 2, 6, 10, 2, 2);
+        
+        // Culata táctica
+        g2d.setColor(new Color(50, 55, 60));
+        GeneralPath stock = new GeneralPath();
+        stock.moveTo(cx - 4, cy + 8);
+        stock.lineTo(cx - 8, cy + 18);
+        stock.lineTo(cx + 6, cy + 18);
+        stock.lineTo(cx + 4, cy + 8);
+        stock.closePath();
+        g2d.fill(stock);
+        
+        // Detalles tácticos (raíles)
+        g2d.setColor(new Color(70, 75, 80));
+        g2d.fillRect(cx - 1, cy - 18, 4, 2);
+        g2d.fillRect(cx - 1, cy - 14, 4, 2);
+        
+        // Efecto de energía (railgun)
+        g2d.setColor(new Color(100, 200, 255, 100));
+        g2d.setStroke(new BasicStroke(1f));
+        g2d.drawLine(cx + 1, cy - 24, cx + 1, cy - 20);
     }
     
     /**
@@ -309,38 +585,79 @@ public class UpgradeIconGenerator {
     }
     
     /**
-     * Icono de disparos múltiples: balas en abanico
+     * Icono de multi-objetivo: balas a múltiples enemigos
      */
-    private static void drawMultiShotIcon(Graphics2D g2d) {
+    private static void drawMultiTargetIcon(Graphics2D g2d) {
         int cx = ICON_SIZE / 2;
-        int cy = ICON_SIZE / 2 + 4;
+        int cy = ICON_SIZE / 2;
         
         Color bulletColor = new Color(255, 220, 100);
+        Color targetColor = new Color(255, 100, 100);
         
-        // Disparos en abanico (5 direcciones)
-        for (int i = -2; i <= 2; i++) {
-            double angle = Math.toRadians(-90 + i * 20);
-            int x = cx + (int)(Math.cos(angle) * 16);
-            int y = cy + (int)(Math.sin(angle) * 16);
-            
+        // Tres enemigos/objetivos en diferentes direcciones
+        int[][] targets = {{cx - 12, cy - 10}, {cx + 12, cy - 8}, {cx, cy + 12}};
+        
+        for (int[] target : targets) {
             // Línea de trayectoria
             g2d.setColor(new Color(255, 220, 100, 80));
             g2d.setStroke(new BasicStroke(1f));
-            g2d.draw(new Line2D.Float(cx, cy, x, y));
+            g2d.draw(new Line2D.Float(cx, cy, target[0], target[1]));
             
             // Bala
             g2d.setColor(bulletColor);
-            g2d.fillOval(x - 3, y - 3, 6, 6);
+            int midX = (cx + target[0]) / 2;
+            int midY = (cy + target[1]) / 2;
+            g2d.fillOval(midX - 2, midY - 2, 4, 4);
+            
+            // Objetivo (enemigo)
+            g2d.setColor(targetColor);
+            g2d.fillOval(target[0] - 4, target[1] - 4, 8, 8);
         }
         
-        // Origen (cañón)
-        g2d.setColor(new Color(100, 100, 100));
-        g2d.fillRoundRect(cx - 4, cy, 8, 10, 3, 3);
+        // Origen (jugador)
+        g2d.setColor(new Color(100, 150, 255));
+        g2d.fillOval(cx - 5, cy - 5, 10, 10);
         
         // Símbolo x3
         g2d.setColor(STAT_COLOR);
-        g2d.setFont(g2d.getFont().deriveFont(java.awt.Font.BOLD, 9f));
-        g2d.drawString("+1", cx + 8, cy + 16);
+        g2d.setFont(g2d.getFont().deriveFont(java.awt.Font.BOLD, 8f));
+        g2d.drawString("x3", cx + 10, cy + 18);
+    }
+    
+    /**
+     * Icono de ángulo de cono: lanzallamas con ángulo amplio
+     */
+    private static void drawConeAngleIcon(Graphics2D g2d) {
+        int cx = ICON_SIZE / 2;
+        int cy = ICON_SIZE / 2 + 6;
+        
+        // Cono de fuego amplio
+        g2d.setColor(new Color(255, 150, 50, 100));
+        Arc2D outerArc = new Arc2D.Float(cx - 20, cy - 20, 40, 40, 60, 60, Arc2D.PIE);
+        g2d.fill(outerArc);
+        
+        g2d.setColor(new Color(255, 200, 50, 150));
+        Arc2D innerArc = new Arc2D.Float(cx - 14, cy - 14, 28, 28, 65, 50, Arc2D.PIE);
+        g2d.fill(innerArc);
+        
+        g2d.setColor(new Color(255, 100, 30, 200));
+        Arc2D coreArc = new Arc2D.Float(cx - 8, cy - 8, 16, 16, 70, 40, Arc2D.PIE);
+        g2d.fill(coreArc);
+        
+        // Flechas indicando expansión del ángulo
+        g2d.setColor(new Color(255, 255, 100));
+        g2d.setStroke(new BasicStroke(2f));
+        // Flecha izquierda
+        g2d.draw(new Line2D.Float(cx - 8, cy - 12, cx - 14, cy - 16));
+        g2d.draw(new Line2D.Float(cx - 14, cy - 16, cx - 12, cy - 12));
+        // Flecha derecha
+        g2d.draw(new Line2D.Float(cx + 8, cy - 12, cx + 14, cy - 16));
+        g2d.draw(new Line2D.Float(cx + 14, cy - 16, cx + 12, cy - 12));
+        
+        // Texto de grados
+        g2d.setColor(STAT_COLOR);
+        g2d.setFont(g2d.getFont().deriveFont(java.awt.Font.BOLD, 8f));
+        g2d.drawString("+°", cx + 12, cy + 14);
     }
     
     /**

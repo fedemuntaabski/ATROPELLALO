@@ -2,6 +2,7 @@ package com.atropellalo.game.upgrade;
 
 import com.atropellalo.game.config.GameConfig;
 import com.atropellalo.game.entity.Player;
+import com.atropellalo.game.weapon.Flamethrower;
 import com.atropellalo.game.weapon.Weapon;
 import com.atropellalo.game.weapon.WeaponManager;
 import com.atropellalo.game.weapon.WeaponType;
@@ -112,8 +113,8 @@ public class UpgradeManager {
                 type
             ));
             
-            // Mejora de cadencia (no aplica a sierras)
-            if (type != WeaponType.CIRCULAR_SAW) {
+            // Mejora de cadencia (no aplica a lanzallamas)
+            if (type != WeaponType.FLAMETHROWER) {
                 options.add(new UpgradeOption(
                     UpgradeType.WEAPON_FIRE_RATE,
                     type.getDisplayName() + ": Cadencia +",
@@ -123,8 +124,7 @@ public class UpgradeManager {
             }
             
             // Mejora de área (solo para armas con área)
-            if (type == WeaponType.GRENADE_LAUNCHER || type == WeaponType.CIRCULAR_SAW || 
-                type == WeaponType.FLAMETHROWER) {
+            if (type == WeaponType.GRENADE_LAUNCHER || type == WeaponType.FLAMETHROWER) {
                 options.add(new UpgradeOption(
                     UpgradeType.WEAPON_IMPACT_AREA,
                     type.getDisplayName() + ": Área +",
@@ -133,15 +133,29 @@ public class UpgradeManager {
                 ));
             }
             
-            // Mejora de proyectiles (solo para armas de proyectiles)
-            if (type == WeaponType.PISTOL || type == WeaponType.LIGHT_MACHINE_GUN || 
-                type == WeaponType.GRENADE_LAUNCHER || type == WeaponType.SHOTGUN) {
-                options.add(new UpgradeOption(
-                    UpgradeType.WEAPON_PROJECTILE_COUNT,
-                    type.getDisplayName() + ": Multi-disparo",
-                    "+" + GameConfig.UPGRADE_WEAPON_PROJECTILE_COUNT + " Disparo Simultáneo",
-                    type
-                ));
+            // Mejora de multi-target (NO para escopeta ni lanzallamas, máx 2 veces)
+            if (type != WeaponType.SHOTGUN && type != WeaponType.FLAMETHROWER) {
+                if (weapon.canUpgradeMultiTarget()) {
+                    options.add(new UpgradeOption(
+                        UpgradeType.WEAPON_MULTI_TARGET,
+                        type.getDisplayName() + ": Multi-Objetivo",
+                        "+" + GameConfig.UPGRADE_WEAPON_TARGET_COUNT + " Objetivo Simultáneo",
+                        type
+                    ));
+                }
+            }
+            
+            // Mejora de ángulo de cono (solo para lanzallamas)
+            if (type == WeaponType.FLAMETHROWER) {
+                Flamethrower flamethrower = (Flamethrower) weapon;
+                if (flamethrower.canUpgradeConeAngle()) {
+                    options.add(new UpgradeOption(
+                        UpgradeType.WEAPON_CONE_ANGLE,
+                        type.getDisplayName() + ": Ángulo +",
+                        "+" + (int)GameConfig.UPGRADE_FLAMETHROWER_CONE_ANGLE + "° de cono",
+                        type
+                    ));
+                }
             }
         }
         
@@ -180,9 +194,19 @@ public class UpgradeManager {
                 return upgradeWeaponStat(weaponManager, option.getWeaponType(),
                     w -> w.upgradeImpactArea(GameConfig.UPGRADE_WEAPON_AREA_FACTOR));
                 
-            case WEAPON_PROJECTILE_COUNT:
-                return upgradeWeaponStat(weaponManager, option.getWeaponType(),
-                    w -> w.upgradeProjectileCount(GameConfig.UPGRADE_WEAPON_PROJECTILE_COUNT));
+            case WEAPON_MULTI_TARGET:
+                Weapon multiTargetWeapon = weaponManager.getWeapon(option.getWeaponType());
+                if (multiTargetWeapon != null) {
+                    return multiTargetWeapon.upgradeTargetCount(GameConfig.UPGRADE_WEAPON_TARGET_COUNT);
+                }
+                return false;
+                
+            case WEAPON_CONE_ANGLE:
+                Weapon coneWeapon = weaponManager.getWeapon(option.getWeaponType());
+                if (coneWeapon != null) {
+                    return coneWeapon.upgradeConeAngle(GameConfig.UPGRADE_FLAMETHROWER_CONE_ANGLE);
+                }
+                return false;
                 
             default:
                 return false;

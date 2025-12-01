@@ -2,7 +2,7 @@ package com.atropellalo.game.ui;
 
 import com.atropellalo.game.camera.Camera;
 import com.atropellalo.game.config.GameConfig;
-import com.atropellalo.game.enemy.Enemy;
+import com.atropellalo.game.effect.VisualEffectManager;
 import com.atropellalo.game.enemy.EnemyManager;
 import com.atropellalo.game.entity.Player;
 import com.atropellalo.game.input.InputHandler;
@@ -245,6 +245,9 @@ public class GamePanel extends JPanel implements Runnable, KeyListener {
         // Actualizar sistema de armas (disparo automático)
         weaponManager.update(deltaTime, player.getCenterX(), player.getCenterY(), enemyManager.getEnemies());
         
+        // Actualizar efectos visuales
+        VisualEffectManager.getInstance().update(deltaTime);
+        
         // Actualizar cámara para seguir al jugador
         camera.centerOn(player.getCenterX(), player.getCenterY());
     }
@@ -285,6 +288,7 @@ public class GamePanel extends JPanel implements Runnable, KeyListener {
         drawLoot(g2d);
         drawEnemies(g2d);
         drawProjectiles(g2d);
+        drawVisualEffects(g2d);
         drawPlayer(g2d);
         
         // Restaurar transformación usando los mismos valores para evitar temblor del HUD
@@ -330,6 +334,13 @@ public class GamePanel extends JPanel implements Runnable, KeyListener {
      */
     private void drawProjectiles(Graphics2D g2d) {
         weaponManager.render(g2d, player.getCenterX(), player.getCenterY());
+    }
+    
+    /**
+     * Dibuja todos los efectos visuales (explosiones, llamas, etc.).
+     */
+    private void drawVisualEffects(Graphics2D g2d) {
+        VisualEffectManager.getInstance().render(g2d);
     }
     
     /**
