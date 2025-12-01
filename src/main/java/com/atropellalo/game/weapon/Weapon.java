@@ -21,6 +21,7 @@ public abstract class Weapon {
     protected WeaponType weaponType;
     protected int targetCount;        // Cantidad de objetivos simultáneos
     protected int multiTargetUpgrades; // Contador de mejoras de multi-target
+    protected int level;              // Nivel del arma para UI
     
     /**
      * Constructor base para armas.
@@ -39,6 +40,7 @@ public abstract class Weapon {
         this.weaponType = weaponType;
         this.targetCount = 1;
         this.multiTargetUpgrades = 0;
+        this.level = 1;
     }
     
     /**
@@ -55,6 +57,7 @@ public abstract class Weapon {
         this.weaponType = weaponType;
         this.targetCount = 1;
         this.multiTargetUpgrades = 0;
+        this.level = 1;
     }
     
     /**
@@ -264,7 +267,40 @@ public abstract class Weapon {
         return multiTargetUpgrades < com.atropellalo.game.config.GameConfig.MAX_MULTI_TARGET_UPGRADES;
     }
     
-    // Getters
+    /**
+     * Incrementa el nivel del arma.
+     */
+    public void upgradeLevel() {
+        this.level++;
+    }
+    
+    // ==================== MÉTODOS PARA UI ====================
+    
+    /**
+     * Obtiene el nombre del arma.
+     * @return Nombre del arma
+     */
+    public String getName() {
+        return weaponType.getDisplayName();
+    }
+    
+    /**
+     * Obtiene la velocidad de proyectil.
+     * @return Velocidad del proyectil o 0 si no aplica
+     */
+    public float getProjectileSpeed() {
+        return 0; // Override en armas con proyectiles
+    }
+    
+    /**
+     * Obtiene la cadencia de fuego (disparos por segundo).
+     * @return Delay entre disparos
+     */
+    public float getFireRate() {
+        return fireDelay;
+    }
+    
+    // ==================== GETTERS ====================
     
     public float getDamage() {
         return damage;
@@ -300,5 +336,9 @@ public abstract class Weapon {
     
     public int getMultiTargetUpgrades() {
         return multiTargetUpgrades;
+    }
+    
+    public int getLevel() {
+        return level;
     }
 }

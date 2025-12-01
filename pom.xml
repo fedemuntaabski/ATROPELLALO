@@ -61,6 +61,14 @@
                     <target>11</target>
                 </configuration>
             </plugin>
+            <plugin>
+                <groupId>org.codehaus.mojo</groupId>
+                <artifactId>exec-maven-plugin</artifactId>
+                <version>3.6.2</version>
+                <configuration>
+                    <mainClass>com.atropellalo.Game</mainClass>
+                </configuration>
+            </plugin>
         </plugins>
         <resources>
             <resource>
