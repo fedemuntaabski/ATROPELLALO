@@ -12,6 +12,7 @@ import java.awt.geom.Point2D;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Random;
+import java.util.concurrent.ThreadLocalRandom;
 
 /**
  * Efecto visual mejorado del lanzallamas.
@@ -354,7 +355,7 @@ public class FlamethrowerEffect implements VisualEffect {
             this.size = size;
             this.life = life;
             this.maxLife = life;
-            this.twinkle = (float)(Math.random() * Math.PI * 2);
+            this.twinkle = (float)(ThreadLocalRandom.current().nextDouble() * Math.PI * 2);
         }
         
         void update(float deltaTime) {
@@ -362,7 +363,7 @@ public class FlamethrowerEffect implements VisualEffect {
             y += vy * deltaTime;
             
             // Movimiento errático
-            vx += (Math.random() - 0.5f) * 50 * deltaTime;
+            vx += (ThreadLocalRandom.current().nextDouble() - 0.5f) * 50 * deltaTime;
             vy -= 30 * deltaTime; // Sube por el calor
             
             vx *= 0.98f;

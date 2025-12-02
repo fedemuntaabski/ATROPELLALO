@@ -200,8 +200,8 @@ public class BufferZombie extends Enemy {
         // El sistema de buff usa multiplicadores temporales
         // Implementamos un sistema simple donde el buff se aplica cada pulso
         // Los enemigos tienen buffed flag que dura buffDuration
-        if (enemy instanceof BuffableEnemy) {
-            ((BuffableEnemy) enemy).applyBuff(speedBonus, damageBonus, GameConfig.BUFFER_BUFF_DURATION);
+        if (enemy instanceof BuffableEnemy buffableEnemy) {
+            buffableEnemy.applyBuff(speedBonus, damageBonus, GameConfig.BUFFER_BUFF_DURATION);
         }
     }
     

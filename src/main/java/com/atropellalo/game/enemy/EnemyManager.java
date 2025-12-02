@@ -99,8 +99,8 @@ public class EnemyManager implements ExplosiveZombie.ExplosionCallback,
             enemy.update(deltaTime, playerX, playerY);
             
             // Actualizar contexto de explosivos
-            if (enemy instanceof ExplosiveZombie) {
-                ((ExplosiveZombie) enemy).updatePlayerPosition(playerX, playerY);
+            if (enemy instanceof ExplosiveZombie zombie) {
+                zombie.updatePlayerPosition(playerX, playerY);
             }
         }
         
@@ -466,24 +466,21 @@ public class EnemyManager implements ExplosiveZombie.ExplosionCallback,
             Enemy enemy = iterator.next();
             if (!enemy.isAlive()) {
                 // Verificar si es explosivo y ya terminó su animación
-                if (enemy instanceof ExplosiveZombie) {
-                    ExplosiveZombie explosive = (ExplosiveZombie) enemy;
+                if (enemy instanceof ExplosiveZombie explosive) {
                     if (!explosive.hasExploded()) {
                         continue; // Esperar a que explote
                     }
                 }
                 
                 // Verificar si es portador y ya hizo burst
-                if (enemy instanceof BroodCarrier) {
-                    BroodCarrier carrier = (BroodCarrier) enemy;
+                if (enemy instanceof BroodCarrier carrier) {
                     if (!carrier.hasBurst()) {
                         continue; // Esperar a que haga burst
                     }
                 }
                 
                 // Manejar muerte especial del Infectador
-                if (enemy instanceof InfectorBoss) {
-                    InfectorBoss infector = (InfectorBoss) enemy;
+                if (enemy instanceof InfectorBoss infector) {
                     if (!infector.isDying()) {
                         infector.startDeathSequence();
                         continue; // Esperar a que complete la explosión de muerte

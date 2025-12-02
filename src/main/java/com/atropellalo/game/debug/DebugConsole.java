@@ -203,9 +203,9 @@ public class DebugConsole {
         }
         
         // Agregar al historial
-        history.add(0, input);
+        history.addFirst(input);
         if (history.size() > MAX_HISTORY) {
-            history.remove(history.size() - 1);
+            history.removeLast();
         }
         
         // Mostrar comando en la consola
@@ -257,11 +257,11 @@ public class DebugConsole {
      * Agrega un mensaje a la consola.
      */
     public void addMessage(String message, MessageType type) {
-        messages.add(0, new ConsoleMessage(message, type));
+        messages.addFirst(new ConsoleMessage(message, type));
         
         // Limitar tamaño del historial de mensajes
         if (messages.size() > MAX_HISTORY) {
-            messages.remove(messages.size() - 1);
+            messages.removeLast();
         }
     }
     
