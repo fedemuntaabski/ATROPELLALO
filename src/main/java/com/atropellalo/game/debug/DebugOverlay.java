@@ -41,6 +41,11 @@ public class DebugOverlay {
         Composite originalComposite = g2d.getComposite();
         Font originalFont = g2d.getFont();
         
+        // Dibujar hitbox del jugador si está activado
+        if (DebugConfig.isShowCollisionBoxes() && player != null) {
+            renderPlayerHitbox(g2d, player, camera);
+        }
+        
         // Recopilar líneas de información
         List<String> lines = collectDebugInfo(player, camera);
         
@@ -204,6 +209,45 @@ public class DebugOverlay {
             // La implementación específica depende de tu interfaz de entidades
             // Por ahora dejamos el método preparado para futuras implementaciones
         }
+    }
+    
+    /**
+     * Dibuja la hitbox rotada del jugador.
+     */
+    private void renderPlayerHitbox(Graphics2D g2d, Player player, Camera camera) {
+        float[] corners = player.getHitboxCorners();
+        
+        // Ajustar por cámara
+        float cameraX = camera.getX();
+        float cameraY = camera.getY();
+        
+        // Convertir esquinas a coordenadas de pantalla
+        int[] xPoints = new int[4];
+        int[] yPoints = new int[4];
+        
+        for (int i = 0; i < 4; i++) {
+            xPoints[i] = (int) (corners[i * 2] - cameraX);
+            yPoints[i] = (int) (corners[i * 2 + 1] - cameraY);
+        }
+        
+        // Dibujar polígono de la hitbox
+        g2d.setColor(new Color(0, 255, 0, 128));
+        g2d.setStroke(new BasicStroke(2));
+        g2d.drawPolygon(xPoints, yPoints, 4);
+        
+        // Dibujar punto central
+        int centerX = (int) (player.getCenterX() - cameraX);
+        int centerY = (int) (player.getCenterY() - cameraY);
+        g2d.setColor(new Color(255, 0, 0, 200));
+        g2d.fillOval(centerX - 3, centerY - 3, 6, 6);
+        
+        // Dibujar línea de dirección
+        float rotation = player.getRotation();
+        int dirX = centerX + (int) (Math.sin(rotation) * 30);
+        int dirY = centerY - (int) (Math.cos(rotation) * 30);
+        g2d.setColor(new Color(255, 255, 0, 200));
+        g2d.setStroke(new BasicStroke(3));
+        g2d.drawLine(centerX, centerY, dirX, dirY);
     }
     
     /**

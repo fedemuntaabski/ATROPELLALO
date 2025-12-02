@@ -197,7 +197,7 @@ public class LootManager {
     public List<Loot> checkCollisions(float playerCenterX, float playerCenterY) {
         List<Loot> collected = new ArrayList<>();
         
-        // Verificar loot normal
+        // Verificar loot normal (solo con centro por compatibilidad)
         for (Loot loot : lootItems) {
             if (!loot.isCollected()) {
                 float distance = loot.distanceTo(playerCenterX, playerCenterY);
@@ -213,6 +213,39 @@ public class LootManager {
             if (!orb.isCollected()) {
                 float distance = orb.distanceTo(playerCenterX, playerCenterY);
                 if (distance <= GameConfig.XP_ORB_PICKUP_DISTANCE) {
+                    orb.collect();
+                    collected.add(orb);
+                }
+            }
+        }
+        
+        return collected;
+    }
+    
+    /**
+     * Verifica colisiones usando la hitbox completa del jugador.
+     * @param player Referencia al jugador con su hitbox
+     * @return Lista de loot recolectado
+     */
+    public List<Loot> checkCollisionsWithHitbox(com.atropellalo.game.entity.Player player) {
+        List<Loot> collected = new ArrayList<>();
+        
+        // Verificar loot normal con hitbox completa
+        for (Loot loot : lootItems) {
+            if (!loot.isCollected()) {
+                // Verificar si el centro del loot está dentro de la hitbox del jugador
+                if (player.containsPoint(loot.getX() + loot.getSize() / 2f, loot.getY() + loot.getSize() / 2f)) {
+                    loot.collect();
+                    collected.add(loot);
+                }
+            }
+        }
+        
+        // Verificar orbes de XP con hitbox completa
+        for (XPOrb orb : xpOrbs) {
+            if (!orb.isCollected()) {
+                // Verificar si el orbe colisiona con la hitbox (usando radio del orbe)
+                if (player.collidesWithCircle(orb.getX(), orb.getY(), GameConfig.XP_ORB_SIZE / 2f)) {
                     orb.collect();
                     collected.add(orb);
                 }

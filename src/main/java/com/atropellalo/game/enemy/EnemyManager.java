@@ -368,7 +368,7 @@ public class EnemyManager implements ExplosiveZombie.ExplosionCallback,
     
     /**
      * Verifica colisiones entre enemigos y jugador.
-     * Solo los enemigos dañan al jugador por contacto.
+     * Los enemigos chocan con la hitbox del jugador y son empujados hacia afuera.
      */
     private void checkPlayerCollisions(float playerX, float playerY) {
         if (player == null || !player.isAlive()) {
@@ -380,14 +380,32 @@ public class EnemyManager implements ExplosiveZombie.ExplosionCallback,
                 continue;
             }
             
-            float distance = enemy.distanceToPlayer(playerX, playerY);
+            // Obtener el centro del enemigo
+            float enemyCenterX = enemy.getX() + enemy.getSize() / 2f;
+            float enemyCenterY = enemy.getY() + enemy.getSize() / 2f;
+            float enemyRadius = enemy.getSize() / 2f;
             
-            if (distance <= GameConfig.ENEMY_COLLISION_DISTANCE) {
-                // Enemigo daña al jugador por contacto
+            // Verificar si el enemigo colisiona con la hitbox del jugador
+            if (player.collidesWithCircle(enemyCenterX, enemyCenterY, enemyRadius)) {
+                // Dañar al jugador si es posible
                 if (enemy.canDamage()) {
                     player.damage(enemy.getDamage());
                     enemy.resetDamageCooldown();
                 }
+                
+                // Empujar al enemigo fuera de la hitbox del jugador
+                float[] pushVector = player.getPushVector(enemyCenterX, enemyCenterY, enemyRadius);
+                
+                // Aplicar el empuje al enemigo (empuja desde su posición actual)
+                float newEnemyX = enemy.getX() + pushVector[0];
+                float newEnemyY = enemy.getY() + pushVector[1];
+                
+                // Limitar a los bordes del mundo
+                newEnemyX = Math.max(0, Math.min(newEnemyX, GameConfig.WORLD_WIDTH - enemy.getSize()));
+                newEnemyY = Math.max(0, Math.min(newEnemyY, GameConfig.WORLD_HEIGHT - enemy.getSize()));
+                
+                // Actualizar posición del enemigo
+                enemy.setPosition(newEnemyX, newEnemyY);
             }
         }
     }

@@ -36,8 +36,14 @@ public final class GameConfig {
     /** Velocidad del jugador en píxeles por segundo */
     public static final float PLAYER_SPEED = 200.0f;
     
-    /** Tamaño del jugador en píxeles */
+    /** Tamaño del jugador en píxeles (para compatibilidad - deprecado) */
     public static final int PLAYER_SIZE = 32;
+    
+    /** Ancho del jugador en píxeles (camioneta) */
+    public static final int PLAYER_WIDTH = 70;
+    
+    /** Alto del jugador en píxeles (camioneta) */
+    public static final int PLAYER_HEIGHT = 145;
     
     // ==================== LOOT - COMBUSTIBLE ====================
     
