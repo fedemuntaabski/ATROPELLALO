@@ -25,6 +25,11 @@ public class InputHandler implements KeyListener {
     public void keyPressed(KeyEvent e) {
         int key = e.getKeyCode();
         
+        // No procesar teclas de debug (F1, F3) para que GamePanel las maneje
+        if (key == KeyEvent.VK_F1 || key == KeyEvent.VK_F3) {
+            return;
+        }
+        
         switch (key) {
             case KeyEvent.VK_W:
                 wPressed = true;

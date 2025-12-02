@@ -2,6 +2,8 @@ package com.atropellalo.game.ui;
 
 import com.atropellalo.game.camera.Camera;
 import com.atropellalo.game.config.GameConfig;
+import com.atropellalo.game.debug.DebugManager;
+import com.atropellalo.game.debug.DebugConsole;
 import com.atropellalo.game.effect.VisualEffectManager;
 import com.atropellalo.game.enemy.EnemyManager;
 import com.atropellalo.game.entity.Player;
@@ -62,9 +64,14 @@ public class GamePanel extends JPanel implements Runnable, KeyListener {
     // Menú de pausa
     private PauseMenu pauseMenu;
     
+    // Sistema de debug
+    private DebugManager debugManager;
+    private boolean debugCommandsRegistered = false;
+    
     public GamePanel() {
         setFocusable(true);
         loadMapImage();
+        initializeDebugSystem();
         initializeGame();
     }
     
@@ -78,6 +85,16 @@ public class GamePanel extends JPanel implements Runnable, KeyListener {
         } catch (IOException e) {
             LOGGER.log(Level.SEVERE, "Error al cargar la imagen del mapa: " + MAP_IMAGE_PATH, e);
         }
+    }
+    
+    /**
+     * Inicializa el sistema de debug UNA SOLA VEZ.
+     * No se debe llamar en restartGame().
+     */
+    private void initializeDebugSystem() {
+        // Crear sistema de debug
+        debugManager = new DebugManager();
+        debugManager.initialize();
     }
     
     /**
@@ -101,10 +118,13 @@ public class GamePanel extends JPanel implements Runnable, KeyListener {
             removeKeyListener(listener);
         }
         
-        // Crear y configurar input handler (nuevo cada vez)
+        // Crear y configurar input handler
         inputHandler = new InputHandler();
-        addKeyListener(inputHandler);
-        addKeyListener(this); // Para el menú de mejoras y reinicio
+        
+        // IMPORTANTE: Registrar listeners en orden inverso de prioridad
+        // Los últimos registrados se procesan primero
+        addKeyListener(inputHandler);  // Primero (menor prioridad)
+        addKeyListener(this);           // Último (mayor prioridad - incluye debugManager)
         
         // Crear sistema de loot (sin mapa de colisiones)
         lootManager = new LootManager();
@@ -116,6 +136,12 @@ public class GamePanel extends JPanel implements Runnable, KeyListener {
         
         // Crear sistema de armas
         weaponManager = new WeaponManager();
+        
+        // Registrar comandos de debug SOLO la primera vez
+        if (!debugCommandsRegistered) {
+            registerDebugCommands();
+            debugCommandsRegistered = true;
+        }
         
         // Crear HUD con callback de reinicio
         gameHUD = new GameHUD(1280, 720);
@@ -160,6 +186,85 @@ public class GamePanel extends JPanel implements Runnable, KeyListener {
     private void restartGame() {
         LOGGER.info("Reiniciando juego...");
         initializeGame();
+    }
+    
+    /**
+     * Registra comandos de debug con referencias al juego.
+     */
+    private void registerDebugCommands() {
+        LOGGER.info("Registrando comandos de debug personalizados...");
+        
+        // Comando para agregar XP al jugador
+        debugManager.registerCommand("addxp", "Agrega XP al jugador (uso: addxp <cantidad>)", args -> {
+            if (args.length < 1) {
+                debugManager.logMessage("Usage: addxp <amount>", DebugConsole.MessageType.ERROR);
+                return;
+            }
+            
+            try {
+                int amount = Integer.parseInt(args[0]);
+                player.addXP(amount);
+                debugManager.logMessage("Added " + amount + " XP to player", DebugConsole.MessageType.INFO);
+            } catch (NumberFormatException e) {
+                debugManager.logMessage("Invalid amount: " + args[0], DebugConsole.MessageType.ERROR);
+            }
+        });
+        
+        // Comando para curar al jugador
+        debugManager.registerCommand("heal", "Restaura la vida del jugador al máximo", args -> {
+            player.heal(player.getMaxHealth());
+            debugManager.logMessage("Player healed to full health", DebugConsole.MessageType.INFO);
+        });
+        
+        // Comando para subir de nivel
+        debugManager.registerCommand("levelup", "Sube de nivel al jugador", args -> {
+            int xpNeeded = player.getXPForNextLevel() - player.getCurrentXP();
+            player.addXP(xpNeeded);
+            debugManager.logMessage("Player leveled up!", DebugConsole.MessageType.INFO);
+        });
+        
+        // Comando para detener spawn de enemigos
+        debugManager.registerCommand("stopspawn", "Detiene el spawn de enemigos", args -> {
+            enemyManager.setSpawnEnabled(false);
+            debugManager.logMessage("Enemy spawning disabled", DebugConsole.MessageType.INFO);
+        });
+        
+        // Comando para reactivar spawn de enemigos
+        debugManager.registerCommand("startspawn", "Reactiva el spawn de enemigos", args -> {
+            enemyManager.setSpawnEnabled(true);
+            debugManager.logMessage("Enemy spawning enabled", DebugConsole.MessageType.INFO);
+        });
+        
+        // Comando para eliminar todos los enemigos
+        debugManager.registerCommand("clearwave", "Elimina todos los enemigos actuales", args -> {
+            int count = enemyManager.getEnemies().size();
+            enemyManager.clearAllEnemies();
+            debugManager.logMessage("Cleared " + count + " enemies", DebugConsole.MessageType.INFO);
+        });
+        
+        // Comando para dar combustible
+        debugManager.registerCommand("addfuel", "Agrega combustible (uso: addfuel [cantidad], default: 100)", args -> {
+            if (args.length < 1) {
+                player.addFuel(100);
+                debugManager.logMessage("Added 100 fuel", DebugConsole.MessageType.INFO);
+            } else {
+                try {
+                    float amount = Float.parseFloat(args[0]);
+                    player.addFuel(amount);
+                    debugManager.logMessage("Added " + amount + " fuel", DebugConsole.MessageType.INFO);
+                } catch (NumberFormatException e) {
+                    debugManager.logMessage("Invalid amount: " + args[0], DebugConsole.MessageType.ERROR);
+                }
+            }
+        });
+        
+        // Comando para modo god (invencibilidad)
+        debugManager.registerCommand("god", "Alterna modo invulnerable (no implementado aún)", args -> {
+            // Este comando requeriría agregar un flag de invencibilidad al Player
+            debugManager.logMessage("God mode not yet implemented", DebugConsole.MessageType.WARNING);
+        });
+        
+        LOGGER.info("Comandos de debug registrados exitosamente");
     }
     
     /**
@@ -254,6 +359,13 @@ public class GamePanel extends JPanel implements Runnable, KeyListener {
             long updateLength = now - lastTime;
             lastTime = now;
             float deltaTime = updateLength / 1000000000f;
+            
+            // Actualizar debug antes del update del juego
+            int totalLoot = lootManager.getFuelCount() + lootManager.getScrapCount() + lootManager.getXPOrbCount();
+            debugManager.update(now, 
+                enemyManager.getEnemies().size(), 
+                weaponManager.getActiveProjectiles(), 
+                totalLoot);
             
             update(deltaTime);
             repaint();
@@ -364,6 +476,9 @@ public class GamePanel extends JPanel implements Runnable, KeyListener {
         if (pauseMenu.isVisible()) {
             pauseMenu.render(g2d, player, weaponManager);
         }
+        
+        // Dibujar debug overlay (siempre al final para que esté encima de todo)
+        debugManager.render(g2d, player, camera, getWidth(), getHeight());
     }
     
     /**
@@ -414,6 +529,16 @@ public class GamePanel extends JPanel implements Runnable, KeyListener {
     
     @Override
     public void keyPressed(KeyEvent e) {
+        // Primero intentar con debug (máxima prioridad)
+        if (debugManager.handleKeyPress(e)) {
+            return; // El debug consumió el evento
+        }
+        
+        // Si la consola está visible, no procesar otros inputs
+        if (debugManager.isConsoleVisible()) {
+            return;
+        }
+        
         // Prioridad al menú de pausa
         if (pauseMenu.isVisible()) {
             pauseMenu.handleKeyPress(e.getKeyCode());
