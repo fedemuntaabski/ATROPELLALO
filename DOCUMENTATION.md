@@ -16,12 +16,13 @@
 3. [Arquitectura del Sistema](#arquitectura-del-sistema)
 4. [Clases Principales](#clases-principales)
 5. [Sistema de Juego](#sistema-de-juego)
-6. [Sistema de Enemigos y Jefes](#sistema-de-enemigos-y-jefes)
-7. [Sistema de Armas](#sistema-de-armas)
-8. [Sistema de Mejoras](#sistema-de-mejoras)
-9. [Mapa Urbano](#mapa-urbano)
-10. [Configuración](#configuración)
-11. [Cómo Ejecutar](#cómo-ejecutar)
+6. [Sistema de Menús](#sistema-de-menús)
+7. [Sistema de Enemigos y Jefes](#sistema-de-enemigos-y-jefes)
+8. [Sistema de Armas](#sistema-de-armas)
+9. [Sistema de Mejoras](#sistema-de-mejoras)
+10. [Mapa Urbano](#mapa-urbano)
+11. [Configuración](#configuración)
+12. [Cómo Ejecutar](#cómo-ejecutar)
 
 ---
 
@@ -301,6 +302,89 @@ Manejo de teclado WASD.
 | 1/2/3 | Seleccionar mejora | Menú de nivel |
 | Enter/Espacio | Confirmar mejora | Menú de nivel |
 | R | Reiniciar partida | Game Over |
+
+---
+
+## Sistema de Menús
+
+### Menú Principal (MainMenu.java)
+**Ubicación**: `com.atropellalo.game.ui.MainMenu`
+
+Menú inicial que se muestra al abrir el juego.
+
+**Características**:
+- 3 botones principales: Jugar, Instrucciones, Opciones
+- Navegación con mouse (hover y click)
+- Diseño centrado con título del juego
+- Transiciones mediante `CardLayout`
+
+**Elementos visuales**:
+
+| Elemento | Descripción |
+|----------|-------------|
+| Título | "ATROPELLALO" en rojo (72pt) |
+| Subtítulo | "Survivor Game" (24pt) |
+| Botones | Rectángulos redondeados con hover |
+| Dimensiones botón | 300x60 píxeles |
+| Espacio entre botones | 20 píxeles |
+
+**Colores**:
+- Fondo: RGB(20, 20, 30)
+- Título: RGB(220, 50, 50)
+- Botón normal: RGB(50, 50, 60)
+- Botón hover: RGB(70, 70, 90)
+- Texto botón: RGB(240, 240, 240)
+
+### Panel de Instrucciones (InstructionsPanel.java)
+**Ubicación**: `com.atropellalo.game.ui.InstructionsPanel`
+
+Muestra los controles y objetivos del juego.
+
+**Información mostrada**:
+
+| Sección | Contenido |
+|---------|-----------|
+| Controles | WASD/Flechas, ESC, Disparo automático |
+| Objetivos | Sobrevivir, eliminar zombies, subir de nivel, recolectar recursos |
+| Navegación | ESC para volver |
+
+### Panel de Opciones (OptionsPanel.java)
+**Ubicación**: `com.atropellalo.game.ui.OptionsPanel`
+
+Pantalla de configuración del juego (placeholder).
+
+**Estado actual**: Muestra mensaje "Opciones disponibles próximamente"
+
+**Opciones planificadas**:
+- Control de volumen
+- Ajustes de dificultad
+- Configuración de controles
+
+### GameWindow (Actualizado)
+**Ubicación**: `com.atropellalo.game.ui.GameWindow`
+
+Gestiona la navegación entre menús usando `CardLayout`.
+
+**Paneles gestionados**:
+
+| Panel | Identificador | Descripción |
+|-------|--------------|-------------|
+| MainMenu | "MAIN_MENU" | Menú inicial |
+| InstructionsPanel | "INSTRUCTIONS" | Pantalla de instrucciones |
+| OptionsPanel | "OPTIONS" | Pantalla de opciones |
+| GamePanel | "GAME" | Juego principal |
+
+**Flujo de navegación**:
+```
+MainMenu → Jugar → GamePanel
+         → Instrucciones → InstructionsPanel → ESC → MainMenu
+         → Opciones → OptionsPanel → ESC → MainMenu
+```
+
+**Características**:
+- `GamePanel` se crea solo cuando el jugador selecciona "Jugar" (lazy loading)
+- El game loop solo se inicia al entrar al juego
+- Cambio de foco automático al cambiar de panel
 
 ---
 
@@ -749,25 +833,28 @@ Gestiona spawn y recolección de items.
 **Ubicación**: `com.atropellalo.game.ui.GameHUD`
 
 HUD del jugador.
+## Historial de Fases
 
-**Elementos**:
-
-| Elemento | Posición | Colores |
-|----------|----------|---------|
-| Barra Salud | Superior izquierda | Verde/Naranja/Rojo según % |
-| Barra Combustible | Bajo salud | Naranja/Rojo según % |
-| Barra XP | Bajo combustible | Azul con indicador de nivel |
-| Oleada/Kills | Superior derecha | Blanco |
-| Game Over | Centro | Rojo con botón reinicio |
-
-**Pantalla Game Over**:
-- Overlay oscuro semi-transparente
-- Texto "GAME OVER" en rojo
-- Botón parpadeante "Presiona R para reiniciar"
-
----
-
-## Configuración (GameConfig.java)
+| Fase | Descripción | Estado |
+|------|-------------|--------|
+| 1 | Ventana básica y mapa | ✅ |
+| 2 | Jugador y movimiento WASD | ✅ |
+| 3 | Sistema de loot (combustible/chatarra) | ✅ |
+| 4 | Enemigos y oleadas | ✅ |
+| 5 | Sistema de armas (pistola) | ✅ |
+| 6 | XP, niveles y mejoras | ✅ |
+| 7 | Nuevas armas (6 tipos) | ✅ |
+| 8 | Jefes (Aplastador, Infectador) | ✅ |
+| 9 | Mapa urbano con colisiones | ✅ |
+| 10 | Menos obstáculos, pathfinding, reinicio | ✅ |
+| 10.1 | Pathfinding mejorado, fix reinicio | ✅ |
+| 11 | Rifle de Francotirador (Sniper Railgun) | ✅ |
+| 12 | Mejoras visuales: explosión zombie, iconos upgrades, limpieza SlashWhip | ✅ |
+| 13 | Mecánica de combustible mejorada, sprites únicos por arma | ✅ |
+| 14 | Oleadas continuas, multi-objetivo, ángulo lanzallamas, eliminación CircularSaw | ✅ |
+| 15 | Sistema de sonidos para armas | ✅ |
+| 16 | Sistema de efectos visuales (explosiones y lanzallamas) | ✅ |
+| 17 | Menú de inicio con opciones Jugar/Instrucciones/Opciones | ✅ |
 
 ### Jugador
 ```java
@@ -1168,9 +1255,92 @@ FLAME_COLORS = {
 3. **Configurable**: Parámetros en GameConfig
 4. **Eficiente**: Efectos con ciclo de vida gestionado automáticamente
 5. **Independiente**: No requiere archivos de video externos
+---
+
+## Fase 17 - Menú de Inicio
+
+### Descripción
+Implementación de un sistema de menús de navegación con pantalla inicial antes de comenzar el juego.
+
+### Nuevas Clases
+
+#### MainMenu.java
+Menú principal con tres botones interactivos:
+- **Jugar**: Inicia el juego
+- **Instrucciones**: Muestra controles y objetivos
+- **Opciones**: Pantalla de configuración (placeholder)
+
+**Características**:
+- Interacción completa con mouse (hover y click)
+- Diseño visual limpio con título y botones estilizados
+- Botones redondeados con efecto hover
+- Callbacks para navegación entre pantallas
+
+#### InstructionsPanel.java
+Panel informativo con:
+- **Controles**: WASD/Flechas, ESC, disparo automático
+- **Objetivos**: Sobrevivir, eliminar zombies, subir nivel, recolectar recursos
+- **Navegación**: ESC para volver al menú principal
+
+#### OptionsPanel.java
+Panel de configuración (actualmente placeholder):
+- Mensaje "Opciones disponibles próximamente"
+- Navegación con ESC
+- Preparado para futuras configuraciones
+
+### Cambios en Arquitectura
+
+#### GameWindow (Refactorizado)
+- **Antes**: Creaba `GamePanel` inmediatamente y lo mostraba
+- **Ahora**: Usa `CardLayout` para gestionar múltiples pantallas
+- **Lazy Loading**: `GamePanel` se crea solo al seleccionar "Jugar"
+- **Gestión de focus**: Cambio automático de foco entre paneles
+
+**Flujo de navegación**:
+```
+Inicio → MainMenu
+         ├─→ Jugar → GamePanel (game loop inicia)
+         ├─→ Instrucciones → InstructionsPanel → ESC → MainMenu
+         └─→ Opciones → OptionsPanel → ESC → MainMenu
+```
+
+### Interfaces de Callback
+```java
+MainMenu.MainMenuCallback {
+    void onPlay();
+    void onInstructions();
+    void onOptions();
+}
+
+InstructionsPanel.InstructionsCallback {
+    void onBack();
+}
+
+OptionsPanel.OptionsCallback {
+    void onBack();
+}
+```
+
+### Beneficios del Sistema
+1. **UX mejorada**: Primera impresión profesional
+2. **Información accesible**: Instrucciones disponibles sin iniciar juego
+3. **Escalable**: Fácil agregar nuevas pantallas de menú
+4. **Eficiente**: Game loop solo se ejecuta cuando se juega
+5. **Navegación clara**: Transiciones suaves entre pantallas
+
+### Archivos Modificados
+- `GameWindow.java`: Refactorizado para gestionar múltiples paneles con CardLayout
+
+### Archivos Nuevos
+- `src/main/java/com/atropellalo/game/ui/MainMenu.java`
+- `src/main/java/com/atropellalo/game/ui/InstructionsPanel.java`
+- `src/main/java/com/atropellalo/game/ui/OptionsPanel.java`
 
 ---
 
+**Fecha de Creación**: 29/11/2025  
+**Última Actualización**: 02/12/2025 - Fase 17  
+**Versión**: 1.0-SNAPSHOT
 **Fecha de Creación**: 29/11/2025  
 **Última Actualización**: 30/11/2025 - Fase 16  
 **Versión**: 1.0-SNAPSHOT

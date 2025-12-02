@@ -161,8 +161,8 @@ public class GamePanel extends JPanel implements Runnable, KeyListener {
             }
             
             @Override
-            public void onQuit() {
-                quitToDesktop();
+            public void onMainMenu() {
+                returnToMainMenu();
             }
         });
         
@@ -324,11 +324,30 @@ public class GamePanel extends JPanel implements Runnable, KeyListener {
     }
     
     /**
-     * Sale al escritorio.
+     * Retorna al menú principal.
      */
-    private void quitToDesktop() {
-        LOGGER.info("Saliendo del juego...");
-        System.exit(0);
+    private void returnToMainMenu() {
+        LOGGER.info("Volviendo al menú principal...");
+        stopGameLoop();
+        if (mainMenuCallback != null) {
+            mainMenuCallback.onReturnToMenu();
+        }
+    }
+    
+    private MainMenuCallback mainMenuCallback;
+    
+    /**
+     * Establece el callback para volver al menú principal.
+     */
+    public void setMainMenuCallback(MainMenuCallback callback) {
+        this.mainMenuCallback = callback;
+    }
+    
+    /**
+     * Interface para callback de retorno al menú principal.
+     */
+    public interface MainMenuCallback {
+        void onReturnToMenu();
     }
     
     /**
