@@ -12,6 +12,7 @@ import com.atropellalo.game.loot.Loot;
 import com.atropellalo.game.loot.LootManager;
 import com.atropellalo.game.loot.LootType;
 import com.atropellalo.game.loot.XPOrb;
+import com.atropellalo.game.sound.SoundManager;
 import com.atropellalo.game.upgrade.UpgradeManager;
 import com.atropellalo.game.upgrade.UpgradeOption;
 import com.atropellalo.game.weapon.WeaponManager;
@@ -43,8 +44,8 @@ public class GamePanel extends JPanel implements Runnable, KeyListener {
     
     private Thread gameThread;
     private boolean running;
-    private boolean paused;
-    private boolean pausedByMenu;
+    private volatile boolean paused;
+    private volatile boolean pausedByMenu;
     
     // Imagen del mapa de estacionamiento
     private BufferedImage mapImage;
@@ -178,6 +179,10 @@ public class GamePanel extends JPanel implements Runnable, KeyListener {
         
         LOGGER.info("Juego inicializado - Mundo: " + GameConfig.WORLD_WIDTH + "x" + GameConfig.WORLD_HEIGHT);
         LOGGER.info("Mapa de estacionamiento cargado - Sin obstáculos");
+        
+        // Detener música del menú e iniciar música de gameplay
+        SoundManager.getInstance().stopMusic();
+        SoundManager.getInstance().playGameplayMusic();
     }
     
     /**
@@ -273,8 +278,11 @@ public class GamePanel extends JPanel implements Runnable, KeyListener {
     private void onPlayerLevelUp(int newLevel) {
         LOGGER.info("¡Jugador subió al nivel " + newLevel + "!");
         
-        // Pausar el juego
+        // Pausar PRIMERO (misma lógica que showPauseMenu)
         paused = true;
+        
+        // Detener sonidos DESPUÉS de pausar
+        SoundManager.getInstance().stopAllSounds();
         
         // Generar opciones de mejora
         List<UpgradeOption> options = upgradeManager.generateOptions(player, weaponManager);
@@ -311,6 +319,8 @@ public class GamePanel extends JPanel implements Runnable, KeyListener {
         }
         
         pausedByMenu = true;
+        // Detener sonidos de armas al pausar
+        SoundManager.getInstance().stopAllSounds();
         pauseMenu.show();
     }
     
@@ -329,6 +339,9 @@ public class GamePanel extends JPanel implements Runnable, KeyListener {
     private void returnToMainMenu() {
         LOGGER.info("Volviendo al menú principal...");
         stopGameLoop();
+        // Detener todos los sonidos antes de volver al menú
+        SoundManager.getInstance().stopAllSounds();
+        SoundManager.getInstance().stopMusic();
         if (mainMenuCallback != null) {
             mainMenuCallback.onReturnToMenu();
         }
@@ -348,6 +361,14 @@ public class GamePanel extends JPanel implements Runnable, KeyListener {
      */
     public interface MainMenuCallback {
         void onReturnToMenu();
+    }
+    
+    /**
+     * Verifica si el juego está pausado.
+     * @return true si está pausado
+     */
+    public boolean isPaused() {
+        return paused || pausedByMenu;
     }
     
     /**
@@ -429,7 +450,7 @@ public class GamePanel extends JPanel implements Runnable, KeyListener {
         enemyManager.update(deltaTime, player.getCenterX(), player.getCenterY());
         
         // Actualizar sistema de armas (disparo automático)
-        weaponManager.update(deltaTime, player.getCenterX(), player.getCenterY(), enemyManager.getEnemies());
+        weaponManager.update(deltaTime, player.getCenterX(), player.getCenterY(), enemyManager.getEnemies(), false);
         
         // Actualizar efectos visuales
         VisualEffectManager.getInstance().update(deltaTime);

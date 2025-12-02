@@ -1,5 +1,7 @@
 package com.atropellalo.game.ui;
 
+import com.atropellalo.game.sound.SoundManager;
+
 import javax.swing.JFrame;
 import javax.swing.JPanel;
 import javax.swing.ImageIcon;
@@ -98,11 +100,27 @@ public class GameWindow extends JFrame {
         
         // Mostrar menú principal
         cardLayout.show(containerPanel, MAIN_MENU);
+        
+        // Iniciar música del menú principal
+        SoundManager.getInstance().playMenuMusic();
     }
     
     private void showMainMenu() {
         cardLayout.show(containerPanel, MAIN_MENU);
         mainMenu.requestFocusInWindow();
+        
+        // Asegurar que solo se reproduzca música del menú
+        // Detener cualquier música de gameplay primero
+        SoundManager soundManager = SoundManager.getInstance();
+        String menuMusicPath = "/music/sombras_del_fin.mp3";
+        
+        // Solo detener si no es la música del menú
+        if (soundManager.getCurrentMusicPath() != null && 
+            !soundManager.getCurrentMusicPath().equals(menuMusicPath)) {
+            soundManager.stopMusic();
+        }
+        
+        soundManager.playMenuMusic();
     }
     
     private void showInstructions() {

@@ -39,6 +39,8 @@ public class OptionsPanel extends JPanel {
     private OptionsCallback callback;
     private boolean draggingWeaponVolume = false;
     private boolean hoveringWeaponHandle = false;
+    private boolean draggingMusicVolume = false;
+    private boolean hoveringMusicHandle = false;
     
     public OptionsPanel(int width, int height) {
         setPreferredSize(new java.awt.Dimension(width, height));
@@ -63,6 +65,7 @@ public class OptionsPanel extends JPanel {
             @Override
             public void mouseReleased(MouseEvent e) {
                 draggingWeaponVolume = false;
+                draggingMusicVolume = false;
             }
         });
         
@@ -81,14 +84,22 @@ public class OptionsPanel extends JPanel {
     
     private void handleMousePress(int mouseX, int mouseY) {
         int centerX = getWidth() / 2;
-        int sliderY = getHeight() / 2 - 20;
+        int weaponSliderY = getHeight() / 2 - 80;
+        int musicSliderY = getHeight() / 2 + 40;
         int sliderX = centerX - SLIDER_WIDTH / 2;
         
         // Verificar si se hizo clic en el slider de volumen de armas
         if (mouseX >= sliderX && mouseX <= sliderX + SLIDER_WIDTH &&
-            mouseY >= sliderY - HANDLE_SIZE / 2 && mouseY <= sliderY + SLIDER_HEIGHT + HANDLE_SIZE / 2) {
+            mouseY >= weaponSliderY - HANDLE_SIZE / 2 && mouseY <= weaponSliderY + SLIDER_HEIGHT + HANDLE_SIZE / 2) {
             draggingWeaponVolume = true;
             updateWeaponVolume(mouseX, sliderX);
+        }
+        
+        // Verificar si se hizo clic en el slider de volumen de música
+        if (mouseX >= sliderX && mouseX <= sliderX + SLIDER_WIDTH &&
+            mouseY >= musicSliderY - HANDLE_SIZE / 2 && mouseY <= musicSliderY + SLIDER_HEIGHT + HANDLE_SIZE / 2) {
+            draggingMusicVolume = true;
+            updateMusicVolume(mouseX, sliderX);
         }
     }
     
@@ -98,19 +109,33 @@ public class OptionsPanel extends JPanel {
             int sliderX = centerX - SLIDER_WIDTH / 2;
             updateWeaponVolume(mouseX, sliderX);
         }
+        
+        if (draggingMusicVolume) {
+            int centerX = getWidth() / 2;
+            int sliderX = centerX - SLIDER_WIDTH / 2;
+            updateMusicVolume(mouseX, sliderX);
+        }
     }
     
     private void handleMouseMove(int mouseX, int mouseY) {
         int centerX = getWidth() / 2;
-        int sliderY = getHeight() / 2 - 20;
+        int weaponSliderY = getHeight() / 2 - 80;
+        int musicSliderY = getHeight() / 2 + 40;
         int sliderX = centerX - SLIDER_WIDTH / 2;
-        int handleX = sliderX + (int)(GameConfig.SOUND_WEAPON_VOLUME * SLIDER_WIDTH) - HANDLE_SIZE / 2;
         
-        boolean wasHovering = hoveringWeaponHandle;
-        hoveringWeaponHandle = mouseX >= handleX && mouseX <= handleX + HANDLE_SIZE &&
-                               mouseY >= sliderY - HANDLE_SIZE / 2 && mouseY <= sliderY + SLIDER_HEIGHT + HANDLE_SIZE / 2;
+        int weaponHandleX = sliderX + (int)(GameConfig.SOUND_WEAPON_VOLUME * SLIDER_WIDTH) - HANDLE_SIZE / 2;
+        int musicHandleX = sliderX + (int)(SoundManager.getInstance().getMusicVolume() * SLIDER_WIDTH) - HANDLE_SIZE / 2;
         
-        if (wasHovering != hoveringWeaponHandle) {
+        boolean wasHoveringWeapon = hoveringWeaponHandle;
+        boolean wasHoveringMusic = hoveringMusicHandle;
+        
+        hoveringWeaponHandle = mouseX >= weaponHandleX && mouseX <= weaponHandleX + HANDLE_SIZE &&
+                               mouseY >= weaponSliderY - HANDLE_SIZE / 2 && mouseY <= weaponSliderY + SLIDER_HEIGHT + HANDLE_SIZE / 2;
+        
+        hoveringMusicHandle = mouseX >= musicHandleX && mouseX <= musicHandleX + HANDLE_SIZE &&
+                              mouseY >= musicSliderY - HANDLE_SIZE / 2 && mouseY <= musicSliderY + SLIDER_HEIGHT + HANDLE_SIZE / 2;
+        
+        if (wasHoveringWeapon != hoveringWeaponHandle || wasHoveringMusic != hoveringMusicHandle) {
             repaint();
         }
     }
@@ -119,6 +144,12 @@ public class OptionsPanel extends JPanel {
         float newVolume = Math.max(0, Math.min(1, (float)(mouseX - sliderX) / SLIDER_WIDTH));
         GameConfig.SOUND_WEAPON_VOLUME = newVolume;
         SoundManager.getInstance().setWeaponVolume(newVolume);
+        repaint();
+    }
+    
+    private void updateMusicVolume(int mouseX, int sliderX) {
+        float newVolume = Math.max(0, Math.min(1, (float)(mouseX - sliderX) / SLIDER_WIDTH));
+        SoundManager.getInstance().setMusicVolume(newVolume);
         repaint();
     }
     
@@ -160,16 +191,27 @@ public class OptionsPanel extends JPanel {
         int centerX = getWidth() / 2;
         int centerY = getHeight() / 2;
         
+        // Dibujar slider de volumen de armas
+        drawSlider(g2d, centerX, centerY - 80, "Volumen de Armas", 
+                   GameConfig.SOUND_WEAPON_VOLUME, 
+                   hoveringWeaponHandle, draggingWeaponVolume);
+        
+        // Dibujar slider de volumen de música
+        drawSlider(g2d, centerX, centerY + 40, "Volumen de Música", 
+                   SoundManager.getInstance().getMusicVolume(), 
+                   hoveringMusicHandle, draggingMusicVolume);
+    }
+    
+    private void drawSlider(Graphics2D g2d, int centerX, int sliderY, String label, 
+                           float volume, boolean hovering, boolean dragging) {
         // Etiqueta
         g2d.setColor(TEXT_COLOR);
         g2d.setFont(new Font("Arial", Font.BOLD, 24));
-        String label = "Volumen de Armas";
         int labelWidth = g2d.getFontMetrics().stringWidth(label);
-        g2d.drawString(label, centerX - labelWidth / 2, centerY - 60);
+        g2d.drawString(label, centerX - labelWidth / 2, sliderY - 20);
         
         // Slider
         int sliderX = centerX - SLIDER_WIDTH / 2;
-        int sliderY = centerY - 20;
         
         // Sombra del slider
         g2d.setColor(new Color(10, 5, 10, 150));
@@ -185,7 +227,7 @@ public class OptionsPanel extends JPanel {
         g2d.drawRoundRect(sliderX, sliderY, SLIDER_WIDTH, SLIDER_HEIGHT, 10, 10);
         
         // Relleno del slider según el volumen
-        int fillWidth = (int)(GameConfig.SOUND_WEAPON_VOLUME * SLIDER_WIDTH);
+        int fillWidth = (int)(volume * SLIDER_WIDTH);
         if (fillWidth > 0) {
             g2d.setColor(SLIDER_FILL_COLOR);
             g2d.fillRoundRect(sliderX, sliderY, fillWidth, SLIDER_HEIGHT, 10, 10);
@@ -200,7 +242,7 @@ public class OptionsPanel extends JPanel {
         g2d.fillOval(handleX + 3, handleY + 3, HANDLE_SIZE, HANDLE_SIZE);
         
         // Handle
-        g2d.setColor(hoveringWeaponHandle || draggingWeaponVolume ? 
+        g2d.setColor(hovering || dragging ? 
                      SLIDER_HANDLE_HOVER_COLOR : SLIDER_HANDLE_COLOR);
         g2d.fillOval(handleX, handleY, HANDLE_SIZE, HANDLE_SIZE);
         
@@ -211,10 +253,10 @@ public class OptionsPanel extends JPanel {
         
         // Valor del volumen
         g2d.setColor(SUBTITLE_COLOR);
-        g2d.setFont(new Font("Arial", Font.BOLD, 20));
-        String value = "%d%%".formatted((int)(GameConfig.SOUND_WEAPON_VOLUME * 100));
+        g2d.setFont(new Font("Arial", Font.BOLD, 18));
+        String value = "%d%%".formatted((int)(volume * 100));
         int valueWidth = g2d.getFontMetrics().stringWidth(value);
-        g2d.drawString(value, centerX - valueWidth / 2, centerY + 40);
+        g2d.drawString(value, centerX - valueWidth / 2, sliderY + SLIDER_HEIGHT + 30);
         
         g2d.setStroke(new BasicStroke(1));
     }

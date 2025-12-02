@@ -103,6 +103,9 @@ public class PauseMenu implements MouseWheelListener, MouseListener, MouseMotion
         visible = true;
         selectedButton = 0;
         scrollOffset = 0;
+        
+        // Atenuar música durante la pausa
+        com.atropellalo.game.sound.SoundManager.getInstance().dimMusic();
     }
     
     /**
@@ -111,6 +114,9 @@ public class PauseMenu implements MouseWheelListener, MouseListener, MouseMotion
     public void hide() {
         visible = false;
         scrollOffset = 0;
+        
+        // Restaurar volumen de música
+        com.atropellalo.game.sound.SoundManager.getInstance().undimMusic();
     }
     
     /**

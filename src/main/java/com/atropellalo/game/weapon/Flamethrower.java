@@ -74,10 +74,19 @@ public class Flamethrower extends Weapon {
         
         if (target == null) {
             active = false;
+            // Detener sonido inmediatamente cuando no hay enemigos
+            if (GameConfig.SOUND_WEAPON_LOOP_ENABLED && SoundManager.getInstance().isLooping(weaponType)) {
+                SoundManager.getInstance().stopWeaponLoop(weaponType);
+            }
             return;
         }
         
         active = true;
+        
+        // Iniciar sonido inmediatamente cuando comienza a disparar
+        if (GameConfig.SOUND_WEAPON_LOOP_ENABLED && !SoundManager.getInstance().isLooping(weaponType)) {
+            SoundManager.getInstance().startWeaponLoop(weaponType);
+        }
         
         // Calcular ángulo hacia el objetivo
         float dx = target.getCenterX() - playerX;
@@ -118,15 +127,6 @@ public class Flamethrower extends Weapon {
                     float finalDamage = damage * damageMultiplier;
                     enemy.takeDamage(finalDamage);
                 }
-            }
-        }
-        
-        // Gestionar sonido en loop (después de actualizar estado de active)
-        if (GameConfig.SOUND_WEAPON_LOOP_ENABLED) {
-            if (active && !previousActive) {
-                SoundManager.getInstance().startWeaponLoop(weaponType);
-            } else if (!active && previousActive) {
-                SoundManager.getInstance().stopWeaponLoop(weaponType);
             }
         }
     }

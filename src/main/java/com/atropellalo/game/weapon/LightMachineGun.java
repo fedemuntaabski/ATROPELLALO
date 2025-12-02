@@ -2,6 +2,7 @@ package com.atropellalo.game.weapon;
 
 import com.atropellalo.game.config.GameConfig;
 import com.atropellalo.game.enemy.Enemy;
+import com.atropellalo.game.sound.SoundManager;
 
 import java.awt.Color;
 import java.util.ArrayList;
@@ -15,6 +16,7 @@ import java.util.List;
 public class LightMachineGun extends Weapon {
     
     private static final Color PROJECTILE_COLOR = new Color(255, 200, 100);
+    private boolean wasFiring = false;
     
     /**
      * Crea una nueva ametralladora ligera con valores de configuración.
@@ -28,6 +30,25 @@ public class LightMachineGun extends Weapon {
             GameConfig.LMG_IMPACT_AREA,
             WeaponType.LIGHT_MACHINE_GUN
         );
+    }
+    
+    @Override
+    public void processContinuousDamage(float deltaTime, float playerX, float playerY, List<Enemy> enemies) {
+        // Determinar si hay enemigos en rango y puede disparar
+        List<Enemy> targets = findClosestEnemies(playerX, playerY, enemies, targetCount);
+        boolean shouldBeFiring = !targets.isEmpty();
+        
+        // Gestionar sonido en loop
+        if (GameConfig.SOUND_WEAPON_LOOP_ENABLED) {
+            boolean isLooping = SoundManager.getInstance().isLooping(weaponType);
+            if (shouldBeFiring && !isLooping) {
+                SoundManager.getInstance().startWeaponLoop(weaponType);
+                wasFiring = true;
+            } else if (!shouldBeFiring && isLooping) {
+                SoundManager.getInstance().stopWeaponLoop(weaponType);
+                wasFiring = false;
+            }
+        }
     }
     
     @Override
@@ -60,9 +81,6 @@ public class LightMachineGun extends Weapon {
             );
             projectiles.add(projectile);
         }
-        
-        // Reproducir sonido de disparo
-        playFireSound();
         
         resetCooldown();
         return projectiles;

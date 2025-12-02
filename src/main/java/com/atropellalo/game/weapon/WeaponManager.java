@@ -41,25 +41,31 @@ public class WeaponManager {
      * @param playerX Centro X del jugador
      * @param playerY Centro Y del jugador
      * @param enemies Lista de enemigos
+     * @param isPaused Si el juego está pausado
      */
-    public void update(float deltaTime, float playerX, float playerY, List<Enemy> enemies) {
+    public void update(float deltaTime, float playerX, float playerY, List<Enemy> enemies, boolean isPaused) {
         // Actualizar todas las armas y sus efectos
         for (Weapon weapon : weapons) {
             weapon.update(deltaTime);
             
-            // Procesar daño continuo (para púas y lanzallamas)
-            weapon.processContinuousDamage(deltaTime, playerX, playerY, enemies);
-            
-            // Intentar disparar automáticamente
-            List<Projectile> newProjectiles = weapon.tryFire(playerX, playerY, enemies);
-            if (!newProjectiles.isEmpty()) {
-                projectiles.addAll(newProjectiles);
-                shotsFired += newProjectiles.size();
+            // Solo procesar lógica de armas si no está pausado
+            if (!isPaused) {
+                // Procesar daño continuo (para púas y lanzallamas)
+                weapon.processContinuousDamage(deltaTime, playerX, playerY, enemies);
+                
+                // Intentar disparar automáticamente
+                List<Projectile> newProjectiles = weapon.tryFire(playerX, playerY, enemies);
+                if (!newProjectiles.isEmpty()) {
+                    projectiles.addAll(newProjectiles);
+                    shotsFired += newProjectiles.size();
+                }
             }
         }
         
-        // Actualizar proyectiles existentes
-        updateProjectiles(deltaTime, enemies);
+        // Actualizar proyectiles existentes solo si no está pausado
+        if (!isPaused) {
+            updateProjectiles(deltaTime, enemies);
+        }
     }
     
     /**
