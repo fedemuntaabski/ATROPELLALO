@@ -39,6 +39,9 @@ public class EnemyManager implements ExplosiveZombie.ExplosionCallback,
     private boolean bossSpawnedThisWave;
     private Enemy currentBoss;
     
+    // Control de spawn para debug
+    private boolean spawnEnabled;
+    
     // Referencia al jugador para daño por explosión
     private Player player;
     
@@ -62,6 +65,7 @@ public class EnemyManager implements ExplosiveZombie.ExplosionCallback,
         this.totalKills = 0;
         this.bossSpawnedThisWave = false;
         this.currentBoss = null;
+        this.spawnEnabled = true;
     }
     
     /**
@@ -115,6 +119,11 @@ public class EnemyManager implements ExplosiveZombie.ExplosionCallback,
      * Las oleadas se inician inmediatamente sin tiempo de espera.
      */
     private void updateWaveSystem(float deltaTime, float playerX, float playerY) {
+        // Si spawn está desactivado, no procesar oleadas
+        if (!spawnEnabled) {
+            return;
+        }
+        
         if (waveInProgress) {
             // Spawn de enemigos de la oleada actual
             if (enemiesRemainingInWave > 0) {
@@ -661,5 +670,34 @@ public class EnemyManager implements ExplosiveZombie.ExplosionCallback,
      */
     public void addKill() {
         totalKills++;
+    }
+    
+    /**
+     * Limpia todos los enemigos del juego.
+     * Útil para debugging.
+     */
+    public void clearAllEnemies() {
+        enemies.clear();
+        currentBoss = null;
+        bossSpawnedThisWave = false;
+        enemiesRemainingInWave = 0;
+        LOGGER.info("Todos los enemigos eliminados (debug command)");
+    }
+    
+    /**
+     * Activa o desactiva el spawn de enemigos.
+     * @param enabled true para activar spawn, false para desactivar
+     */
+    public void setSpawnEnabled(boolean enabled) {
+        this.spawnEnabled = enabled;
+        LOGGER.info("Enemy spawn " + (enabled ? "enabled" : "disabled"));
+    }
+    
+    /**
+     * Verifica si el spawn de enemigos está activo.
+     * @return true si está activo
+     */
+    public boolean isSpawnEnabled() {
+        return spawnEnabled;
     }
 }

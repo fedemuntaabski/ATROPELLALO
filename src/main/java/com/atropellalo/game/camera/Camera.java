@@ -58,4 +58,20 @@ public class Camera {
     public float getY() {
         return y;
     }
+    
+    /**
+     * Obtiene el ancho del viewport de la cámara.
+     * @return Ancho del viewport en píxeles
+     */
+    public int getViewportWidth() {
+        return viewportWidth;
+    }
+    
+    /**
+     * Obtiene el alto del viewport de la cámara.
+     * @return Alto del viewport en píxeles
+     */
+    public int getViewportHeight() {
+        return viewportHeight;
+    }
 }

@@ -471,6 +471,15 @@ public class Player {
     }
     
     /**
+     * Obtiene la cantidad de XP necesaria para el siguiente nivel.
+     * Alias para compatibilidad con el sistema de debug.
+     * @return XP necesaria para el siguiente nivel
+     */
+    public int getXPForNextLevel() {
+        return xpToNextLevel;
+    }
+    
+    /**
      * Obtiene el porcentaje de progreso hacia el siguiente nivel.
      * @return Valor entre 0.0 y 1.0
      */
