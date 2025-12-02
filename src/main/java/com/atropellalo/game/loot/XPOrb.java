@@ -6,6 +6,7 @@ import java.awt.Color;
 import java.awt.Graphics2D;
 import java.awt.RadialGradientPaint;
 import java.awt.geom.Point2D;
+import java.util.concurrent.ThreadLocalRandom;
 
 /**
  * Orbe de experiencia que aparece al matar enemigos.
@@ -33,7 +34,7 @@ public class XPOrb extends Loot {
         this.magnetDistance = GameConfig.XP_ORB_MAGNET_DISTANCE;
         this.magnetSpeed = GameConfig.XP_ORB_MAGNET_SPEED;
         this.beingAttracted = false;
-        this.glowPhase = (float) (Math.random() * Math.PI * 2);
+        this.glowPhase = (float) (ThreadLocalRandom.current().nextDouble() * Math.PI * 2);
     }
     
     /**

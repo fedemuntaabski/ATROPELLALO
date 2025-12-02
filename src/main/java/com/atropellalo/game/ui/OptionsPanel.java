@@ -212,7 +212,7 @@ public class OptionsPanel extends JPanel {
         // Valor del volumen
         g2d.setColor(SUBTITLE_COLOR);
         g2d.setFont(new Font("Arial", Font.BOLD, 20));
-        String value = String.format("%d%%", (int)(GameConfig.SOUND_WEAPON_VOLUME * 100));
+        String value = "%d%%".formatted((int)(GameConfig.SOUND_WEAPON_VOLUME * 100));
         int valueWidth = g2d.getFontMetrics().stringWidth(value);
         g2d.drawString(value, centerX - valueWidth / 2, centerY + 40);
         

@@ -52,6 +52,9 @@ public class Player {
     private AnimationState currentAnimState;
     private float rotation; // Rotación en radianes
     
+    // Hitbox rectangular rotable
+    private float[] hitboxCorners; // 8 valores: x1,y1, x2,y2, x3,y3, x4,y4
+    
     // Callback para notificar subida de nivel
     private LevelUpCallback levelUpCallback;
     
@@ -118,6 +121,8 @@ public class Player {
         initializeAnimations();
         this.currentAnimState = AnimationState.IDLE;
         this.rotation = 0; // Mirando hacia arriba por defecto
+        this.hitboxCorners = new float[8];
+        updateHitbox();
     }
     
     /**
@@ -206,16 +211,16 @@ public class Player {
             float newX = x + velocityX * deltaTime;
             float newY = y + velocityY * deltaTime;
             
-            // Limitar al mundo
-            newX = Math.max(0, Math.min(newX, GameConfig.WORLD_WIDTH - GameConfig.PLAYER_SIZE));
-            newY = Math.max(0, Math.min(newY, GameConfig.WORLD_HEIGHT - GameConfig.PLAYER_SIZE));
+            // Limitar al mundo (usando las dimensiones rectangulares)
+            newX = Math.max(0, Math.min(newX, GameConfig.WORLD_WIDTH - GameConfig.PLAYER_WIDTH));
+            newY = Math.max(0, Math.min(newY, GameConfig.WORLD_HEIGHT - GameConfig.PLAYER_HEIGHT));
             
             // Verificar colisiones si hay callback configurado
             if (collisionCallback != null) {
-                if (collisionCallback.checkCollision(newX, newY, GameConfig.PLAYER_SIZE, GameConfig.PLAYER_SIZE)) {
+                if (collisionCallback.checkCollision(newX, newY, GameConfig.PLAYER_WIDTH, GameConfig.PLAYER_HEIGHT)) {
                     // Resolver colisión
                     float[] resolved = collisionCallback.resolveCollision(
-                        x, y, newX, newY, GameConfig.PLAYER_SIZE, GameConfig.PLAYER_SIZE
+                        x, y, newX, newY, GameConfig.PLAYER_WIDTH, GameConfig.PLAYER_HEIGHT
                     );
                     newX = resolved[0];
                     newY = resolved[1];
@@ -230,6 +235,9 @@ public class Player {
             // Aplicar nueva posición
             x = newX;
             y = newY;
+            
+            // Actualizar hitbox
+            updateHitbox();
         }
         
         // Verificar si el jugador muere
@@ -248,10 +256,10 @@ public class Player {
             // Calcular escala del sprite
             float scale = calculateScale();
             
-            // Renderizar sprite con rotación (el sprite mantiene rotación)
+            // Renderizar sprite con rotación (centrado en el mismo punto que la hitbox)
             currentAnim.renderScaled(g2d, 
-                                     x + GameConfig.PLAYER_SIZE / 2f, 
-                                     y + GameConfig.PLAYER_SIZE / 2f, 
+                                     getHitboxCenterX(), 
+                                     getHitboxCenterY(), 
                                      rotation, 
                                      scale);
         } else {
@@ -423,6 +431,281 @@ public class Player {
     }
     
     /**
+     * Obtiene el ancho del jugador.
+     */
+    public int getWidth() {
+        return GameConfig.PLAYER_WIDTH;
+    }
+    
+    /**
+     * Obtiene el alto del jugador.
+     */
+    public int getHeight() {
+        return GameConfig.PLAYER_HEIGHT;
+    }
+    
+    /**
+     * Obtiene la rotación actual del jugador en radianes.
+     */
+    public float getRotation() {
+        return rotation;
+    }
+    
+    /**
+     * Actualiza las esquinas de la hitbox rectangular rotada.
+     * La hitbox rota alrededor del centro del sprite visual.
+     */
+    private void updateHitbox() {
+        // Centro basado en el sprite visual (32x32)
+        float centerX = getHitboxCenterX();
+        float centerY = getHitboxCenterY();
+        
+        // Dimensiones de la hitbox (70x145)
+        float halfWidth = GameConfig.PLAYER_WIDTH / 2f;
+        float halfHeight = GameConfig.PLAYER_HEIGHT / 2f;
+        
+        float cos = (float) Math.cos(rotation);
+        float sin = (float) Math.sin(rotation);
+        
+        // Esquina superior izquierda (en orientación sin rotar)
+        float localX = -halfWidth;
+        float localY = -halfHeight;
+        hitboxCorners[0] = centerX + (localX * cos - localY * sin);
+        hitboxCorners[1] = centerY + (localX * sin + localY * cos);
+        
+        // Esquina superior derecha
+        localX = halfWidth;
+        localY = -halfHeight;
+        hitboxCorners[2] = centerX + (localX * cos - localY * sin);
+        hitboxCorners[3] = centerY + (localX * sin + localY * cos);
+        
+        // Esquina inferior derecha
+        localX = halfWidth;
+        localY = halfHeight;
+        hitboxCorners[4] = centerX + (localX * cos - localY * sin);
+        hitboxCorners[5] = centerY + (localX * sin + localY * cos);
+        
+        // Esquina inferior izquierda
+        localX = -halfWidth;
+        localY = halfHeight;
+        hitboxCorners[6] = centerX + (localX * cos - localY * sin);
+        hitboxCorners[7] = centerY + (localX * sin + localY * cos);
+    }
+    
+    /**
+     * Obtiene las esquinas de la hitbox rotada.
+     * @return Array de 8 floats: [x1,y1, x2,y2, x3,y3, x4,y4]
+     */
+    public float[] getHitboxCorners() {
+        return hitboxCorners;
+    }
+    
+    /**
+     * Verifica si un punto está dentro de la hitbox del jugador.
+     * Usa el algoritmo de ray casting para detección de punto en polígono.
+     * @param px Coordenada X del punto
+     * @param py Coordenada Y del punto
+     * @return true si el punto está dentro de la hitbox
+     */
+    public boolean containsPoint(float px, float py) {
+        int intersections = 0;
+        
+        // Ray casting algorithm - cuenta cuántas veces un rayo horizontal cruza los bordes
+        for (int i = 0; i < 4; i++) {
+            int j = (i + 1) % 4;
+            
+            float x1 = hitboxCorners[i * 2];
+            float y1 = hitboxCorners[i * 2 + 1];
+            float x2 = hitboxCorners[j * 2];
+            float y2 = hitboxCorners[j * 2 + 1];
+            
+            // Verifica si el rayo horizontal desde el punto cruza este borde
+            if (((y1 > py) != (y2 > py)) &&
+                (px < (x2 - x1) * (py - y1) / (y2 - y1) + x1)) {
+                intersections++;
+            }
+        }
+        
+        // Si el número de intersecciones es impar, el punto está dentro
+        return (intersections % 2) == 1;
+    }
+    
+    /**
+     * Verifica si un círculo colisiona con la hitbox del jugador.
+     * @param cx Centro X del círculo
+     * @param cy Centro Y del círculo
+     * @param radius Radio del círculo
+     * @return true si hay colisión
+     */
+    public boolean collidesWithCircle(float cx, float cy, float radius) {
+        // Primero verifica si el centro está dentro
+        if (containsPoint(cx, cy)) {
+            return true;
+        }
+        
+        // Verifica si el círculo intersecta con algún borde del rectángulo
+        for (int i = 0; i < 4; i++) {
+            int j = (i + 1) % 4;
+            
+            float x1 = hitboxCorners[i * 2];
+            float y1 = hitboxCorners[i * 2 + 1];
+            float x2 = hitboxCorners[j * 2];
+            float y2 = hitboxCorners[j * 2 + 1];
+            
+            // Distancia del centro del círculo al segmento de línea
+            float dist = distanceToSegment(cx, cy, x1, y1, x2, y2);
+            if (dist <= radius) {
+                return true;
+            }
+        }
+        
+        return false;
+    }
+    
+    /**
+     * Calcula la distancia mínima de un punto a un segmento de línea.
+     */
+    private float distanceToSegment(float px, float py, float x1, float y1, float x2, float y2) {
+        float dx = x2 - x1;
+        float dy = y2 - y1;
+        float lengthSquared = dx * dx + dy * dy;
+        
+        if (lengthSquared == 0) {
+            // El segmento es un punto
+            return (float) Math.sqrt((px - x1) * (px - x1) + (py - y1) * (py - y1));
+        }
+        
+        // Proyección del punto en la línea
+        float t = Math.max(0, Math.min(1, ((px - x1) * dx + (py - y1) * dy) / lengthSquared));
+        
+        float projX = x1 + t * dx;
+        float projY = y1 + t * dy;
+        
+        float distX = px - projX;
+        float distY = py - projY;
+        
+        return (float) Math.sqrt(distX * distX + distY * distY);
+    }
+    
+    /**
+     * Obtiene la distancia mínima de un punto a la hitbox.
+     * @param px Coordenada X del punto
+     * @param py Coordenada Y del punto
+     * @return Distancia mínima a la hitbox
+     */
+    public float distanceToHitbox(float px, float py) {
+        // Si el punto está dentro, la distancia es 0
+        if (containsPoint(px, py)) {
+            return 0;
+        }
+        
+        // Buscar la distancia mínima a todos los bordes
+        float minDistance = Float.MAX_VALUE;
+        
+        for (int i = 0; i < 4; i++) {
+            int j = (i + 1) % 4;
+            
+            float x1 = hitboxCorners[i * 2];
+            float y1 = hitboxCorners[i * 2 + 1];
+            float x2 = hitboxCorners[j * 2];
+            float y2 = hitboxCorners[j * 2 + 1];
+            
+            float dist = distanceToSegment(px, py, x1, y1, x2, y2);
+            minDistance = Math.min(minDistance, dist);
+        }
+        
+        return minDistance;
+    }
+    
+    /**
+     * Calcula el vector de empuje para separar un círculo que colisiona con la hitbox.
+     * @param cx Centro X del círculo
+     * @param cy Centro Y del círculo
+     * @param radius Radio del círculo
+     * @return Array [dx, dy] con el vector de empuje para alejar el círculo
+     */
+    public float[] getPushVector(float cx, float cy, float radius) {
+        float[] result = new float[2];
+        
+        // Encontrar el punto más cercano en la hitbox al centro del círculo
+        float minDist = Float.MAX_VALUE;
+        float closestX = 0, closestY = 0;
+        
+        for (int i = 0; i < 4; i++) {
+            int j = (i + 1) % 4;
+            
+            float x1 = hitboxCorners[i * 2];
+            float y1 = hitboxCorners[i * 2 + 1];
+            float x2 = hitboxCorners[j * 2];
+            float y2 = hitboxCorners[j * 2 + 1];
+            
+            // Encontrar punto más cercano en el segmento
+            float dx = x2 - x1;
+            float dy = y2 - y1;
+            float lengthSquared = dx * dx + dy * dy;
+            
+            if (lengthSquared == 0) {
+                // El segmento es un punto
+                float dist = (float) Math.sqrt((cx - x1) * (cx - x1) + (cy - y1) * (cy - y1));
+                if (dist < minDist) {
+                    minDist = dist;
+                    closestX = x1;
+                    closestY = y1;
+                }
+                continue;
+            }
+            
+            float t = Math.max(0, Math.min(1, ((cx - x1) * dx + (cy - y1) * dy) / lengthSquared));
+            
+            float projX = x1 + t * dx;
+            float projY = y1 + t * dy;
+            
+            float distX = cx - projX;
+            float distY = cy - projY;
+            float dist = (float) Math.sqrt(distX * distX + distY * distY);
+            
+            if (dist < minDist) {
+                minDist = dist;
+                closestX = projX;
+                closestY = projY;
+            }
+        }
+        
+        // Vector desde el punto más cercano hacia el centro del círculo
+        float dx = cx - closestX;
+        float dy = cy - closestY;
+        float dist = (float) Math.sqrt(dx * dx + dy * dy);
+        
+        // Calcular cuánto debe moverse el círculo para no colisionar
+        float overlap = radius - dist;
+        
+        if (overlap > 0 && dist > 0.001f) {
+            // Normalizar el vector y multiplicar por la distancia de penetración + margen
+            float pushAmount = overlap + 2; // +2 pixeles de margen
+            result[0] = (dx / dist) * pushAmount;
+            result[1] = (dy / dist) * pushAmount;
+        } else if (containsPoint(cx, cy)) {
+            // El centro está dentro de la hitbox, empujar hacia afuera con más fuerza
+            if (dist > 0.001f) {
+                float pushAmount = radius + 5; // Empujar completamente afuera
+                result[0] = (dx / dist) * pushAmount;
+                result[1] = (dy / dist) * pushAmount;
+            } else {
+                // Caso extremo: centro exactamente en el borde, empujar hacia afuera del player
+                float toCenterX = cx - (x + GameConfig.PLAYER_SIZE / 2f);
+                float toCenterY = cy - (y + GameConfig.PLAYER_SIZE / 2f);
+                float toCenterDist = (float) Math.sqrt(toCenterX * toCenterX + toCenterY * toCenterY);
+                if (toCenterDist > 0.001f) {
+                    result[0] = (toCenterX / toCenterDist) * (radius + 5);
+                    result[1] = (toCenterY / toCenterDist) * (radius + 5);
+                }
+            }
+        }
+        
+        return result;
+    }
+    
+    /**
      * Obtiene el centro X del jugador (para la cámara).
      */
     public float getCenterX() {
@@ -433,6 +716,20 @@ public class Player {
      * Obtiene el centro Y del jugador (para la cámara).
      */
     public float getCenterY() {
+        return y + GameConfig.PLAYER_SIZE / 2f;
+    }
+    
+    /**
+     * Obtiene el centro X de la hitbox.
+     */
+    private float getHitboxCenterX() {
+        return x + GameConfig.PLAYER_SIZE / 2f;
+    }
+    
+    /**
+     * Obtiene el centro Y de la hitbox.
+     */
+    private float getHitboxCenterY() {
         return y + GameConfig.PLAYER_SIZE / 2f;
     }
     

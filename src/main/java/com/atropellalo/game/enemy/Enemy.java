@@ -347,6 +347,16 @@ public abstract class Enemy {
         return y;
     }
     
+    /**
+     * Establece la posición del enemigo.
+     * @param newX Nueva coordenada X
+     * @param newY Nueva coordenada Y
+     */
+    public void setPosition(float newX, float newY) {
+        this.x = newX;
+        this.y = newY;
+    }
+    
     public float getCenterX() {
         return x + size / 2f;
     }

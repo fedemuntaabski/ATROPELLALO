@@ -2,7 +2,11 @@ package com.atropellalo.game.ui;
 
 import javax.swing.JFrame;
 import javax.swing.JPanel;
+import javax.swing.ImageIcon;
 import java.awt.CardLayout;
+import java.awt.Image;
+import java.io.IOException;
+import javax.imageio.ImageIO;
 
 /**
  * Ventana principal del juego.
@@ -12,7 +16,7 @@ public class GameWindow extends JFrame {
     
     private static final int WINDOW_WIDTH = 1280;
     private static final int WINDOW_HEIGHT = 720;
-    private static final String GAME_TITLE = "Atropellalo - Survivor Game";
+    private static final String GAME_TITLE = "Atropellalo - Survivor Game v1.0.0";
     
     private static final String MAIN_MENU = "MAIN_MENU";
     private static final String INSTRUCTIONS = "INSTRUCTIONS";
@@ -40,6 +44,16 @@ public class GameWindow extends JFrame {
         setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
         setResizable(false);
         setLocationRelativeTo(null);
+        
+        // Cargar y establecer el ícono de la ventana
+        try {
+            Image icon = ImageIO.read(getClass().getResourceAsStream("/images/icono.png"));
+            if (icon != null) {
+                setIconImage(icon);
+            }
+        } catch (IOException e) {
+            System.err.println("No se pudo cargar el ícono de la aplicación: " + e.getMessage());
+        }
         
         add(containerPanel);
     }

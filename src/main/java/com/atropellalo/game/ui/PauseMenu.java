@@ -242,16 +242,16 @@ public class PauseMenu implements MouseWheelListener, MouseListener, MouseMotion
                       player.getCurrentXP() + " / " + player.getXpToNextLevel());
         
         // Salud
-        y = renderStat(g2d, x, y, "Salud:", 
-                      String.format("%.0f / %.0f", player.getHealth(), player.getMaxHealth()));
+        y = renderStat(g2d, x, y, "Salud:",
+            "%.0f / %.0f".formatted(player.getHealth(), player.getMaxHealth()));
         
         // Combustible
-        y = renderStat(g2d, x, y, "Combustible:", 
-                      String.format("%.0f / %.0f", player.getFuel(), player.getMaxFuel()));
+        y = renderStat(g2d, x, y, "Combustible:",
+            "%.0f / %.0f".formatted(player.getFuel(), player.getMaxFuel()));
         
         // Velocidad
-        y = renderStat(g2d, x, y, "Velocidad:", 
-                      String.format("%.0f", player.getSpeed()));
+        y = renderStat(g2d, x, y, "Velocidad:",
+            "%.0f".formatted(player.getSpeed()));
         
         return y;
     }
@@ -293,8 +293,8 @@ public class PauseMenu implements MouseWheelListener, MouseListener, MouseMotion
                       String.valueOf(weaponManager.getShotsFired()));
         y = renderStat(g2d, x, y, "Disparos acertados:", 
                       String.valueOf(weaponManager.getShotsHit()));
-        y = renderStat(g2d, x, y, "Precisión:", 
-                      String.format("%.1f%%", weaponManager.getAccuracy()));
+        y = renderStat(g2d, x, y, "Precisión:",
+            "%.1f%%".formatted(weaponManager.getAccuracy()));
         y = renderStat(g2d, x, y, "Proyectiles activos:", 
                       String.valueOf(weaponManager.getActiveProjectiles()));
         
@@ -314,20 +314,20 @@ public class PauseMenu implements MouseWheelListener, MouseListener, MouseMotion
         g2d.setFont(new Font("Arial", Font.PLAIN, 14));
         
         // Daño
-        y = renderStat(g2d, x + 10, y, "Daño:", String.format("%.1f", weapon.getDamage()));
+        y = renderStat(g2d, x + 10, y, "Daño:", "%.1f".formatted(weapon.getDamage()));
         
         // Cadencia de fuego
-        y = renderStat(g2d, x + 10, y, "Cadencia:", 
-                      String.format("%.2f/s", 1.0f / weapon.getFireRate()));
+        y = renderStat(g2d, x + 10, y, "Cadencia:",
+            "%.2f/s".formatted(1.0f / weapon.getFireRate()));
         
         // Velocidad de proyectil (si aplica)
         if (weapon.getProjectileSpeed() > 0) {
-            y = renderStat(g2d, x + 10, y, "Vel. Proyectil:", 
-                          String.format("%.0f", weapon.getProjectileSpeed()));
+            y = renderStat(g2d, x + 10, y, "Vel. Proyectil:",
+                "%.0f".formatted(weapon.getProjectileSpeed()));
         }
         
         // Rango
-        y = renderStat(g2d, x + 10, y, "Rango:", String.format("%.0f", weapon.getRange()));
+        y = renderStat(g2d, x + 10, y, "Rango:", "%.0f".formatted(weapon.getRange()));
         
         // Nivel
         y = renderStat(g2d, x + 10, y, "Nivel:", String.valueOf(weapon.getLevel()));

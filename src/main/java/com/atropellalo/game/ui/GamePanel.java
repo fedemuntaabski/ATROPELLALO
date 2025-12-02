@@ -419,8 +419,8 @@ public class GamePanel extends JPanel implements Runnable, KeyListener {
         // Actualizar sistema de loot (con posición del jugador para atracción de orbes)
         lootManager.update(deltaTime, player.getCenterX(), player.getCenterY());
         
-        // Verificar colisiones con loot
-        List<Loot> collected = lootManager.checkCollisions(player.getCenterX(), player.getCenterY());
+        // Verificar colisiones con loot usando la hitbox completa del jugador
+        List<Loot> collected = lootManager.checkCollisionsWithHitbox(player);
         for (Loot loot : collected) {
             applyLootEffect(loot);
         }

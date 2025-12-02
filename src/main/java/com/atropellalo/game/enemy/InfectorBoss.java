@@ -8,6 +8,7 @@ import java.awt.*;
 import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
+import java.util.concurrent.ThreadLocalRandom;
 
 /**
  * El Infectador (Infector Boss) - Jefe de la oleada 20.
@@ -414,9 +415,9 @@ public class InfectorBoss extends Enemy {
             // Burbujas dentro de la poza
             g2d.setColor(new Color(120, 220, 60, alpha / 2));
             for (int i = 0; i < 3; i++) {
-                int bubbleX = (int) (pool.x - pool.radius / 2 + Math.random() * pool.radius);
-                int bubbleY = (int) (pool.y - pool.radius / 2 + Math.random() * pool.radius);
-                int bubbleSize = (int) (5 + Math.random() * 10);
+                int bubbleX = (int) (pool.x - pool.radius / 2 + ThreadLocalRandom.current().nextDouble() * pool.radius);
+                int bubbleY = (int) (pool.y - pool.radius / 2 + ThreadLocalRandom.current().nextDouble() * pool.radius);
+                int bubbleSize = (int) (5 + ThreadLocalRandom.current().nextDouble() * 10);
                 g2d.fillOval(bubbleX, bubbleY, bubbleSize, bubbleSize);
             }
         }

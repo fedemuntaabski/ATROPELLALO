@@ -41,6 +41,11 @@ public class DebugOverlay {
         Composite originalComposite = g2d.getComposite();
         Font originalFont = g2d.getFont();
         
+        // Dibujar hitbox del jugador si está activado
+        if (DebugConfig.isShowCollisionBoxes() && player != null) {
+            renderPlayerHitbox(g2d, player, camera);
+        }
+        
         // Recopilar líneas de información
         List<String> lines = collectDebugInfo(player, camera);
         
@@ -98,7 +103,7 @@ public class DebugOverlay {
             
             if (DebugConfig.isShowFPS()) {
                 int fps = performanceMonitor.getCurrentFPS();
-                String fpsLine = String.format("FPS: %d", fps);
+                String fpsLine = "FPS: %d".formatted(fps);
                 if (fps < 30) {
                     fpsLine += " [!]";
                 }
@@ -108,8 +113,8 @@ public class DebugOverlay {
                 float minFrameTime = PerformanceMonitor.nanosToMillis(performanceMonitor.getMinFrameTime());
                 float maxFrameTime = PerformanceMonitor.nanosToMillis(performanceMonitor.getMaxFrameTime());
                 
-                lines.add(String.format("Frame Time: %.2fms (avg)", avgFrameTime));
-                lines.add(String.format("  Min: %.2fms | Max: %.2fms", minFrameTime, maxFrameTime));
+                lines.add("Frame Time: %.2fms (avg)".formatted(avgFrameTime));
+                lines.add("  Min: %.2fms | Max: %.2fms".formatted(minFrameTime, maxFrameTime));
             }
             
             if (DebugConfig.isShowMemoryUsage()) {
@@ -118,12 +123,12 @@ public class DebugOverlay {
                 long maxMB = performanceMonitor.getMaxMemoryMB();
                 float usagePercent = performanceMonitor.getMemoryUsagePercent();
                 
-                String memLine = String.format("Memory: %dMB / %dMB (%.1f%%)", usedMB, totalMB, usagePercent);
+                String memLine = "Memory: %dMB / %dMB (%.1f%%)".formatted(usedMB, totalMB, usagePercent);
                 if (usagePercent > 90) {
                     memLine += " [!]";
                 }
                 lines.add(memLine);
-                lines.add(String.format("  Max Available: %dMB", maxMB));
+                lines.add("  Max Available: %dMB".formatted(maxMB));
             }
         }
         
@@ -131,29 +136,29 @@ public class DebugOverlay {
         if (DebugConfig.isShowEntityCount()) {
             lines.add("");
             lines.add("=== ENTITIES ===");
-            lines.add(String.format("Total: %d", performanceMonitor.getEntityCount()));
-            lines.add(String.format("  Enemies: %d", performanceMonitor.getEnemyCount()));
-            lines.add(String.format("  Projectiles: %d", performanceMonitor.getProjectileCount()));
-            lines.add(String.format("  Loot: %d", performanceMonitor.getLootCount()));
+            lines.add("Total: %d".formatted(performanceMonitor.getEntityCount()));
+            lines.add("  Enemies: %d".formatted(performanceMonitor.getEnemyCount()));
+            lines.add("  Projectiles: %d".formatted(performanceMonitor.getProjectileCount()));
+            lines.add("  Loot: %d".formatted(performanceMonitor.getLootCount()));
         }
         
         // Player
         if (DebugConfig.isShowPlayerStats() && player != null) {
             lines.add("");
             lines.add("=== PLAYER ===");
-            lines.add(String.format("Position: (%.1f, %.1f)", player.getX(), player.getY()));
-            lines.add(String.format("Health: %.1f / %.1f", player.getHealth(), player.getMaxHealth()));
-            lines.add(String.format("Level: %d (XP: %d/%d)", 
+            lines.add("Position: (%.1f, %.1f)".formatted(player.getX(), player.getY()));
+            lines.add("Health: %.1f / %.1f".formatted(player.getHealth(), player.getMaxHealth()));
+            lines.add("Level: %d (XP: %d/%d)".formatted(
                 player.getLevel(), player.getCurrentXP(), player.getXPForNextLevel()));
-            lines.add(String.format("Speed: %.2f", player.getSpeed()));
+            lines.add("Speed: %.2f".formatted(player.getSpeed()));
         }
         
         // Camera
         if (DebugConfig.isShowCameraInfo() && camera != null) {
             lines.add("");
             lines.add("=== CAMERA ===");
-            lines.add(String.format("Position: (%.1f, %.1f)", camera.getX(), camera.getY()));
-            lines.add(String.format("Viewport: %dx%d", (int)camera.getViewportWidth(), (int)camera.getViewportHeight()));
+            lines.add("Position: (%.1f, %.1f)".formatted(camera.getX(), camera.getY()));
+            lines.add("Viewport: %dx%d".formatted((int)camera.getViewportWidth(), (int)camera.getViewportHeight()));
         }
         
         return lines;
@@ -204,6 +209,45 @@ public class DebugOverlay {
             // La implementación específica depende de tu interfaz de entidades
             // Por ahora dejamos el método preparado para futuras implementaciones
         }
+    }
+    
+    /**
+     * Dibuja la hitbox rotada del jugador.
+     */
+    private void renderPlayerHitbox(Graphics2D g2d, Player player, Camera camera) {
+        float[] corners = player.getHitboxCorners();
+        
+        // Ajustar por cámara
+        float cameraX = camera.getX();
+        float cameraY = camera.getY();
+        
+        // Convertir esquinas a coordenadas de pantalla
+        int[] xPoints = new int[4];
+        int[] yPoints = new int[4];
+        
+        for (int i = 0; i < 4; i++) {
+            xPoints[i] = (int) (corners[i * 2] - cameraX);
+            yPoints[i] = (int) (corners[i * 2 + 1] - cameraY);
+        }
+        
+        // Dibujar polígono de la hitbox
+        g2d.setColor(new Color(0, 255, 0, 128));
+        g2d.setStroke(new BasicStroke(2));
+        g2d.drawPolygon(xPoints, yPoints, 4);
+        
+        // Dibujar punto central
+        int centerX = (int) (player.getCenterX() - cameraX);
+        int centerY = (int) (player.getCenterY() - cameraY);
+        g2d.setColor(new Color(255, 0, 0, 200));
+        g2d.fillOval(centerX - 3, centerY - 3, 6, 6);
+        
+        // Dibujar línea de dirección
+        float rotation = player.getRotation();
+        int dirX = centerX + (int) (Math.sin(rotation) * 30);
+        int dirY = centerY - (int) (Math.cos(rotation) * 30);
+        g2d.setColor(new Color(255, 255, 0, 200));
+        g2d.setStroke(new BasicStroke(3));
+        g2d.drawLine(centerX, centerY, dirX, dirY);
     }
     
     /**
