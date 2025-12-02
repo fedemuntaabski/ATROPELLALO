@@ -25,19 +25,21 @@ import java.util.List;
 public class PauseMenu implements MouseWheelListener, MouseListener, MouseMotionListener {
     
     private static final int MENU_WIDTH = 600;
-    private static final int MENU_HEIGHT = 650;
-    private static final int STATS_HEIGHT = 450;
+    private static final int MENU_HEIGHT = 550;
+    private static final int STATS_HEIGHT = 350;
     private static final int BUTTON_WIDTH = 250;
     private static final int BUTTON_HEIGHT = 50;
     private static final int BUTTON_SPACING = 20;
     
-    private static final Color OVERLAY_COLOR = new Color(0, 0, 0, 180);
-    private static final Color MENU_BG_COLOR = new Color(30, 30, 40);
-    private static final Color STATS_BG_COLOR = new Color(20, 20, 30);
-    private static final Color BUTTON_COLOR = new Color(70, 130, 180);
-    private static final Color BUTTON_HOVER_COLOR = new Color(100, 160, 210);
-    private static final Color TEXT_COLOR = Color.WHITE;
-    private static final Color STAT_VALUE_COLOR = new Color(100, 255, 100);
+    private static final Color OVERLAY_COLOR = new Color(0, 0, 0, 200);
+    private static final Color MENU_BG_COLOR = new Color(15, 10, 20);
+    private static final Color STATS_BG_COLOR = new Color(10, 5, 15);
+    private static final Color BUTTON_COLOR = new Color(40, 35, 45);
+    private static final Color BUTTON_HOVER_COLOR = new Color(60, 50, 70);
+    private static final Color TEXT_COLOR = new Color(220, 210, 200);
+    private static final Color STAT_VALUE_COLOR = new Color(180, 30, 30);
+    private static final Color TITLE_COLOR = new Color(180, 30, 30);
+    private static final Color BORDER_COLOR = new Color(80, 70, 90);
     
     private final int screenWidth;
     private final int screenHeight;
@@ -57,7 +59,7 @@ public class PauseMenu implements MouseWheelListener, MouseListener, MouseMotion
      */
     public interface PauseMenuCallback {
         void onResume();
-        void onQuit();
+        void onMainMenu();
     }
     
     public PauseMenu(int screenWidth, int screenHeight) {
@@ -135,21 +137,31 @@ public class PauseMenu implements MouseWheelListener, MouseListener, MouseMotion
         int menuX = (screenWidth - MENU_WIDTH) / 2;
         int menuY = (screenHeight - MENU_HEIGHT) / 2;
         
-        // Panel del menú
+        // Panel del menú con borde cartoon
         g2d.setColor(MENU_BG_COLOR);
         g2d.fillRoundRect(menuX, menuY, MENU_WIDTH, MENU_HEIGHT, 20, 20);
-        g2d.setColor(BUTTON_HOVER_COLOR);
+        g2d.setColor(BORDER_COLOR);
+        g2d.setStroke(new java.awt.BasicStroke(3));
         g2d.drawRoundRect(menuX, menuY, MENU_WIDTH, MENU_HEIGHT, 20, 20);
+        g2d.setStroke(new java.awt.BasicStroke(1));
         
-        // Título
-        g2d.setColor(TEXT_COLOR);
-        g2d.setFont(new Font("Arial", Font.BOLD, 36));
+        // Título con sombra
+        g2d.setFont(new Font("Impact", Font.BOLD, 60));
         String title = "PAUSA";
         int titleWidth = g2d.getFontMetrics().stringWidth(title);
-        g2d.drawString(title, menuX + (MENU_WIDTH - titleWidth) / 2, menuY + 50);
+        int titleX = menuX + (MENU_WIDTH - titleWidth) / 2;
+        int titleY = menuY + 60;
+        
+        // Sombra del título
+        g2d.setColor(new Color(0, 0, 0, 150));
+        g2d.drawString(title, titleX + 3, titleY + 3);
+        
+        // Título principal
+        g2d.setColor(TITLE_COLOR);
+        g2d.drawString(title, titleX, titleY);
         
         // Área de estadísticas scrolleable
-        renderStatsArea(g2d, menuX + 20, menuY + 80, MENU_WIDTH - 40, STATS_HEIGHT, 
+        renderStatsArea(g2d, menuX + 20, menuY + 90, MENU_WIDTH - 40, STATS_HEIGHT, 
                        player, weaponManager);
         
         // Botones
@@ -161,11 +173,13 @@ public class PauseMenu implements MouseWheelListener, MouseListener, MouseMotion
      */
     private void renderStatsArea(Graphics2D g2d, int x, int y, int width, int height,
                                   Player player, WeaponManager weaponManager) {
-        // Fondo del área de stats
+        // Fondo del área de stats con borde cartoon
         g2d.setColor(STATS_BG_COLOR);
         g2d.fillRoundRect(x, y, width, height, 10, 10);
-        g2d.setColor(BUTTON_HOVER_COLOR);
+        g2d.setColor(BORDER_COLOR);
+        g2d.setStroke(new java.awt.BasicStroke(2));
         g2d.drawRoundRect(x, y, width, height, 10, 10);
+        g2d.setStroke(new java.awt.BasicStroke(1));
         
         // Clip para scroll
         g2d.setClip(x + 5, y + 5, width - 10, height - 10);
@@ -192,7 +206,7 @@ public class PauseMenu implements MouseWheelListener, MouseListener, MouseMotion
         // Indicadores de scroll mejorados
         if (scrollOffset > 0) {
             // Indicador superior con gradiente
-            g2d.setColor(new Color(100, 160, 210, 200));
+            g2d.setColor(STAT_VALUE_COLOR);
             int[] xPoints = {x + width / 2, x + width / 2 - 10, x + width / 2 + 10};
             int[] yPoints = {y + 10, y + 20, y + 20};
             g2d.fillPolygon(xPoints, yPoints, 3);
@@ -201,7 +215,7 @@ public class PauseMenu implements MouseWheelListener, MouseListener, MouseMotion
         }
         if (scrollOffset < maxScroll) {
             // Indicador inferior con gradiente
-            g2d.setColor(new Color(100, 160, 210, 200));
+            g2d.setColor(STAT_VALUE_COLOR);
             int[] xPoints = {x + width / 2, x + width / 2 - 10, x + width / 2 + 10};
             int[] yPoints = {y + height - 10, y + height - 20, y + height - 20};
             g2d.fillPolygon(xPoints, yPoints, 3);
@@ -292,7 +306,7 @@ public class PauseMenu implements MouseWheelListener, MouseListener, MouseMotion
      */
     private int renderWeaponDetails(Graphics2D g2d, int x, int y, int width, Weapon weapon) {
         // Nombre del arma
-        g2d.setColor(BUTTON_HOVER_COLOR);
+        g2d.setColor(STAT_VALUE_COLOR);
         g2d.setFont(new Font("Arial", Font.BOLD, 16));
         g2d.drawString(weapon.getName(), x, y);
         y += 20;
@@ -342,8 +356,8 @@ public class PauseMenu implements MouseWheelListener, MouseListener, MouseMotion
         // Botón Reanudar
         renderButton(g2d, resumeButton, "REANUDAR", selectedButton == 0);
         
-        // Botón Salir
-        renderButton(g2d, quitButton, "SALIR", selectedButton == 1);
+        // Botón Menú Principal
+        renderButton(g2d, quitButton, "MENÚ PRINCIPAL", selectedButton == 1);
     }
     
     /**
@@ -352,16 +366,28 @@ public class PauseMenu implements MouseWheelListener, MouseListener, MouseMotion
     private void renderButton(Graphics2D g2d, Rectangle bounds, String text, boolean selected) {
         Color buttonColor = selected ? BUTTON_HOVER_COLOR : BUTTON_COLOR;
         
+        // Fondo del botón
         g2d.setColor(buttonColor);
         g2d.fillRoundRect(bounds.x, bounds.y, bounds.width, bounds.height, 10, 10);
         
-        g2d.setColor(TEXT_COLOR);
+        // Borde cartoon
+        g2d.setColor(selected ? STAT_VALUE_COLOR : BORDER_COLOR);
+        g2d.setStroke(new java.awt.BasicStroke(3));
         g2d.drawRoundRect(bounds.x, bounds.y, bounds.width, bounds.height, 10, 10);
+        g2d.setStroke(new java.awt.BasicStroke(1));
         
-        g2d.setFont(new Font("Arial", Font.BOLD, 18));
+        // Texto del botón
+        g2d.setFont(new Font("Arial Black", Font.BOLD, 18));
         int textWidth = g2d.getFontMetrics().stringWidth(text);
         int textX = bounds.x + (bounds.width - textWidth) / 2;
         int textY = bounds.y + (bounds.height + g2d.getFontMetrics().getAscent()) / 2 - 2;
+        
+        // Sombra del texto
+        g2d.setColor(new Color(0, 0, 0, 100));
+        g2d.drawString(text, textX + 2, textY + 2);
+        
+        // Texto principal
+        g2d.setColor(TEXT_COLOR);
         g2d.drawString(text, textX, textY);
     }
     
@@ -420,8 +446,8 @@ public class PauseMenu implements MouseWheelListener, MouseListener, MouseMotion
             case 0: // Reanudar
                 callback.onResume();
                 break;
-            case 1: // Salir
-                callback.onQuit();
+            case 1: // Menú Principal
+                callback.onMainMenu();
                 break;
         }
     }
