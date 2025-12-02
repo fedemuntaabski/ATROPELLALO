@@ -1,10 +1,32 @@
 # Compiled class files
 target/
+*.class
+build/
+dist/
+out/
+
+# Package files
+*.jar
+*.war
+*.ear
+*.nar
 
 # IDE files
+# IntelliJ IDEA
 .idea/
 *.iml
+*.iws
+*.ipr
+
+# Eclipse
+.classpath
+.project
+.settings/
+
+# VS Code
 .vscode/
+
+# Vim
 *.swp
 *.swo
 
@@ -17,3 +39,8 @@ Thumbs.db
 
 # Maven
 dependency-reduced-pom.xml
+
+# Temporary files
+*.tmp
+*.bak
+*~
