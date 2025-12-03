@@ -16,7 +16,7 @@ import javax.imageio.ImageIO;
  */
 public class SlowZombie extends Enemy {
     
-    private static final String SPRITE_PATH = "/images/SlowZombie.png";
+    private static final String SPRITE_PATH = "/img/slow_zombie.png";
     private static final float SPRITE_SCALE = 3.0f;
     
     // Colores de fallback

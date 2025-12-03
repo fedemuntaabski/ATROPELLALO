@@ -51,9 +51,15 @@ public class Flamethrower extends Weapon {
     public void update(float deltaTime) {
         super.update(deltaTime);
         
+        // Calcular punto de origen del lanzallamas desde el borde de la camioneta
+        // Desplazar el origen 50 píxeles en la dirección del disparo
+        float offsetDistance = 50f;
+        float flameOriginX = lastPlayerX + (float)Math.cos(aimAngle) * offsetDistance;
+        float flameOriginY = lastPlayerY + (float)Math.sin(aimAngle) * offsetDistance;
+        
         // Actualizar efecto visual del lanzallamas
         VisualEffectManager.getInstance().updateFlamethrower(
-            lastPlayerX, lastPlayerY, aimAngle, coneAngle, range, active
+            flameOriginX, flameOriginY, aimAngle, coneAngle, range, active
         );
         
         // Nota: La gestión del sonido se hace en processContinuousDamage

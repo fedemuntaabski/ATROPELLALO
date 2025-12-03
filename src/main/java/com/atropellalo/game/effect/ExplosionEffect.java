@@ -2,19 +2,16 @@ package com.atropellalo.game.effect;
 
 import com.atropellalo.game.config.GameConfig;
 
-import java.awt.AlphaComposite;
 import java.awt.BasicStroke;
 import java.awt.Color;
 import java.awt.Graphics2D;
-import java.awt.RadialGradientPaint;
-import java.awt.geom.Point2D;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Random;
 
 /**
  * Efecto visual de explosión para zombies explosivos.
- * Simula una explosión con ondas de choque, llamas y partículas.
+ * Simula una explosión con partículas y chispas (VFX only).
  */
 public class ExplosionEffect implements VisualEffect {
     
@@ -27,12 +24,10 @@ public class ExplosionEffect implements VisualEffect {
     private final List<Particle> particles;
     private final List<Spark> sparks;
     
-    // Colores de la explosión
-    private static final Color CORE_COLOR = new Color(255, 255, 200);
+    // Colores de las partículas de explosión
     private static final Color INNER_COLOR = new Color(255, 200, 50);
     private static final Color MIDDLE_COLOR = new Color(255, 100, 0);
     private static final Color OUTER_COLOR = new Color(200, 50, 0);
-    private static final Color SMOKE_COLOR = new Color(80, 80, 80);
     
     /**
      * Crea un nuevo efecto de explosión.
@@ -58,10 +53,16 @@ public class ExplosionEffect implements VisualEffect {
      * Inicializa las partículas de escombros.
      */
     private void initializeParticles() {
-        int count = GameConfig.VFX_EXPLOSION_PARTICLE_COUNT;
+        // Escalar cantidad de partículas según el radio (más área = más partículas)
+        float radiusScale = maxRadius / GameConfig.GRENADE_EXPLOSION_RADIUS;
+        int baseCount = GameConfig.VFX_EXPLOSION_PARTICLE_COUNT;
+        int count = (int)(baseCount * Math.min(radiusScale, 2.0f)); // Máximo 2x partículas
+        
         for (int i = 0; i < count; i++) {
             float angle = random.nextFloat() * (float)(Math.PI * 2);
-            float speed = 100 + random.nextFloat() * 200;
+            // Escalar velocidad según el radio para que cubra el área
+            float baseSpeed = 100 + random.nextFloat() * 200;
+            float speed = baseSpeed * radiusScale;
             float size = 4 + random.nextFloat() * 8;
             float life = 0.3f + random.nextFloat() * 0.4f;
             
@@ -83,10 +84,16 @@ public class ExplosionEffect implements VisualEffect {
      * Inicializa las chispas de la explosión.
      */
     private void initializeSparks() {
-        int count = GameConfig.VFX_EXPLOSION_SPARK_COUNT;
+        // Escalar cantidad de chispas según el radio
+        float radiusScale = maxRadius / GameConfig.GRENADE_EXPLOSION_RADIUS;
+        int baseCount = GameConfig.VFX_EXPLOSION_SPARK_COUNT;
+        int count = (int)(baseCount * Math.min(radiusScale, 2.0f)); // Máximo 2x chispas
+        
         for (int i = 0; i < count; i++) {
             float angle = random.nextFloat() * (float)(Math.PI * 2);
-            float speed = 200 + random.nextFloat() * 300;
+            // Escalar velocidad según el radio
+            float baseSpeed = 200 + random.nextFloat() * 300;
+            float speed = baseSpeed * radiusScale;
             float length = 10 + random.nextFloat() * 20;
             float life = 0.2f + random.nextFloat() * 0.3f;
             
@@ -114,22 +121,6 @@ public class ExplosionEffect implements VisualEffect {
         float progress = timer / duration;
         if (progress > 1) return;
         
-        // Guardar estado
-        java.awt.Composite oldComposite = g2d.getComposite();
-        
-        // Calcular radio actual (crece rápido al principio)
-        float easedProgress = 1f - (1f - progress) * (1f - progress);
-        float currentRadius = maxRadius * easedProgress;
-        
-        // Alpha general que disminuye con el tiempo
-        float alpha = 1f - progress;
-        
-        // Renderizar ondas de choque
-        renderShockwaves(g2d, currentRadius, alpha, progress);
-        
-        // Renderizar resplandor central con gradiente
-        renderCoreGlow(g2d, currentRadius, alpha);
-        
         // Renderizar chispas
         for (Spark s : sparks) {
             s.render(g2d);
@@ -139,97 +130,6 @@ public class ExplosionEffect implements VisualEffect {
         for (Particle p : particles) {
             p.render(g2d);
         }
-        
-        // Renderizar humo (aparece después del flash inicial)
-        if (progress > 0.3f) {
-            renderSmoke(g2d, currentRadius, progress);
-        }
-        
-        // Restaurar estado
-        g2d.setComposite(oldComposite);
-    }
-    
-    /**
-     * Renderiza las ondas de choque expansivas.
-     */
-    private void renderShockwaves(Graphics2D g2d, float radius, float alpha, float progress) {
-        for (int ring = 0; ring < 3; ring++) {
-            float ringDelay = ring * 0.1f;
-            float ringProgress = Math.max(0, progress - ringDelay);
-            if (ringProgress <= 0) continue;
-            
-            float ringRadius = maxRadius * (0.5f + ringProgress * 0.8f);
-            float ringAlpha = Math.max(0, alpha - ring * 0.2f) * (1f - ringProgress);
-            
-            if (ringAlpha > 0) {
-                g2d.setColor(new Color(255, 200, 100, (int)(ringAlpha * 150)));
-                g2d.setStroke(new BasicStroke(3 - ring));
-                int r = (int) ringRadius;
-                g2d.drawOval((int)x - r, (int)y - r, r * 2, r * 2);
-            }
-        }
-    }
-    
-    /**
-     * Renderiza el resplandor central con gradiente radial.
-     */
-    private void renderCoreGlow(Graphics2D g2d, float radius, float alpha) {
-        if (radius < 1) return;
-        
-        Point2D center = new Point2D.Float(x, y);
-        float[] dist = {0.0f, 0.3f, 0.6f, 1.0f};
-        
-        int coreAlpha = (int)(alpha * 255);
-        Color[] colors = {
-            new Color(255, 255, 255, Math.min(255, (int)(coreAlpha * 1.2f))),
-            new Color(255, 200, 50, coreAlpha),
-            new Color(255, 100, 0, (int)(coreAlpha * 0.7f)),
-            new Color(200, 50, 0, 0)
-        };
-        
-        try {
-            RadialGradientPaint gradient = new RadialGradientPaint(
-                center, radius, dist, colors
-            );
-            g2d.setPaint(gradient);
-            int r = (int) radius;
-            g2d.fillOval((int)x - r, (int)y - r, r * 2, r * 2);
-        } catch (Exception e) {
-            // Fallback si el gradiente falla
-            g2d.setColor(new Color(255, 150, 50, (int)(alpha * 200)));
-            int r = (int) radius;
-            g2d.fillOval((int)x - r, (int)y - r, r * 2, r * 2);
-        }
-    }
-    
-    /**
-     * Renderiza el efecto de humo.
-     */
-    private void renderSmoke(Graphics2D g2d, float radius, float progress) {
-        float smokeProgress = (progress - 0.3f) / 0.7f;
-        float smokeAlpha = Math.max(0, 0.5f - smokeProgress * 0.5f);
-        float smokeRadius = radius * (0.5f + smokeProgress * 0.5f);
-        
-        g2d.setComposite(AlphaComposite.getInstance(AlphaComposite.SRC_OVER, smokeAlpha));
-        
-        // Múltiples círculos de humo
-        for (int i = 0; i < 3; i++) {
-            float offsetX = (random.nextFloat() - 0.5f) * smokeRadius * 0.3f;
-            float offsetY = -smokeProgress * 30 * (i + 1);
-            float cloudRadius = smokeRadius * (0.4f + i * 0.2f);
-            
-            g2d.setColor(new Color(
-                SMOKE_COLOR.getRed(),
-                SMOKE_COLOR.getGreen(),
-                SMOKE_COLOR.getBlue(),
-                (int)(smokeAlpha * 100)
-            ));
-            
-            int r = (int) cloudRadius;
-            g2d.fillOval((int)(x + offsetX) - r, (int)(y + offsetY) - r, r * 2, r * 2);
-        }
-        
-        g2d.setComposite(AlphaComposite.getInstance(AlphaComposite.SRC_OVER, 1f));
     }
     
     @Override

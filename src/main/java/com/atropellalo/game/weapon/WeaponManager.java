@@ -36,6 +36,14 @@ public class WeaponManager {
     }
     
     /**
+     * Limpia todos los proyectiles activos.
+     * Útil para resetear el estado del juego.
+     */
+    public void clearProjectiles() {
+        projectiles.clear();
+    }
+    
+    /**
      * Actualiza el sistema de armas.
      * @param deltaTime Tiempo desde el último frame
      * @param playerX Centro X del jugador
@@ -107,8 +115,9 @@ public class WeaponManager {
             weapon.render(g2d, playerX, playerY);
         }
         
-        // Renderizar proyectiles
-        for (Projectile projectile : projectiles) {
+        // Renderizar proyectiles (crear copia defensiva para evitar ConcurrentModificationException)
+        List<Projectile> projectilesCopy = new ArrayList<>(projectiles);
+        for (Projectile projectile : projectilesCopy) {
             projectile.render(g2d);
         }
     }
@@ -118,7 +127,9 @@ public class WeaponManager {
      * @param g2d Contexto gráfico
      */
     public void render(Graphics2D g2d) {
-        for (Projectile projectile : projectiles) {
+        // Crear copia defensiva para evitar ConcurrentModificationException
+        List<Projectile> projectilesCopy = new ArrayList<>(projectiles);
+        for (Projectile projectile : projectilesCopy) {
             projectile.render(g2d);
         }
     }

@@ -38,7 +38,7 @@ import java.util.logging.Logger;
 public class GamePanel extends JPanel implements Runnable, KeyListener {
     
     private static final Logger LOGGER = Logger.getLogger(GamePanel.class.getName());
-    private static final String MAP_IMAGE_PATH = "/images/Map.png";
+    private static final String MAP_IMAGE_PATH = "/img/map.png";
     private static final int TARGET_FPS = 60;
     private static final long OPTIMAL_TIME = 1000000000 / TARGET_FPS;
     
@@ -71,6 +71,10 @@ public class GamePanel extends JPanel implements Runnable, KeyListener {
     
     public GamePanel() {
         setFocusable(true);
+        
+        // Deshabilitar navegación por TAB para que la consola pueda usarlo
+        setFocusTraversalKeysEnabled(false);
+        
         loadMapImage();
         initializeDebugSystem();
         initializeGame();
@@ -121,6 +125,7 @@ public class GamePanel extends JPanel implements Runnable, KeyListener {
         
         // Crear y configurar input handler
         inputHandler = new InputHandler();
+        inputHandler.setDebugManager(debugManager);
         
         // IMPORTANTE: Registrar listeners en orden inverso de prioridad
         // Los últimos registrados se procesan primero
@@ -162,6 +167,16 @@ public class GamePanel extends JPanel implements Runnable, KeyListener {
             }
             
             @Override
+            public void onRestart() {
+                restartGame();
+            }
+            
+            @Override
+            public void onOptions() {
+                showOptionsFromPause();
+            }
+            
+            @Override
             public void onMainMenu() {
                 returnToMainMenu();
             }
@@ -190,6 +205,13 @@ public class GamePanel extends JPanel implements Runnable, KeyListener {
      */
     private void restartGame() {
         LOGGER.info("Reiniciando juego...");
+        
+        // Limpiar estado del juego anterior
+        weaponManager.clearProjectiles();
+        com.atropellalo.game.effect.VisualEffectManager.getInstance().clear();
+        com.atropellalo.game.sound.SoundManager.getInstance().stopAllWeaponLoops();
+        
+        // Inicializar nueva partida
         initializeGame();
     }
     
@@ -264,9 +286,14 @@ public class GamePanel extends JPanel implements Runnable, KeyListener {
         });
         
         // Comando para modo god (invencibilidad)
-        debugManager.registerCommand("god", "Alterna modo invulnerable (no implementado aún)", args -> {
-            // Este comando requeriría agregar un flag de invencibilidad al Player
-            debugManager.logMessage("God mode not yet implemented", DebugConsole.MessageType.WARNING);
+        debugManager.registerCommand("god", "Alterna modo invulnerable", args -> {
+            boolean newGodMode = !player.isGodMode();
+            player.setGodMode(newGodMode);
+            if (newGodMode) {
+                debugManager.logMessage("God mode ENABLED - You are invincible!", DebugConsole.MessageType.INFO);
+            } else {
+                debugManager.logMessage("God mode DISABLED - You can take damage again", DebugConsole.MessageType.INFO);
+            }
         });
         
         LOGGER.info("Comandos de debug registrados exitosamente");
@@ -325,12 +352,35 @@ public class GamePanel extends JPanel implements Runnable, KeyListener {
     }
     
     /**
+     * Reabre el menú de pausa (usado cuando se vuelve desde opciones).
+     */
+    public void reopenPauseMenu() {
+        if (!player.isAlive()) {
+            return; // No pausar si está muerto
+        }
+        
+        pausedByMenu = true;
+        pauseMenu.show();
+    }
+    
+    /**
      * Reanuda el juego desde el menú de pausa.
      */
     private void resumeGame() {
         LOGGER.info("Reanudando juego desde menú de pausa");
         pausedByMenu = false;
         pauseMenu.hide();
+    }
+    
+    /**
+     * Muestra el panel de opciones desde el menú de pausa.
+     */
+    private void showOptionsFromPause() {
+        LOGGER.info("Abriendo opciones desde menú de pausa...");
+        pauseMenu.hide();
+        if (optionsCallback != null) {
+            optionsCallback.run();
+        }
     }
     
     /**
@@ -348,12 +398,20 @@ public class GamePanel extends JPanel implements Runnable, KeyListener {
     }
     
     private MainMenuCallback mainMenuCallback;
+    private Runnable optionsCallback;
     
     /**
      * Establece el callback para volver al menú principal.
      */
     public void setMainMenuCallback(MainMenuCallback callback) {
         this.mainMenuCallback = callback;
+    }
+    
+    /**
+     * Establece el callback para abrir opciones.
+     */
+    public void setOptionsCallback(Runnable callback) {
+        this.optionsCallback = callback;
     }
     
     /**
@@ -504,8 +562,10 @@ public class GamePanel extends JPanel implements Runnable, KeyListener {
         // Dibujar HUD
         gameHUD.render(g2d, player);
         
-        // Dibujar información de oleadas
-        enemyManager.renderWaveInfo(g2d, 1280);
+        // Dibujar información de oleadas (solo si está activado con F3)
+        if (com.atropellalo.game.debug.DebugConfig.isShowWaveInfo()) {
+            enemyManager.renderWaveInfo(g2d, 1280);
+        }
         
         // Dibujar menú de mejoras si está visible
         if (upgradeMenu.isVisible()) {

@@ -20,7 +20,7 @@ import javax.imageio.ImageIO;
  */
 public class BruiserBoss extends Enemy {
     
-    private static final String SPRITE_PATH = "/images/BruiserBoss.png";
+    private static final String SPRITE_PATH = "/img/bruiser_boss.png";
     private static final float SPRITE_SCALE = 3.0f;
     
     // Sprite compartido para todos los BruiserBoss

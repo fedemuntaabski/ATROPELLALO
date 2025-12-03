@@ -87,10 +87,12 @@ public class DebugManager {
      * @return true si el evento fue consumido por el sistema de debug
      */
     public boolean handleKeyPress(KeyEvent e) {
-        // F3 togglea el debug overlay
+        // F3 togglea el debug overlay y el indicador de oleada
         if (e.getKeyCode() == KeyEvent.VK_F3) {
-            DebugConfig.setDebugEnabled(!DebugConfig.isDebugEnabled());
-            LOGGER.info("Debug mode: " + (DebugConfig.isDebugEnabled() ? "ON" : "OFF"));
+            boolean newState = !DebugConfig.isDebugEnabled();
+            DebugConfig.setDebugEnabled(newState);
+            DebugConfig.setShowWaveInfo(newState);
+            LOGGER.info("Debug mode: " + (newState ? "ON" : "OFF"));
             return true;
         }
         

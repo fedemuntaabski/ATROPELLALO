@@ -3,6 +3,7 @@ package com.atropellalo.game.enemy;
 import com.atropellalo.game.config.GameConfig;
 import com.atropellalo.game.entity.Player;
 import com.atropellalo.game.loot.LootManager;
+import com.atropellalo.game.loot.XPOrbRarity;
 
 import java.awt.Color;
 import java.awt.Font;
@@ -393,19 +394,24 @@ public class EnemyManager implements ExplosiveZombie.ExplosionCallback,
                     enemy.resetDamageCooldown();
                 }
                 
-                // Empujar al enemigo fuera de la hitbox del jugador
+                // Evitar que el enemigo atraviese la hitbox empujándolo al borde
                 float[] pushVector = player.getPushVector(enemyCenterX, enemyCenterY, enemyRadius);
                 
-                // Aplicar el empuje al enemigo (empuja desde su posición actual)
-                float newEnemyX = enemy.getX() + pushVector[0];
-                float newEnemyY = enemy.getY() + pushVector[1];
+                // Aplicar solo el empuje mínimo necesario para sacarlo (sin margen extra)
+                float overlap = (float) Math.sqrt(pushVector[0] * pushVector[0] + pushVector[1] * pushVector[1]);
                 
-                // Limitar a los bordes del mundo
-                newEnemyX = Math.max(0, Math.min(newEnemyX, GameConfig.WORLD_WIDTH - enemy.getSize()));
-                newEnemyY = Math.max(0, Math.min(newEnemyY, GameConfig.WORLD_HEIGHT - enemy.getSize()));
-                
-                // Actualizar posición del enemigo
-                enemy.setPosition(newEnemyX, newEnemyY);
+                if (overlap > 0) {
+                    // Calcular posición en el borde exacto de la hitbox
+                    float newEnemyX = enemy.getX() + pushVector[0];
+                    float newEnemyY = enemy.getY() + pushVector[1];
+                    
+                    // Limitar a los bordes del mundo
+                    newEnemyX = Math.max(0, Math.min(newEnemyX, GameConfig.WORLD_WIDTH - enemy.getSize()));
+                    newEnemyY = Math.max(0, Math.min(newEnemyY, GameConfig.WORLD_HEIGHT - enemy.getSize()));
+                    
+                    // Actualizar posición del enemigo para que quede en el borde sin empuje adicional
+                    enemy.setPosition(newEnemyX, newEnemyY);
+                }
             }
         }
     }
@@ -537,44 +543,53 @@ public class EnemyManager implements ExplosiveZombie.ExplosionCallback,
         }
         
         int baseXP;
+        XPOrbRarity rarity;
+        
         switch (enemy.getType()) {
             case FAST:
                 baseXP = GameConfig.XP_FAST_ZOMBIE;
+                rarity = XPOrbRarity.NORMAL;
                 break;
             case SLOW:
                 baseXP = GameConfig.XP_SLOW_ZOMBIE;
+                rarity = XPOrbRarity.SPECIAL;
                 break;
             case EXPLOSIVE:
                 baseXP = GameConfig.XP_EXPLOSIVE_ZOMBIE;
+                rarity = XPOrbRarity.NORMAL;
                 break;
             case SPITTER:
                 baseXP = GameConfig.XP_SPITTER_ZOMBIE;
+                rarity = XPOrbRarity.NORMAL;
                 break;
             case BUFFER:
                 baseXP = GameConfig.XP_BUFFER_ZOMBIE;
+                rarity = XPOrbRarity.SPECIAL;
                 break;
             case BROOD_CARRIER:
                 baseXP = GameConfig.XP_BROOD_CARRIER;
+                rarity = XPOrbRarity.SPECIAL;
                 break;
             case BOSS_BRUISER:
                 baseXP = GameConfig.XP_BRUISER_BOSS;
                 // Los jefes no escalan XP - ya dan mucho
-                lootManager.spawnXPOrb(enemy.getCenterX(), enemy.getCenterY(), baseXP);
+                lootManager.spawnXPOrb(enemy.getCenterX(), enemy.getCenterY(), baseXP, XPOrbRarity.UNIQUE);
                 return;
             case BOSS_INFECTOR:
                 baseXP = GameConfig.XP_INFECTOR_BOSS;
                 // Los jefes no escalan XP - ya dan mucho
-                lootManager.spawnXPOrb(enemy.getCenterX(), enemy.getCenterY(), baseXP);
+                lootManager.spawnXPOrb(enemy.getCenterX(), enemy.getCenterY(), baseXP, XPOrbRarity.UNIQUE);
                 return;
             default:
                 baseXP = GameConfig.XP_FAST_ZOMBIE;
+                rarity = XPOrbRarity.NORMAL;
         }
         
         // Aplicar escalado de XP por oleada
         float xpScale = (float) Math.pow(GameConfig.WAVE_XP_SCALING, currentWave - 1);
         int scaledXP = Math.round(baseXP * xpScale * enemy.getXPMultiplier());
         
-        lootManager.spawnXPOrb(enemy.getCenterX(), enemy.getCenterY(), scaledXP);
+        lootManager.spawnXPOrb(enemy.getCenterX(), enemy.getCenterY(), scaledXP, rarity);
     }
     
     /**

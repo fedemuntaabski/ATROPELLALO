@@ -122,9 +122,10 @@ public class LootManager {
      * Verifica que no colisione con edificios si hay mapa configurado.
      * @param x Posición X
      * @param y Posición Y
-     * @param xpValue Cantidad de XP
+     * @param xpValue Cantidad de XP base
+     * @param rarity Rareza del orbe
      */
-    public void spawnXPOrb(float x, float y, int xpValue) {
+    public void spawnXPOrb(float x, float y, int xpValue, XPOrbRarity rarity) {
         // Pequeña variación aleatoria en la posición
         float offsetX = (random.nextFloat() - 0.5f) * 20;
         float offsetY = (random.nextFloat() - 0.5f) * 20;
@@ -134,7 +135,7 @@ public class LootManager {
         
         // Sin colisiones en el estacionamiento - spawns siempre válidos
         
-        xpOrbs.add(new XPOrb(finalX, finalY, xpValue));
+        xpOrbs.add(new XPOrb(finalX, finalY, xpValue, rarity));
     }
     
     /**

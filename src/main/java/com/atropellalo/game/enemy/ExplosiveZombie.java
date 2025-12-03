@@ -18,7 +18,7 @@ import javax.imageio.ImageIO;
  */
 public class ExplosiveZombie extends Enemy {
     
-    private static final String SPRITE_PATH = "/images/ExplosiveZombie.png";
+    private static final String SPRITE_PATH = "/img/explosive_zombie.png";
     private static final float SPRITE_SCALE = 3.0f;
     
     // Colores de fallback
@@ -165,6 +165,9 @@ public class ExplosiveZombie extends Enemy {
         VisualEffectManager.getInstance().createExplosion(
             getCenterX(), getCenterY(), explosionRadius
         );
+        
+        // Reproducir sonido de explosión
+        com.atropellalo.game.sound.SoundManager.getInstance().playExplosionSound();
         
         // Dañar al jugador si está en rango
         float distToPlayer = distanceToPlayer(playerX, playerY);

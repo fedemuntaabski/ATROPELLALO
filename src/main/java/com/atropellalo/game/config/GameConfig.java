@@ -28,10 +28,10 @@ public final class GameConfig {
     public static final float PLAYER_INITIAL_FUEL = 100.0f;
     
     /** Consumo de combustible por segundo mientras se mueve */
-    public static final float FUEL_CONSUMPTION_RATE = 3.0f;
+    public static final float FUEL_CONSUMPTION_RATE = 2.0f;
     
-    /** Factor de reducción de velocidad cuando no hay combustible (0.6 = 60% más lento) */
-    public static final float NO_FUEL_SPEED_PENALTY = 0.6f;
+    /** Factor de reducción de velocidad cuando no hay combustible (0.7 = 70% de velocidad) */
+    public static final float NO_FUEL_SPEED_PENALTY = 0.7f;
     
     /** Velocidad del jugador en píxeles por segundo */
     public static final float PLAYER_SPEED = 200.0f;
@@ -54,36 +54,36 @@ public final class GameConfig {
     public static final int FUEL_SIZE = 24;
     
     /** Intervalo mínimo de spawn de combustible (segundos) */
-    public static final float FUEL_SPAWN_INTERVAL_MIN = 4.0f;
+    public static final float FUEL_SPAWN_INTERVAL_MIN = 3.0f;
     
     /** Intervalo máximo de spawn de combustible (segundos) */
-    public static final float FUEL_SPAWN_INTERVAL_MAX = 8.0f;
+    public static final float FUEL_SPAWN_INTERVAL_MAX = 6.0f;
     
     /** Cantidad máxima de items de combustible en el mapa */
-    public static final int FUEL_MAX_ON_MAP = 6;
+    public static final int FUEL_MAX_ON_MAP = 8;
     
     /** Cantidad inicial de combustible en el mapa */
-    public static final int FUEL_INITIAL_SPAWN = 2;
+    public static final int FUEL_INITIAL_SPAWN = 3;
     
     // ==================== LOOT - CHATARRA ====================
     
     /** Cantidad de salud que restaura cada item de chatarra */
-    public static final float SCRAP_HEAL_AMOUNT = 15.0f;
+    public static final float SCRAP_HEAL_AMOUNT = 20.0f;
     
     /** Tamaño del item de chatarra en píxeles */
     public static final int SCRAP_SIZE = 22;
     
     /** Intervalo mínimo de spawn de chatarra (segundos) */
-    public static final float SCRAP_SPAWN_INTERVAL_MIN = 5.0f;
+    public static final float SCRAP_SPAWN_INTERVAL_MIN = 4.0f;
     
     /** Intervalo máximo de spawn de chatarra (segundos) */
-    public static final float SCRAP_SPAWN_INTERVAL_MAX = 10.0f;
+    public static final float SCRAP_SPAWN_INTERVAL_MAX = 9.0f;
     
     /** Cantidad máxima de items de chatarra en el mapa */
-    public static final int SCRAP_MAX_ON_MAP = 4;
+    public static final int SCRAP_MAX_ON_MAP = 5;
     
     /** Cantidad inicial de chatarra en el mapa */
-    public static final int SCRAP_INITIAL_SPAWN = 1;
+    public static final int SCRAP_INITIAL_SPAWN = 2;
     
     // ==================== COLISIONES ====================
     
@@ -141,7 +141,7 @@ public final class GameConfig {
     public static int FAST_ZOMBIE_SIZE = 24;
     
     /** Daño del zombie rápido al jugador */
-    public static float FAST_ZOMBIE_DAMAGE = 8.0f;
+    public static float FAST_ZOMBIE_DAMAGE = 6.0f;
     
     // ==================== ENEMIGOS - ZOMBIE LENTO ====================
     
@@ -155,7 +155,7 @@ public final class GameConfig {
     public static int SLOW_ZOMBIE_SIZE = 36;
     
     /** Daño del zombie lento al jugador */
-    public static float SLOW_ZOMBIE_DAMAGE = 15.0f;
+    public static float SLOW_ZOMBIE_DAMAGE = 12.0f;
     
     // ==================== ENEMIGOS - ZOMBIE EXPLOSIVO ====================
     
@@ -270,19 +270,19 @@ public final class GameConfig {
     // ==================== SISTEMA DE OLEADAS ====================
     
     /** Tiempo entre oleadas (segundos) */
-    public static float WAVE_INTERVAL = 5.0f;
+    public static float WAVE_INTERVAL = 8.0f;
     
     /** Número base de enemigos por oleada */
-    public static int WAVE_BASE_ENEMIES = 10;
+    public static int WAVE_BASE_ENEMIES = 8;
     
     /** Incremento de enemigos por oleada */
-    public static int WAVE_ENEMY_INCREMENT = 5;
+    public static int WAVE_ENEMY_INCREMENT = 4;
     
     /** Máximo de enemigos simultáneos en el mapa */
     public static int MAX_ENEMIES_ON_MAP = 100;
     
     /** Intervalo de spawn entre enemigos de una oleada (segundos) */
-    public static float ENEMY_SPAWN_INTERVAL = 0.3f;
+    public static float ENEMY_SPAWN_INTERVAL = 0.4f;
     
     /** Probabilidad de zombie rápido (0-100) */
     public static int FAST_ZOMBIE_SPAWN_CHANCE = 50;
@@ -314,13 +314,13 @@ public final class GameConfig {
     // ==================== ARMAS - PISTOLA ====================
     
     /** Daño de la pistola por disparo */
-    public static float PISTOL_DAMAGE = 15.0f;
+    public static float PISTOL_DAMAGE = 18.0f;
     
     /** Rango de la pistola (píxeles) */
-    public static float PISTOL_RANGE = 250.0f;
+    public static float PISTOL_RANGE = 280.0f;
     
     /** Delay entre disparos (segundos) */
-    public static float PISTOL_FIRE_DELAY = 0.75f;
+    public static float PISTOL_FIRE_DELAY = 0.65f;
     
     /** Disparos simultáneos de la pistola */
     public static int PISTOL_PROJECTILE_COUNT = 1;
@@ -337,13 +337,13 @@ public final class GameConfig {
     // ==================== ARMAS - AMETRALLADORA LIGERA ====================
     
     /** Daño de la ametralladora por disparo (bajo) */
-    public static float LMG_DAMAGE = 2.0f;
+    public static float LMG_DAMAGE = 3.5f;
     
     /** Rango de la ametralladora (medio) */
-    public static float LMG_RANGE = 200.0f;
+    public static float LMG_RANGE = 220.0f;
     
     /** Delay entre disparos (muy bajo - alta cadencia) */
-    public static float LMG_FIRE_DELAY = 0.20f;
+    public static float LMG_FIRE_DELAY = 0.18f;
     
     /** Disparos simultáneos de la ametralladora */
     public static int LMG_PROJECTILE_COUNT = 1;
@@ -374,19 +374,19 @@ public final class GameConfig {
     // ==================== ARMAS - ESCOPETA ====================
     
     /** Daño de la escopeta por proyectil (alto) */
-    public static float SHOTGUN_DAMAGE = 25.0f;
+    public static float SHOTGUN_DAMAGE = 20.0f;
     
     /** Rango de la escopeta (corto) */
-    public static float SHOTGUN_RANGE = 150.0f;
+    public static float SHOTGUN_RANGE = 160.0f;
     
     /** Delay entre disparos (medio) */
-    public static float SHOTGUN_FIRE_DELAY = 1.0f;
+    public static float SHOTGUN_FIRE_DELAY = 0.9f;
     
     /** Proyectiles por disparo */
-    public static int SHOTGUN_PROJECTILE_COUNT = 5;
+    public static int SHOTGUN_PROJECTILE_COUNT = 6;
     
     /** Ángulo de dispersión total (15% de 360 = ~54 grados) */
-    public static float SHOTGUN_SPREAD_ANGLE = 54.0f;
+    public static float SHOTGUN_SPREAD_ANGLE = 48.0f;
     
     /** Velocidad de los proyectiles */
     public static float SHOTGUN_PROJECTILE_SPEED = 350.0f;
@@ -394,30 +394,30 @@ public final class GameConfig {
     // ==================== ARMAS - LANZALLAMAS ====================
     
     /** Daño del lanzallamas por tick */
-    public static float FLAMETHROWER_DAMAGE = 15.0f;
+    public static float FLAMETHROWER_DAMAGE = 12.0f;
     
     /** Rango del lanzallamas (corto-medio) */
-    public static float FLAMETHROWER_RANGE = 120.0f;
+    public static float FLAMETHROWER_RANGE = 130.0f;
     
     /** Ángulo del cono del lanzallamas (grados) */
-    public static float FLAMETHROWER_CONE_ANGLE = 60.0f;
+    public static float FLAMETHROWER_CONE_ANGLE = 65.0f;
     
     /** Tick rate del daño del lanzallamas (segundos) - cada cuanto aplica daño */
-    public static float FLAMETHROWER_TICK_RATE = 0.1f;
+    public static float FLAMETHROWER_TICK_RATE = 0.12f;
     
     // ==================== ARMAS - RIFLE DE FRANCOTIRADOR (SNIPER RAILGUN) ====================
     
     /** Daño del rifle de francotirador (muy alto - one-shot mayoría de enemigos) */
-    public static float SNIPER_DAMAGE = 120.0f;
+    public static float SNIPER_DAMAGE = 100.0f;
     
     /** Rango del rifle de francotirador (muy largo) */
     public static float SNIPER_RANGE = 500.0f;
     
     /** Delay entre disparos (muy alto - cadencia baja) */
-    public static float SNIPER_FIRE_DELAY = 4.5f;
+    public static float SNIPER_FIRE_DELAY = 3.5f;
     
     /** Cantidad de enemigos que atraviesa el proyectil */
-    public static int SNIPER_PENETRATION = 3;
+    public static int SNIPER_PENETRATION = 4;
     
     /** Velocidad del proyectil del francotirador */
     public static float SNIPER_PROJECTILE_SPEED = 800.0f;
@@ -437,51 +437,51 @@ public final class GameConfig {
     public static int XP_ORB_SIZE = 12;
     
     /** Distancia de atracción magnética del orbe */
-    public static float XP_ORB_MAGNET_DISTANCE = 100.0f;
+    public static float XP_ORB_MAGNET_DISTANCE = 120.0f;
     
     /** Velocidad de atracción del orbe */
-    public static float XP_ORB_MAGNET_SPEED = 220.0f;
+    public static float XP_ORB_MAGNET_SPEED = 250.0f;
     
     /** Distancia de recolección del orbe */
-    public static float XP_ORB_PICKUP_DISTANCE = 20.0f;
+    public static float XP_ORB_PICKUP_DISTANCE = 25.0f;
     
     /** XP base otorgado por zombie rápido */
-    public static int XP_FAST_ZOMBIE = 10;
+    public static int XP_FAST_ZOMBIE = 12;
     
     /** XP base otorgado por zombie lento */
-    public static int XP_SLOW_ZOMBIE = 25;
+    public static int XP_SLOW_ZOMBIE = 30;
     
     /** XP base otorgado por zombie explosivo */
-    public static int XP_EXPLOSIVE_ZOMBIE = 20;
+    public static int XP_EXPLOSIVE_ZOMBIE = 22;
     
     /** XP base otorgado por zombie escupidor */
-    public static int XP_SPITTER_ZOMBIE = 25;
+    public static int XP_SPITTER_ZOMBIE = 28;
     
     /** XP base otorgado por zombie buffer */
-    public static int XP_BUFFER_ZOMBIE = 30;
+    public static int XP_BUFFER_ZOMBIE = 35;
     
     /** XP base otorgado por zombie portador */
-    public static int XP_BROOD_CARRIER = 35;
+    public static int XP_BROOD_CARRIER = 40;
     
     /** XP requerido para nivel 1 -> 2 */
-    public static int XP_BASE_TO_LEVEL_UP = 100;
+    public static int XP_BASE_TO_LEVEL_UP = 80;
     
     /** Factor de incremento de XP por nivel */
-    public static float XP_LEVEL_SCALING = 1.2f;
+    public static float XP_LEVEL_SCALING = 1.25f;
     
     // ==================== MEJORAS/UPGRADES ====================
     
     /** Cantidad de mejora de salud máxima */
-    public static float UPGRADE_HEALTH_AMOUNT = 20.0f;
+    public static float UPGRADE_HEALTH_AMOUNT = 25.0f;
     
     /** Cantidad de mejora de velocidad */
-    public static float UPGRADE_SPEED_AMOUNT = 20.0f;
+    public static float UPGRADE_SPEED_AMOUNT = 25.0f;
     
     /** Factor de mejora de daño de arma */
-    public static float UPGRADE_WEAPON_DAMAGE_FACTOR = 1.2f;
+    public static float UPGRADE_WEAPON_DAMAGE_FACTOR = 1.25f;
     
     /** Factor de mejora de cadencia de arma */
-    public static float UPGRADE_WEAPON_FIRE_RATE_FACTOR = 0.85f;
+    public static float UPGRADE_WEAPON_FIRE_RATE_FACTOR = 0.83f;
     
     /** Factor de mejora de área de impacto */
     public static float UPGRADE_WEAPON_AREA_FACTOR = 1.3f;
@@ -504,26 +504,26 @@ public final class GameConfig {
     // ==================== ESCALADO DE OLEADAS ====================
     
     /** Factor de escalado de vida de enemigos por oleada */
-    public static float WAVE_HEALTH_SCALING = 1.05f;
+    public static float WAVE_HEALTH_SCALING = 1.04f;
     
     /** Factor de escalado de velocidad de enemigos por oleada */
-    public static float WAVE_SPEED_SCALING = 1.02f;
+    public static float WAVE_SPEED_SCALING = 1.015f;
     
     /** Factor de escalado de daño de enemigos por oleada */
-    public static float WAVE_DAMAGE_SCALING = 1.03f;
+    public static float WAVE_DAMAGE_SCALING = 1.025f;
     
     /** Factor de escalado de XP de enemigos por oleada */
-    public static float WAVE_XP_SCALING = 1.05f;
+    public static float WAVE_XP_SCALING = 1.06f;
     
     // ==================== BONIFICACIONES DE NIVEL ====================
     
     /** Combustible otorgado al subir de nivel */
-    public static float LEVEL_UP_FUEL_BONUS = 10.0f;
+    public static float LEVEL_UP_FUEL_BONUS = 15.0f;
     
     // ==================== JEFE - EL APLASTADOR (BRUISER) - OLEADA 5 ====================
     
     /** Salud del Aplastador (muy alta) */
-    public static float BRUISER_BOSS_HEALTH = 850.0f;
+    public static float BRUISER_BOSS_HEALTH = 700.0f;
     
     /** Velocidad del Aplastador (baja-media) */
     public static float BRUISER_BOSS_SPEED = 65.0f;
@@ -532,7 +532,7 @@ public final class GameConfig {
     public static int BRUISER_BOSS_SIZE = 74;
     
     /** Daño por contacto del Aplastador (alto) */
-    public static float BRUISER_BOSS_CONTACT_DAMAGE = 35.0f;
+    public static float BRUISER_BOSS_CONTACT_DAMAGE = 30.0f;
     
     /** Radio del golpe de terremoto */
     public static float BRUISER_EARTHQUAKE_RADIUS = 150.0f;
@@ -567,7 +567,7 @@ public final class GameConfig {
     // ==================== JEFE - EL INFECTADOR (INFECTOR) - OLEADA 10 ====================
     
     /** Salud del Infectador (media-alta) */
-    public static float INFECTOR_BOSS_HEALTH = 850.0f;
+    public static float INFECTOR_BOSS_HEALTH = 750.0f;
     
     /** Velocidad del Infectador (media) */
     public static float INFECTOR_BOSS_SPEED = 60.0f;
@@ -576,7 +576,7 @@ public final class GameConfig {
     public static int INFECTOR_BOSS_SIZE = 66;
     
     /** Daño por contacto del Infectador (medio) */
-    public static float INFECTOR_BOSS_CONTACT_DAMAGE = 25.0f;
+    public static float INFECTOR_BOSS_CONTACT_DAMAGE = 22.0f;
     
     /** Radio de la nube tóxica periódica */
     public static float INFECTOR_TOXIC_CLOUD_RADIUS = 100.0f;
@@ -637,8 +637,8 @@ public final class GameConfig {
     public static int VFX_EXPLOSION_SPARK_COUNT = 15;
     
     /** Partículas por segundo del lanzallamas */
-    public static float VFX_FLAME_PARTICLES_PER_SECOND = 60f;
+    public static float VFX_FLAME_PARTICLES_PER_SECOND = 120f;
     
     /** Probabilidad de generar brasas (por frame a 60fps) */
-    public static float VFX_FLAME_EMBER_CHANCE = 0.3f;
+    public static float VFX_FLAME_EMBER_CHANCE = 0.5f;
 }

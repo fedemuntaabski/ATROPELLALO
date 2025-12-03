@@ -30,6 +30,9 @@ public class DebugConsole {
     private final Map<String, DebugCommand> commands;
     private final Map<String, String> commandDescriptions;
     private int historyIndex;
+    private List<String> autocompleteCandidates;
+    private int autocompleteIndex;
+    private String autocompletePrefix;
     
     public DebugConsole() {
         this.visible = false;
@@ -39,6 +42,9 @@ public class DebugConsole {
         this.commands = new HashMap<>();
         this.commandDescriptions = new HashMap<>();
         this.historyIndex = -1;
+        this.autocompleteCandidates = new ArrayList<>();
+        this.autocompleteIndex = -1;
+        this.autocompletePrefix = "";
         
         registerDefaultCommands();
     }
@@ -146,6 +152,7 @@ public class DebugConsole {
         visible = false;
         currentInput.setLength(0);
         historyIndex = -1;
+        resetAutocomplete();
     }
     
     /**
@@ -158,6 +165,9 @@ public class DebugConsole {
         
         int keyCode = e.getKeyCode();
         
+        // Debug: imprimir keyCode
+        System.out.println("DebugConsole - KeyCode: " + keyCode + " (" + KeyEvent.getKeyText(keyCode) + ")");
+        
         switch (keyCode) {
             case KeyEvent.VK_ENTER:
                 executeCurrentInput();
@@ -166,15 +176,20 @@ public class DebugConsole {
             case KeyEvent.VK_BACK_SPACE:
                 if (currentInput.length() > 0) {
                     currentInput.deleteCharAt(currentInput.length() - 1);
+                    resetAutocomplete();
                 }
                 return true;
                 
+            case KeyEvent.VK_TAB:
+                autocomplete();
+                return true;
+                
             case KeyEvent.VK_UP:
-                navigateHistory(-1);
+                navigateHistory(1);
                 return true;
                 
             case KeyEvent.VK_DOWN:
-                navigateHistory(1);
+                navigateHistory(-1);
                 return true;
                 
             case KeyEvent.VK_ESCAPE:
@@ -185,6 +200,7 @@ public class DebugConsole {
                 char keyChar = e.getKeyChar();
                 if (Character.isDefined(keyChar) && !Character.isISOControl(keyChar)) {
                     currentInput.append(keyChar);
+                    resetAutocomplete();
                     return true;
                 }
         }
@@ -232,6 +248,62 @@ public class DebugConsole {
         // Limpiar input
         currentInput.setLength(0);
         historyIndex = -1;
+        resetAutocomplete();
+    }
+    
+    /**
+     * Realiza autocompletado de comandos.
+     */
+    private void autocomplete() {
+        String input = currentInput.toString().trim().toLowerCase();
+        
+        // Si es la primera vez presionando TAB, buscar candidatos
+        if (autocompleteIndex == -1) {
+            autocompletePrefix = input;
+            autocompleteCandidates.clear();
+            
+            // Si el input está vacío, mostrar todos los comandos
+            if (input.isEmpty()) {
+                autocompleteCandidates.addAll(commands.keySet());
+            } else {
+                // Buscar comandos que coincidan con el prefijo
+                for (String cmd : commands.keySet()) {
+                    if (cmd.startsWith(input)) {
+                        autocompleteCandidates.add(cmd);
+                    }
+                }
+            }
+            
+            // Ordenar candidatos
+            autocompleteCandidates.sort(String::compareTo);
+            
+            if (autocompleteCandidates.isEmpty()) {
+                System.out.println("No autocomplete candidates found for: '" + input + "'");
+                return;
+            }
+            
+            System.out.println("Autocomplete candidates: " + autocompleteCandidates);
+            autocompleteIndex = 0;
+        } else {
+            // Ciclar entre candidatos
+            autocompleteIndex = (autocompleteIndex + 1) % autocompleteCandidates.size();
+            System.out.println("Cycling to candidate: " + autocompleteCandidates.get(autocompleteIndex));
+        }
+        
+        // Aplicar autocompletado
+        if (!autocompleteCandidates.isEmpty()) {
+            currentInput.setLength(0);
+            currentInput.append(autocompleteCandidates.get(autocompleteIndex));
+        }
+    }
+    
+    /**
+     * Resetea el estado de autocompletado.
+     */
+    private void resetAutocomplete() {
+        autocompleteIndex = -1;
+        autocompleteCandidates.clear();
+        autocompletePrefix = "";
     }
     
     /**
@@ -251,6 +323,8 @@ public class DebugConsole {
         } else {
             currentInput.setLength(0);
         }
+        
+        resetAutocomplete();
     }
     
     /**

@@ -17,7 +17,7 @@ import javax.imageio.ImageIO;
  */
 public class GameHUD {
     
-    private static final String HUD_SPRITE_PATH = "/images/HUD.png";
+    private static final String HUD_SPRITE_PATH = "/img/hud.png";
     private static BufferedImage hudSprite = null;
     
     // Posiciones y dimensiones del HUD y las barras

@@ -87,7 +87,7 @@
                             <headerType>gui</headerType>
                             <jar>${project.build.directory}/Atropellalo-${project.version}.jar</jar>
                             <outfile>${project.build.directory}/Atropellalo-${project.version}.exe</outfile>
-                            <icon>${project.basedir}/src/main/resources/images/icono.ico</icon>
+                            <icon>${project.basedir}/src/main/resources/img/icon.ico</icon>
                             <classPath>
                                 <mainClass>com.atropellalo.Game</mainClass>
                             </classPath>

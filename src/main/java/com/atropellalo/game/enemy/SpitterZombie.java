@@ -27,7 +27,7 @@ import javax.imageio.ImageIO;
  */
 public class SpitterZombie extends Enemy {
     
-    private static final String SPRITE_PATH = "/images/SpitterZombie.png";
+    private static final String SPRITE_PATH = "/img/spitter_zombie.png";
     private static final float SPRITE_SCALE = 3.0f;
     
     // Sprite compartido para todos los SpitterZombies

@@ -14,7 +14,7 @@ import javax.imageio.ImageIO;
  */
 public class Scrap extends Loot {
     
-    private static final String SPRITE_PATH = "/images/Scrap.png";
+    private static final String SPRITE_PATH = "/img/scrap.png";
     private static final float SPRITE_SCALE = 0.05f;
     private static BufferedImage sprite = null;
     private static int spriteWidth = 0;

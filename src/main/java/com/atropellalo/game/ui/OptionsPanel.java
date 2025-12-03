@@ -1,5 +1,6 @@
 package com.atropellalo.game.ui;
 
+import com.atropellalo.game.config.ConfigManager;
 import com.atropellalo.game.config.GameConfig;
 import com.atropellalo.game.sound.SoundManager;
 
@@ -64,6 +65,13 @@ public class OptionsPanel extends JPanel {
             
             @Override
             public void mouseReleased(MouseEvent e) {
+                // Guardar configuración al soltar el mouse
+                if (draggingWeaponVolume) {
+                    com.atropellalo.game.config.ConfigManager.getInstance().setWeaponVolume(SoundManager.getInstance().getWeaponVolume());
+                }
+                if (draggingMusicVolume) {
+                    com.atropellalo.game.config.ConfigManager.getInstance().setMusicVolume(SoundManager.getInstance().getMusicVolume());
+                }
                 draggingWeaponVolume = false;
                 draggingMusicVolume = false;
             }
@@ -142,7 +150,6 @@ public class OptionsPanel extends JPanel {
     
     private void updateWeaponVolume(int mouseX, int sliderX) {
         float newVolume = Math.max(0, Math.min(1, (float)(mouseX - sliderX) / SLIDER_WIDTH));
-        GameConfig.SOUND_WEAPON_VOLUME = newVolume;
         SoundManager.getInstance().setWeaponVolume(newVolume);
         repaint();
     }
@@ -193,7 +200,7 @@ public class OptionsPanel extends JPanel {
         
         // Dibujar slider de volumen de armas
         drawSlider(g2d, centerX, centerY - 80, "Volumen de Armas", 
-                   GameConfig.SOUND_WEAPON_VOLUME, 
+                   SoundManager.getInstance().getWeaponVolume(), 
                    hoveringWeaponHandle, draggingWeaponVolume);
         
         // Dibujar slider de volumen de música

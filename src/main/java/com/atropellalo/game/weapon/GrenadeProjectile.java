@@ -1,35 +1,23 @@
 package com.atropellalo.game.weapon;
 
 import com.atropellalo.game.config.GameConfig;
+import com.atropellalo.game.effect.VisualEffectManager;
 import com.atropellalo.game.enemy.Enemy;
 
-import java.awt.AlphaComposite;
 import java.awt.Color;
-import java.awt.Composite;
 import java.awt.Graphics2D;
 import java.util.List;
 
 /**
  * Proyectil de granada con efecto de explosión visual.
- * Al impactar o alcanzar su destino, muestra una animación de explosión
- * similar a la del zombie explosivo.
+ * Al impactar o alcanzar su destino, crea un efecto de explosión VFX
+ * usando el VisualEffectManager.
  */
 public class GrenadeProjectile extends Projectile {
     
-    private boolean exploding;
-    private float explosionTimer;
-    private float explosionDuration;
+    private boolean exploded;
     private float explosionRadius;
     private boolean damageApplied;
-    
-    private static final float EXPLOSION_DURATION = 0.5f;
-    private static final Color[] EXPLOSION_COLORS = {
-        new Color(255, 200, 50),   // Amarillo brillante
-        new Color(255, 150, 0),    // Naranja
-        new Color(255, 100, 0),    // Naranja rojizo
-        new Color(200, 50, 0),     // Rojo oscuro
-        new Color(100, 100, 100)   // Humo gris
-    };
     
     /**
      * Crea un nuevo proyectil de granada.
@@ -38,34 +26,19 @@ public class GrenadeProjectile extends Projectile {
                             float damage, float maxRange, float impactArea,
                             float speed, Color color, int size) {
         super(startX, startY, targetX, targetY, damage, maxRange, impactArea, speed, color, size);
-        this.exploding = false;
-        this.explosionTimer = 0;
-        this.explosionDuration = EXPLOSION_DURATION;
+        this.exploded = false;
         this.explosionRadius = impactArea;
         this.damageApplied = false;
     }
     
     @Override
     public void update(float deltaTime) {
-        if (exploding) {
-            explosionTimer += deltaTime;
-            if (explosionTimer >= explosionDuration) {
-                deactivate();
-            }
-            return;
-        }
-        
         super.update(deltaTime);
-        
-        // Iniciar explosión cuando el proyectil se desactiva (alcanzó destino)
-        if (!isActive() && !exploding) {
-            startExplosion();
-        }
     }
     
     @Override
     public boolean checkCollisions(List<Enemy> enemies) {
-        if (exploding) {
+        if (exploded) {
             return false;
         }
         
@@ -93,11 +66,21 @@ public class GrenadeProjectile extends Projectile {
     }
     
     /**
-     * Inicia la animación de explosión.
+     * Inicia el efecto de explosión VFX.
      */
     private void startExplosion() {
-        exploding = true;
-        explosionTimer = 0;
+        if (exploded) {
+            return;
+        }
+        exploded = true;
+        
+        // Crear efecto visual de explosión
+        VisualEffectManager.getInstance().createExplosion(
+            getX(), getY(), explosionRadius
+        );
+        
+        // Reproducir sonido de explosión
+        com.atropellalo.game.sound.SoundManager.getInstance().playExplosionSound();
     }
     
     /**
@@ -128,103 +111,53 @@ public class GrenadeProjectile extends Projectile {
     
     @Override
     public void render(Graphics2D g2d) {
-        if (exploding) {
-            renderExplosion(g2d);
-            return;
+        // Solo renderizar el proyectil si no ha explotado
+        if (!exploded) {
+            renderGrenade(g2d);
         }
-        
-        super.render(g2d);
+        // La explosión VFX se renderiza automáticamente por VisualEffectManager
     }
     
     /**
-     * Renderiza el efecto de explosión.
+     * Renderiza una granada visual.
      */
-    private void renderExplosion(Graphics2D g2d) {
-        float progress = explosionTimer / explosionDuration;
-        float x = getX();
-        float y = getY();
+    private void renderGrenade(Graphics2D g2d) {
+        int grenadeSize = 12;
+        int x = (int) getX();
+        int y = (int) getY();
         
-        Composite oldComposite = g2d.getComposite();
+        // Cuerpo principal de la granada (óvalo verde oscuro)
+        g2d.setColor(new Color(60, 80, 40));
+        g2d.fillOval(x - grenadeSize/2, y - grenadeSize/2, grenadeSize, grenadeSize);
         
-        // Fase de expansión (primera mitad)
-        if (progress < 0.5f) {
-            float expansionProgress = progress * 2;
-            float currentRadius = explosionRadius * expansionProgress;
-            
-            // Círculos concéntricos de diferentes colores
-            for (int i = EXPLOSION_COLORS.length - 1; i >= 0; i--) {
-                float layerProgress = (float) i / EXPLOSION_COLORS.length;
-                float layerRadius = currentRadius * (1 - layerProgress * 0.3f);
-                float alpha = 1.0f - layerProgress * 0.3f;
-                
-                g2d.setComposite(AlphaComposite.getInstance(AlphaComposite.SRC_OVER, alpha));
-                g2d.setColor(EXPLOSION_COLORS[i]);
-                g2d.fillOval(
-                    (int)(x - layerRadius), 
-                    (int)(y - layerRadius), 
-                    (int)(layerRadius * 2), 
-                    (int)(layerRadius * 2)
-                );
-            }
-            
-            // Destello central
-            g2d.setComposite(AlphaComposite.getInstance(AlphaComposite.SRC_OVER, 1.0f - expansionProgress));
-            g2d.setColor(Color.WHITE);
-            float flashRadius = currentRadius * 0.3f;
-            g2d.fillOval(
-                (int)(x - flashRadius), 
-                (int)(y - flashRadius), 
-                (int)(flashRadius * 2), 
-                (int)(flashRadius * 2)
-            );
-        } 
-        // Fase de disipación (segunda mitad)
-        else {
-            float fadeProgress = (progress - 0.5f) * 2;
-            float alpha = 1.0f - fadeProgress;
-            
-            // Humo que se disipa
-            g2d.setComposite(AlphaComposite.getInstance(AlphaComposite.SRC_OVER, alpha * 0.6f));
-            g2d.setColor(EXPLOSION_COLORS[EXPLOSION_COLORS.length - 1]);
-            
-            float smokeRadius = explosionRadius * (1 + fadeProgress * 0.5f);
-            g2d.fillOval(
-                (int)(x - smokeRadius), 
-                (int)(y - smokeRadius), 
-                (int)(smokeRadius * 2), 
-                (int)(smokeRadius * 2)
-            );
-            
-            // Restos de fuego
-            g2d.setComposite(AlphaComposite.getInstance(AlphaComposite.SRC_OVER, alpha));
-            g2d.setColor(EXPLOSION_COLORS[2]);
-            float fireRadius = explosionRadius * 0.5f * (1 - fadeProgress);
-            g2d.fillOval(
-                (int)(x - fireRadius), 
-                (int)(y - fireRadius), 
-                (int)(fireRadius * 2), 
-                (int)(fireRadius * 2)
-            );
-        }
+        // Segmentos de la granada (líneas)
+        g2d.setColor(new Color(40, 60, 30));
+        g2d.drawLine(x - grenadeSize/2, y, x + grenadeSize/2, y);
+        g2d.drawLine(x, y - grenadeSize/2, x, y + grenadeSize/2);
         
-        g2d.setComposite(oldComposite);
-    }
-    
-    @Override
-    public boolean isActive() {
-        // Mantener activo durante la explosión
-        if (exploding) {
-            return explosionTimer < explosionDuration;
-        }
-        return super.isActive();
+        // Pin superior (rectángulo pequeño)
+        g2d.setColor(new Color(100, 100, 100));
+        g2d.fillRect(x - 2, y - grenadeSize/2 - 3, 4, 3);
+        
+        // Anillo del pin
+        g2d.setColor(new Color(150, 150, 150));
+        g2d.drawOval(x - 3, y - grenadeSize/2 - 5, 6, 4);
+        
+        // Borde de la granada
+        g2d.setColor(new Color(40, 60, 30));
+        g2d.drawOval(x - grenadeSize/2, y - grenadeSize/2, grenadeSize, grenadeSize);
+        
+        // Resaltado para dar volumen
+        g2d.setColor(new Color(80, 100, 60, 100));
+        g2d.fillOval(x - grenadeSize/4, y - grenadeSize/3, grenadeSize/3, grenadeSize/3);
     }
     
     /**
-     * Indica si la granada está en proceso de explosión.
-     * @return true si está explotando
+     * Indica si la granada ya explotó.
+     * @return true si explotó
      */
     public boolean isExploding() {
-        return exploding;
+        return exploded;
     }
     
     /**
@@ -232,7 +165,7 @@ public class GrenadeProjectile extends Projectile {
      * @param enemies Lista de enemigos
      */
     public void forceExplosion(List<Enemy> enemies) {
-        if (!exploding) {
+        if (!exploded) {
             startExplosion();
             applyExplosionDamage(enemies);
         }

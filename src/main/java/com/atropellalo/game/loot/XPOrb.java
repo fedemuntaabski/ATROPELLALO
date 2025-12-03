@@ -15,6 +15,7 @@ import java.util.concurrent.ThreadLocalRandom;
 public class XPOrb extends Loot {
     
     private final int xpValue;
+    private final XPOrbRarity rarity;
     private float magnetDistance;
     private float magnetSpeed;
     private boolean beingAttracted;
@@ -26,11 +27,13 @@ public class XPOrb extends Loot {
      * Crea un nuevo orbe de XP.
      * @param x Posición X inicial
      * @param y Posición Y inicial
-     * @param xpValue Cantidad de XP que otorga
+     * @param baseXpValue Cantidad base de XP (será multiplicado por la rareza)
+     * @param rarity Rareza del orbe
      */
-    public XPOrb(float x, float y, int xpValue) {
+    public XPOrb(float x, float y, int baseXpValue, XPOrbRarity rarity) {
         super(x, y, GameConfig.XP_ORB_SIZE);
-        this.xpValue = xpValue;
+        this.rarity = rarity;
+        this.xpValue = Math.round(baseXpValue * rarity.getXpMultiplier());
         this.magnetDistance = GameConfig.XP_ORB_MAGNET_DISTANCE;
         this.magnetSpeed = GameConfig.XP_ORB_MAGNET_SPEED;
         this.beingAttracted = false;
@@ -88,14 +91,24 @@ public class XPOrb extends Loot {
         // Efecto de brillo pulsante
         float glow = (float) (0.7f + 0.3f * Math.sin(glowPhase));
         
-        // Color base del orbe (azul brillante)
-        Color orbColor = new Color(100, 180, 255);
-        Color glowColor = new Color(150, 200, 255, (int)(100 * glow));
+        // Colores según rareza
+        Color orbColor = rarity.getBaseColor();
+        Color glowColor = new Color(
+            rarity.getGlowColor().getRed(),
+            rarity.getGlowColor().getGreen(),
+            rarity.getGlowColor().getBlue(),
+            (int)(100 * glow)
+        );
         
         // Dibujar halo de brillo
         if (beingAttracted) {
             int glowRadius = radius + 4;
-            g2d.setColor(new Color(200, 230, 255, (int)(80 * glow)));
+            g2d.setColor(new Color(
+                rarity.getGlowColor().getRed(),
+                rarity.getGlowColor().getGreen(),
+                rarity.getGlowColor().getBlue(),
+                (int)(80 * glow)
+            ));
             g2d.fillOval(centerX - glowRadius, centerY - glowRadius, 
                         glowRadius * 2, glowRadius * 2);
         }
@@ -106,7 +119,7 @@ public class XPOrb extends Loot {
         Color[] colors = {
             Color.WHITE,
             orbColor,
-            new Color(50, 100, 200)
+            rarity.getDarkColor()
         };
         
         RadialGradientPaint gradient = new RadialGradientPaint(

@@ -25,11 +25,11 @@ import java.util.List;
 public class PauseMenu implements MouseWheelListener, MouseListener, MouseMotionListener {
     
     private static final int MENU_WIDTH = 600;
-    private static final int MENU_HEIGHT = 550;
-    private static final int STATS_HEIGHT = 350;
+    private static final int MENU_HEIGHT = 580;
+    private static final int STATS_HEIGHT = 280;
     private static final int BUTTON_WIDTH = 250;
-    private static final int BUTTON_HEIGHT = 50;
-    private static final int BUTTON_SPACING = 20;
+    private static final int BUTTON_HEIGHT = 60;
+    private static final int BUTTON_SPACING = 15;
     
     private static final Color OVERLAY_COLOR = new Color(0, 0, 0, 200);
     private static final Color MENU_BG_COLOR = new Color(15, 10, 20);
@@ -45,11 +45,13 @@ public class PauseMenu implements MouseWheelListener, MouseListener, MouseMotion
     private final int screenHeight;
     
     private boolean visible;
-    private int selectedButton; // 0 = Reanudar, 1 = Salir
+    private int selectedButton; // 0 = Reanudar, 1 = Reiniciar, 2 = Opciones, 3 = Menú Principal
     private int scrollOffset;
     private int maxScroll;
     
     private Rectangle resumeButton;
+    private Rectangle restartButton;
+    private Rectangle optionsButton;
     private Rectangle quitButton;
     
     private PauseMenuCallback callback;
@@ -59,6 +61,8 @@ public class PauseMenu implements MouseWheelListener, MouseListener, MouseMotion
      */
     public interface PauseMenuCallback {
         void onResume();
+        void onRestart();
+        void onOptions();
         void onMainMenu();
     }
     
@@ -80,12 +84,19 @@ public class PauseMenu implements MouseWheelListener, MouseListener, MouseMotion
         int menuX = (screenWidth - MENU_WIDTH) / 2;
         int menuY = (screenHeight - MENU_HEIGHT) / 2;
         
-        int buttonY = menuY + MENU_HEIGHT - BUTTON_HEIGHT - 20;
+        // Primera fila de botones (Reanudar y Reiniciar)
+        int firstRowY = menuY + MENU_HEIGHT - (BUTTON_HEIGHT * 2) - BUTTON_SPACING - 20;
         int totalButtonWidth = BUTTON_WIDTH * 2 + BUTTON_SPACING;
         int buttonStartX = menuX + (MENU_WIDTH - totalButtonWidth) / 2;
         
-        resumeButton = new Rectangle(buttonStartX, buttonY, BUTTON_WIDTH, BUTTON_HEIGHT);
-        quitButton = new Rectangle(buttonStartX + BUTTON_WIDTH + BUTTON_SPACING, buttonY, 
+        resumeButton = new Rectangle(buttonStartX, firstRowY, BUTTON_WIDTH, BUTTON_HEIGHT);
+        restartButton = new Rectangle(buttonStartX + BUTTON_WIDTH + BUTTON_SPACING, firstRowY, 
+                                      BUTTON_WIDTH, BUTTON_HEIGHT);
+        
+        // Segunda fila de botones (Opciones y Menú Principal)
+        int secondRowY = firstRowY + BUTTON_HEIGHT + BUTTON_SPACING;
+        optionsButton = new Rectangle(buttonStartX, secondRowY, BUTTON_WIDTH, BUTTON_HEIGHT);
+        quitButton = new Rectangle(buttonStartX + BUTTON_WIDTH + BUTTON_SPACING, secondRowY, 
                                    BUTTON_WIDTH, BUTTON_HEIGHT);
     }
     
@@ -359,11 +370,13 @@ public class PauseMenu implements MouseWheelListener, MouseListener, MouseMotion
      * Renderiza los botones.
      */
     private void renderButtons(Graphics2D g2d) {
-        // Botón Reanudar
+        // Primera fila
         renderButton(g2d, resumeButton, "REANUDAR", selectedButton == 0);
+        renderButton(g2d, restartButton, "REINICIAR", selectedButton == 1);
         
-        // Botón Menú Principal
-        renderButton(g2d, quitButton, "MENÚ PRINCIPAL", selectedButton == 1);
+        // Segunda fila
+        renderButton(g2d, optionsButton, "OPCIONES", selectedButton == 2);
+        renderButton(g2d, quitButton, "MENÚ PRINCIPAL", selectedButton == 3);
     }
     
     /**
@@ -408,22 +421,36 @@ public class PauseMenu implements MouseWheelListener, MouseListener, MouseMotion
         switch (keyCode) {
             case KeyEvent.VK_LEFT:
             case KeyEvent.VK_A:
-                selectedButton = Math.max(0, selectedButton - 1);
+                // Navegación horizontal en la misma fila
+                if (selectedButton == 1) selectedButton = 0; // Reiniciar -> Reanudar
+                else if (selectedButton == 3) selectedButton = 2; // Menú -> Opciones
                 break;
                 
             case KeyEvent.VK_RIGHT:
             case KeyEvent.VK_D:
-                selectedButton = Math.min(1, selectedButton + 1);
+                // Navegación horizontal en la misma fila
+                if (selectedButton == 0) selectedButton = 1; // Reanudar -> Reiniciar
+                else if (selectedButton == 2) selectedButton = 3; // Opciones -> Menú
                 break;
                 
             case KeyEvent.VK_UP:
             case KeyEvent.VK_W:
-                scrollOffset = Math.max(0, scrollOffset - 30);
+                // Navegación vertical entre filas, o scroll si está en primera fila
+                if (selectedButton >= 2) {
+                    selectedButton -= 2; // Fila 2 -> Fila 1
+                } else {
+                    scrollOffset = Math.max(0, scrollOffset - 30);
+                }
                 break;
                 
             case KeyEvent.VK_DOWN:
             case KeyEvent.VK_S:
-                scrollOffset = Math.min(maxScroll, scrollOffset + 30);
+                // Navegación vertical entre filas, o scroll si está en segunda fila
+                if (selectedButton < 2) {
+                    selectedButton += 2; // Fila 1 -> Fila 2
+                } else {
+                    scrollOffset = Math.min(maxScroll, scrollOffset + 30);
+                }
                 break;
                 
             case KeyEvent.VK_ENTER:
@@ -452,7 +479,13 @@ public class PauseMenu implements MouseWheelListener, MouseListener, MouseMotion
             case 0: // Reanudar
                 callback.onResume();
                 break;
-            case 1: // Menú Principal
+            case 1: // Reiniciar
+                callback.onRestart();
+                break;
+            case 2: // Opciones
+                callback.onOptions();
+                break;
+            case 3: // Menú Principal
                 callback.onMainMenu();
                 break;
         }
@@ -480,14 +513,18 @@ public class PauseMenu implements MouseWheelListener, MouseListener, MouseMotion
         int x = e.getX();
         int y = e.getY();
         
-        // Verificar click en botón Reanudar
+        // Verificar click en botones
         if (resumeButton.contains(x, y)) {
             selectedButton = 0;
             executeSelectedButton();
-        }
-        // Verificar click en botón Salir
-        else if (quitButton.contains(x, y)) {
+        } else if (restartButton.contains(x, y)) {
             selectedButton = 1;
+            executeSelectedButton();
+        } else if (optionsButton.contains(x, y)) {
+            selectedButton = 2;
+            executeSelectedButton();
+        } else if (quitButton.contains(x, y)) {
+            selectedButton = 3;
             executeSelectedButton();
         }
     }
@@ -504,8 +541,12 @@ public class PauseMenu implements MouseWheelListener, MouseListener, MouseMotion
         // Actualizar botón seleccionado según posición del mouse
         if (resumeButton.contains(x, y)) {
             selectedButton = 0;
-        } else if (quitButton.contains(x, y)) {
+        } else if (restartButton.contains(x, y)) {
             selectedButton = 1;
+        } else if (optionsButton.contains(x, y)) {
+            selectedButton = 2;
+        } else if (quitButton.contains(x, y)) {
+            selectedButton = 3;
         }
     }
     

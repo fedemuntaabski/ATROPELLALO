@@ -15,7 +15,7 @@ import javax.imageio.ImageIO;
  */
 public class Fuel extends Loot {
     
-    private static final String SPRITE_PATH = "/images/Fuel.png";
+    private static final String SPRITE_PATH = "/img/fuel.png";
     private static final float SPRITE_SCALE = 0.08f;
     
     // Sprite compartido

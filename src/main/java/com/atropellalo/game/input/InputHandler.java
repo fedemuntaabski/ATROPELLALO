@@ -1,5 +1,7 @@
 package com.atropellalo.game.input;
 
+import com.atropellalo.game.debug.DebugManager;
+
 import java.awt.event.KeyEvent;
 import java.awt.event.KeyListener;
 
@@ -13,6 +15,7 @@ public class InputHandler implements KeyListener {
     private boolean aPressed;
     private boolean sPressed;
     private boolean dPressed;
+    private DebugManager debugManager;
     
     public InputHandler() {
         this.wPressed = false;
@@ -21,12 +24,24 @@ public class InputHandler implements KeyListener {
         this.dPressed = false;
     }
     
+    /**
+     * Establece el DebugManager para verificar si la consola está activa.
+     */
+    public void setDebugManager(DebugManager debugManager) {
+        this.debugManager = debugManager;
+    }
+    
     @Override
     public void keyPressed(KeyEvent e) {
         int key = e.getKeyCode();
         
         // No procesar teclas de debug (F1, F3) para que GamePanel las maneje
         if (key == KeyEvent.VK_F1 || key == KeyEvent.VK_F3) {
+            return;
+        }
+        
+        // No procesar movimiento si la consola está visible
+        if (debugManager != null && debugManager.isConsoleVisible()) {
             return;
         }
         
@@ -50,6 +65,7 @@ public class InputHandler implements KeyListener {
     public void keyReleased(KeyEvent e) {
         int key = e.getKeyCode();
         
+        // Siempre procesar keyReleased para evitar que las teclas se queden "pegadas"
         switch (key) {
             case KeyEvent.VK_W:
                 wPressed = false;

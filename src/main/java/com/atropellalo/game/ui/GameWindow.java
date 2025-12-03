@@ -49,7 +49,7 @@ public class GameWindow extends JFrame {
         
         // Cargar y establecer el ícono de la ventana
         try {
-            Image icon = ImageIO.read(getClass().getResourceAsStream("/images/icono.png"));
+            Image icon = ImageIO.read(getClass().getResourceAsStream("/img/icon.png"));
             if (icon != null) {
                 setIconImage(icon);
             }
@@ -133,11 +133,32 @@ public class GameWindow extends JFrame {
         optionsPanel.requestFocusInWindow();
     }
     
+    /**
+     * Muestra el panel de opciones desde el juego pausado.
+     * El juego permanece en pausa mientras se ajustan las opciones.
+     */
+    private void showOptionsFromGame() {
+        // Cambiar temporalmente el callback de opciones para volver al menú de pausa
+        optionsPanel.setCallback(() -> {
+            // Restaurar el callback normal de opciones
+            optionsPanel.setCallback(this::showMainMenu);
+            // Volver al juego (el menú de pausa se reabrirá automáticamente)
+            cardLayout.show(containerPanel, GAME);
+            gamePanel.requestFocusInWindow();
+            // Reabrir el menú de pausa
+            gamePanel.reopenPauseMenu();
+        });
+        
+        cardLayout.show(containerPanel, OPTIONS);
+        optionsPanel.requestFocusInWindow();
+    }
+    
     private void startGame() {
         // Crear el panel del juego solo cuando se va a jugar
         if (gamePanel == null) {
             gamePanel = new GamePanel();
-            gamePanel.setMainMenuCallback(this::showMainMenu);
+            gamePanel.setMainMenuCallback(() -> showMainMenu());
+            gamePanel.setOptionsCallback(this::showOptionsFromGame);
             containerPanel.add(gamePanel, GAME);
             
             // Configurar listeners del game panel
@@ -154,7 +175,8 @@ public class GameWindow extends JFrame {
             gamePanel.stopGameLoop();
             containerPanel.remove(gamePanel);
             gamePanel = new GamePanel();
-            gamePanel.setMainMenuCallback(this::showMainMenu);
+            gamePanel.setMainMenuCallback(() -> showMainMenu());
+            gamePanel.setOptionsCallback(this::showOptionsFromGame);
             containerPanel.add(gamePanel, GAME);
         }
         

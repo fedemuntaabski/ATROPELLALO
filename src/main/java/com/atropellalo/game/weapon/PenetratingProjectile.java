@@ -26,7 +26,7 @@ import javax.imageio.ImageIO;
  */
 public class PenetratingProjectile extends Projectile {
     
-    private static final String SPRITE_PATH = "/images/Bullet.png";
+    private static final String SPRITE_PATH = "/img/bullet.png";
     private static final float SPRITE_SCALE = 0.04f;
     private static BufferedImage sprite = null;
     private static int spriteWidth = 0;

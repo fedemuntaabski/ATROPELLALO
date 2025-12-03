@@ -18,7 +18,7 @@ import javax.imageio.ImageIO;
  */
 public class Player {
     
-    private static final String SPRITE_PATH = "/images/Player.png";
+    private static final String SPRITE_PATH = "/img/player.png";
     private static final float SPRITE_SCALE = 4.5f;
     
     // Sprite compartido
@@ -34,6 +34,7 @@ public class Player {
     // Sistema de stats
     private float health;
     private float maxHealth;
+    private boolean godMode;
     private float fuel;
     private float maxFuel;
     private float speed;
@@ -105,6 +106,7 @@ public class Player {
         // Inicializar stats desde configuración
         this.maxHealth = GameConfig.PLAYER_MAX_HEALTH;
         this.health = GameConfig.PLAYER_INITIAL_HEALTH;
+        this.godMode = false;
         this.maxFuel = GameConfig.PLAYER_MAX_FUEL;
         this.fuel = GameConfig.PLAYER_INITIAL_FUEL;
         this.speed = GameConfig.PLAYER_SPEED;
@@ -355,6 +357,10 @@ public class Player {
      * @param amount Cantidad de daño
      */
     public void damage(float amount) {
+        if (godMode) {
+            return; // No recibir daño en modo dios
+        }
+        
         health -= amount;
         if (health <= 0) {
             health = 0;
@@ -794,5 +800,13 @@ public class Player {
     
     public boolean hasFuel() {
         return fuel > 0;
+    }
+    
+    public boolean isGodMode() {
+        return godMode;
+    }
+    
+    public void setGodMode(boolean godMode) {
+        this.godMode = godMode;
     }
 }

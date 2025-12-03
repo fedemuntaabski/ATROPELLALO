@@ -10,6 +10,7 @@ public class DebugConfig {
     private static boolean debugEnabled = false;
     
     // Flags individuales
+    private static boolean showWaveInfo = false;  // Oculto por defecto, se muestra con F3
     private static boolean showFPS = true;
     private static boolean showEntityCount = true;
     private static boolean showPlayerStats = true;
@@ -37,6 +38,14 @@ public class DebugConfig {
     
     public static boolean isDebugEnabled() {
         return debugEnabled;
+    }
+    
+    public static boolean isShowWaveInfo() {
+        return showWaveInfo;
+    }
+    
+    public static void setShowWaveInfo(boolean show) {
+        showWaveInfo = show;
     }
     
     // Getters y setters para flags individuales
@@ -167,6 +176,7 @@ public class DebugConfig {
      * Activa todas las opciones de debug.
      */
     public static void enableAll() {
+        showWaveInfo = true;
         showFPS = true;
         showEntityCount = true;
         showPlayerStats = true;
@@ -184,6 +194,7 @@ public class DebugConfig {
      * Desactiva todas las opciones de debug.
      */
     public static void disableAll() {
+        showWaveInfo = false;
         showFPS = false;
         showEntityCount = false;
         showPlayerStats = false;
@@ -201,6 +212,7 @@ public class DebugConfig {
      * Restaura la configuración por defecto.
      */
     public static void resetToDefaults() {
+        showWaveInfo = false;
         showFPS = true;
         showEntityCount = true;
         showPlayerStats = true;

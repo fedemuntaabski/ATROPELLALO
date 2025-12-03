@@ -33,11 +33,11 @@ public class FlamethrowerEffect implements VisualEffect {
     
     // Colores del fuego (de interior a exterior)
     private static final Color[] FLAME_COLORS = {
-        new Color(255, 255, 220, 220),  // Núcleo blanco-amarillo
-        new Color(255, 220, 100, 200),  // Amarillo brillante
-        new Color(255, 150, 50, 180),   // Naranja
-        new Color(255, 80, 20, 150),    // Rojo-naranja
-        new Color(200, 50, 10, 100)     // Rojo oscuro
+        new Color(255, 255, 220, 240),  // Núcleo blanco-amarillo
+        new Color(255, 220, 100, 230),  // Amarillo brillante
+        new Color(255, 150, 50, 210),   // Naranja
+        new Color(255, 80, 20, 180),    // Rojo-naranja
+        new Color(200, 50, 10, 140)     // Rojo oscuro
     };
     
     private static final Color HEAT_DISTORTION_COLOR = new Color(255, 200, 100, 30);
@@ -103,7 +103,10 @@ public class FlamethrowerEffect implements VisualEffect {
      * Genera partículas de fuego.
      */
     private void generateParticles(float deltaTime) {
-        int particlesToSpawn = (int)(GameConfig.VFX_FLAME_PARTICLES_PER_SECOND * deltaTime);
+        // Escalar cantidad de partículas según el ángulo del cono
+        float coneScale = coneAngle / GameConfig.FLAMETHROWER_CONE_ANGLE;
+        float baseParticles = GameConfig.VFX_FLAME_PARTICLES_PER_SECOND;
+        int particlesToSpawn = (int)(baseParticles * coneScale * deltaTime);
         particlesToSpawn = Math.max(1, particlesToSpawn);
         
         float halfCone = (float) Math.toRadians(coneAngle / 2);
@@ -112,15 +115,17 @@ public class FlamethrowerEffect implements VisualEffect {
             // Ángulo aleatorio dentro del cono
             float particleAngle = angle + (random.nextFloat() - 0.5f) * 2 * halfCone;
             
-            // Velocidad variable
-            float speed = 150 + random.nextFloat() * 100;
+            // Velocidad escalada según el alcance
+            float rangeScale = range / GameConfig.FLAMETHROWER_RANGE;
+            float baseSpeed = 150 + random.nextFloat() * 100;
+            float speed = baseSpeed * rangeScale;
             
             // Tamaño basado en posición (más grandes en el centro)
             float distFromCenter = Math.abs(particleAngle - angle) / halfCone;
-            float size = 15 * (1 - distFromCenter * 0.5f) + random.nextFloat() * 10;
+            float size = 25 * (1 - distFromCenter * 0.4f) + random.nextFloat() * 15;
             
             // Vida más corta para partículas en los bordes
-            float life = (0.3f + random.nextFloat() * 0.2f) * (1 - distFromCenter * 0.3f);
+            float life = (0.4f + random.nextFloat() * 0.3f) * (1 - distFromCenter * 0.2f);
             
             // Color aleatorio del espectro de fuego
             int colorIndex = random.nextInt(FLAME_COLORS.length);
@@ -137,8 +142,8 @@ public class FlamethrowerEffect implements VisualEffect {
             float halfCone = (float) Math.toRadians(coneAngle / 2);
             float emberAngle = angle + (random.nextFloat() - 0.5f) * 2 * halfCone;
             float speed = 50 + random.nextFloat() * 100;
-            float size = 2 + random.nextFloat() * 3;
-            float life = 0.5f + random.nextFloat() * 0.5f;
+            float size = 4 + random.nextFloat() * 5;
+            float life = 0.6f + random.nextFloat() * 0.6f;
             
             embers.add(new Ember(x, y, emberAngle, speed, size, life));
         }
@@ -154,9 +159,7 @@ public class FlamethrowerEffect implements VisualEffect {
         AffineTransform oldTransform = g2d.getTransform();
         java.awt.Composite oldComposite = g2d.getComposite();
         
-        // Orden de renderizado: primero partículas VFX (debajo), luego cono base (encima)
-        
-        // Renderizar partículas VFX primero (quedan debajo)
+        // Solo renderizar partículas VFX (sin cono base)
         for (FlameParticle p : particles) {
             p.render(g2d);
         }
@@ -164,12 +167,6 @@ public class FlamethrowerEffect implements VisualEffect {
         // Renderizar brasas
         for (Ember e : embers) {
             e.render(g2d);
-        }
-        
-        // Renderizar cono base encima de las partículas
-        if (active) {
-            renderBaseCone(g2d);
-            renderHeatDistortion(g2d);
         }
         
         // Restaurar estado

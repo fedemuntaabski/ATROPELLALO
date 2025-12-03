@@ -1,5 +1,6 @@
 package com.atropellalo.game.sound;
 
+import com.atropellalo.game.config.ConfigManager;
 import com.atropellalo.game.config.GameConfig;
 import com.atropellalo.game.weapon.WeaponType;
 
@@ -37,6 +38,12 @@ public class SoundManager {
     
     /** Estado de reproducción de cada arma */
     private final Map<WeaponType, Boolean> playingState;
+    
+    /** Pool de clips para el sonido de explosión (3 clips) */
+    private final List<Clip> explosionClipPool;
+    
+    /** Índice del siguiente clip de explosión a usar */
+    private int explosionPoolIndex;
     
     /** Volumen maestro (0.0 - 1.0) */
     private float masterVolume;
@@ -79,10 +86,15 @@ public class SoundManager {
         this.weaponClipPools = new EnumMap<>(WeaponType.class);
         this.poolIndexes = new EnumMap<>(WeaponType.class);
         this.playingState = new EnumMap<>(WeaponType.class);
-        this.masterVolume = GameConfig.SOUND_MASTER_VOLUME;
-        this.weaponVolume = GameConfig.SOUND_WEAPON_VOLUME;
-        this.musicVolume = 0.5f; // Volumen de música por defecto
-        this.soundEnabled = GameConfig.SOUND_ENABLED;
+        this.explosionClipPool = new ArrayList<>();
+        this.explosionPoolIndex = 0;
+        
+        // Cargar configuración guardada
+        ConfigManager config = ConfigManager.getInstance();
+        this.masterVolume = config.getMasterVolume();
+        this.weaponVolume = config.getWeaponVolume();
+        this.musicVolume = config.getMusicVolume();
+        this.soundEnabled = config.isSoundEnabled();
         this.gameplayMusicTracks = new ArrayList<>();
         this.currentTrackIndex = 0;
         this.currentMusicPath = null;
@@ -112,12 +124,29 @@ public class SoundManager {
      * Carga todos los sonidos de armas.
      */
     private void loadAllSounds() {
-        loadWeaponSound(WeaponType.PISTOL, "/sounds/pistol.mp3");
-        loadWeaponSound(WeaponType.LIGHT_MACHINE_GUN, "/sounds/machinegun.mp3");
-        loadWeaponSound(WeaponType.GRENADE_LAUNCHER, "/sounds/grenade-launcher.mp3");
-        loadWeaponSound(WeaponType.FLAMETHROWER, "/sounds/fireflammer.mp3");
-        loadWeaponSound(WeaponType.SHOTGUN, "/sounds/shotgun.mp3");
-        loadWeaponSound(WeaponType.SNIPER_RAILGUN, "/sounds/sniperrifle.mp3");
+        loadWeaponSound(WeaponType.PISTOL, "/sfx/pistol.mp3");
+        loadWeaponSound(WeaponType.LIGHT_MACHINE_GUN, "/sfx/machine_gun.mp3");
+        loadWeaponSound(WeaponType.GRENADE_LAUNCHER, "/sfx/grenade_launcher.mp3");
+        loadWeaponSound(WeaponType.FLAMETHROWER, "/sfx/blaze.mp3");
+        loadWeaponSound(WeaponType.SHOTGUN, "/sfx/shotgun.mp3");
+        loadWeaponSound(WeaponType.SNIPER_RAILGUN, "/sfx/sniper_rifle.mp3");
+        loadExplosionSound();
+    }
+    
+    /**
+     * Carga el sonido de explosión en un pool de clips.
+     */
+    private void loadExplosionSound() {
+        // Crear pool de 3 clips para explosiones
+        for (int i = 0; i < 3; i++) {
+            Clip clip = loadSingleClip("/sfx/explosion.mp3");
+            if (clip != null) {
+                explosionClipPool.add(clip);
+            }
+        }
+        if (!explosionClipPool.isEmpty()) {
+            LOGGER.info("Pool de sonidos de explosión cargado (" + explosionClipPool.size() + " clips)");
+        }
     }
     
     /**
@@ -300,12 +329,47 @@ public class SoundManager {
     }
     
     /**
+     * Detiene todos los loops de armas activos.
+     * Útil para limpiar el estado del sonido al reiniciar el juego.
+     */
+    public void stopAllWeaponLoops() {
+        for (WeaponType weaponType : WeaponType.values()) {
+            stopWeaponLoop(weaponType);
+        }
+    }
+    
+    /**
      * Verifica si un arma está reproduciendo sonido en loop.
      * @param weaponType Tipo de arma
      * @return true si está en loop
      */
     public boolean isLooping(WeaponType weaponType) {
         return Boolean.TRUE.equals(playingState.get(weaponType));
+    }
+    
+    /**
+     * Reproduce el sonido de explosión.
+     * Usa un pool de clips para permitir múltiples explosiones simultáneas.
+     */
+    public void playExplosionSound() {
+        if (!soundEnabled || explosionClipPool.isEmpty()) {
+            return;
+        }
+        
+        Clip clip = explosionClipPool.get(explosionPoolIndex);
+        if (clip != null) {
+            // Detener si está corriendo
+            if (clip.isRunning()) {
+                clip.stop();
+            }
+            clip.flush();
+            clip.setFramePosition(0);
+            setClipVolume(clip, masterVolume * weaponVolume);
+            clip.start();
+            
+            // Rotar al siguiente clip del pool
+            explosionPoolIndex = (explosionPoolIndex + 1) % explosionClipPool.size();
+        }
     }
     
     /**
@@ -324,8 +388,16 @@ public class SoundManager {
             float dB = (float) (Math.log10(Math.max(0.0001, volume)) * 20.0);
             dB = Math.max(gainControl.getMinimum(), Math.min(gainControl.getMaximum(), dB));
             
-            // Aplicar cambio inmediatamente
+            // Aplicar el valor directamente
             gainControl.setValue(dB);
+            
+            // Forzar que el cambio se procese inmediatamente
+            // Obtener la posición actual y hacer un micro-flush
+            if (clip.isActive()) {
+                int currentFrame = clip.getFramePosition();
+                // El simple acto de leer la posición puede ayudar a forzar el procesamiento
+                clip.setFramePosition(currentFrame);
+            }
         } catch (IllegalArgumentException e) {
             LOGGER.fine("Control de volumen no disponible para este clip");
         }
@@ -338,6 +410,7 @@ public class SoundManager {
     public void setMasterVolume(float volume) {
         this.masterVolume = Math.max(0, Math.min(1, volume));
         updateAllVolumes();
+        ConfigManager.getInstance().setMasterVolume(this.masterVolume);
     }
     
     /**
@@ -347,6 +420,7 @@ public class SoundManager {
     public void setWeaponVolume(float volume) {
         this.weaponVolume = Math.max(0, Math.min(1, volume));
         updateAllVolumes();
+        // No guardar aquí - se guarda desde OptionsPanel al soltar el mouse
     }
     
     /**
@@ -376,6 +450,7 @@ public class SoundManager {
             stopAllSounds();
             stopMusic();
         }
+        ConfigManager.getInstance().setSoundEnabled(enabled);
     }
     
     /**
@@ -453,7 +528,12 @@ public class SoundManager {
             AudioInputStream decodedAudioIn = AudioSystem.getAudioInputStream(decodedFormat, audioIn);
             
             musicClip = AudioSystem.getClip();
+            
+            // Usar DataLine.Info para especificar un buffer más pequeño que responda más rápido
+            DataLine.Info info = new DataLine.Info(Clip.class, decodedFormat);
+            musicClip = (Clip) AudioSystem.getLine(info);
             musicClip.open(decodedAudioIn);
+            
             setClipVolume(musicClip, masterVolume * musicVolume);
             
             if (loop) {
@@ -544,18 +624,19 @@ public class SoundManager {
      */
     public void setMusicVolume(float volume) {
         this.musicVolume = Math.max(0, Math.min(1, volume));
-        if (musicClip != null && musicClip.isRunning()) {
-            // Aplicar inmediatamente sin delay
+        if (musicClip != null) {
+            // Aplicar inmediatamente sin verificar isRunning()
             float actualVolume = musicDimmed ? musicVolume * 0.3f : musicVolume;
             setClipVolume(musicClip, masterVolume * actualVolume);
         }
+        // No guardar aquí - se guarda desde OptionsPanel al soltar el mouse
     }
     
     /**
      * Atenúa la música (reduce el volumen al 30%).
      */
     public void dimMusic() {
-        if (!musicDimmed && musicClip != null && musicClip.isRunning()) {
+        if (!musicDimmed && musicClip != null) {
             musicDimmed = true;
             setClipVolume(musicClip, masterVolume * musicVolume * 0.3f);
         }
@@ -565,7 +646,7 @@ public class SoundManager {
      * Restaura el volumen normal de la música.
      */
     public void undimMusic() {
-        if (musicDimmed && musicClip != null && musicClip.isRunning()) {
+        if (musicDimmed && musicClip != null) {
             musicDimmed = false;
             setClipVolume(musicClip, masterVolume * musicVolume);
         }
